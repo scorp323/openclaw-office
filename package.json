@@ -6,7 +6,7 @@
   "description": "Visual monitoring & management frontend for OpenClaw Multi-Agent system",
   "repository": {
     "type": "git",
-    "url": "https://github.com/openclaw/OpenClaw-Office.git"
+    "url": "https://github.com/WW-AI-Lab/openclaw-office.git"
   },
   "scripts": {
     "dev": "vite",
