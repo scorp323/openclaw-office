@@ -226,8 +226,100 @@
   "settings": {
     "title": "Settings",
     "description": "App settings: theme, provider, gateway, updates",
-    "comingSoon": "Settings coming soon",
-    "waitingPhase": "Waiting for Phase D implementation"
+    "appearance": {
+      "title": "Appearance",
+      "theme": "Theme",
+      "themeLight": "Light",
+      "themeDark": "Dark",
+      "themeSystem": "System",
+      "language": "Language",
+      "langZh": "中文",
+      "langEn": "English"
+    },
+    "providers": {
+      "title": "AI Providers",
+      "description": "Manage AI model provider configurations",
+      "add": "Add Provider",
+      "empty": "No AI Providers configured",
+      "emptyHint": "Click the button above to add your first provider",
+      "apiKeyConfigured": "Configured",
+      "apiKeyNotConfigured": "Not configured",
+      "models": "{{count}} model(s)",
+      "deleteTitle": "Delete Provider",
+      "deleteDescription": "Are you sure you want to delete provider \"{{name}}\"? You will need to reconfigure it.",
+      "addDialog": {
+        "title": "Add Provider",
+        "selectType": "Select Provider Type",
+        "providerId": "Provider ID",
+        "providerIdHint": "Unique identifier in the config file",
+        "baseUrl": "Base URL",
+        "apiKey": "API Key",
+        "apiType": "API Type",
+        "idConflict": "This Provider ID already exists",
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "editDialog": {
+        "title": "Edit Provider",
+        "apiKeyPlaceholder": "Leave empty to keep unchanged",
+        "cancel": "Cancel",
+        "save": "Save"
+      }
+    },
+    "gateway": {
+      "title": "Gateway",
+      "description": "Gateway runtime status",
+      "version": "Version",
+      "port": "Port",
+      "uptime": "Uptime",
+      "mode": "Mode",
+      "nodeVersion": "Node.js",
+      "platform": "Platform",
+      "refresh": "Refresh",
+      "notConnected": "Gateway not connected",
+      "notConnectedHint": "Make sure OpenClaw Gateway is running",
+      "uptimeFormat": "{{hours}}h {{minutes}}m"
+    },
+    "update": {
+      "title": "Updates",
+      "currentVersion": "Current Version",
+      "channel": "Update Channel",
+      "checkUpdate": "Check for Updates",
+      "updating": "Updating...",
+      "confirmTitle": "Confirm Update",
+      "confirmDescription": "The Gateway will restart during the update and the connection will be briefly interrupted. Continue?",
+      "resultOk": "Update successful, version upgraded from {{before}} to {{after}}, Gateway is restarting",
+      "resultNoop": "Already up to date",
+      "resultError": "Update failed: {{reason}}"
+    },
+    "advanced": {
+      "title": "Advanced",
+      "devMode": "Developer Mode",
+      "devModeHint": "Enable to show developer tools"
+    },
+    "developer": {
+      "title": "Developer Tools",
+      "gatewayToken": "Gateway Token",
+      "tokenConfigured": "Configured",
+      "tokenHint": "Use CLI `openclaw config get gateway.auth.token` to view the full token",
+      "configPath": "Config File Path",
+      "rawConfig": "Raw Configuration",
+      "showConfig": "Show",
+      "hideConfig": "Hide",
+      "wsUrl": "WebSocket URL",
+      "connectionStatus": "Connection Status",
+      "copied": "Copied"
+    },
+    "about": {
+      "title": "About",
+      "appName": "OpenClaw Office",
+      "tagline": "Multi-Agent collaboration visual monitoring",
+      "version": "Version",
+      "docs": "Documentation",
+      "github": "GitHub"
+    },
+    "restartWarning": "Gateway will automatically restart after saving configuration, connection will be briefly interrupted",
+    "configConflict": "Configuration was modified by another client, automatically reloaded"
   },
   "viewModels": {
     "statusLabels": {

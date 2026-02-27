@@ -226,8 +226,100 @@
   "settings": {
     "title": "Settings",
     "description": "应用设置：主题、Provider、Gateway、更新",
-    "comingSoon": "Settings 即将上线",
-    "waitingPhase": "等待 Phase D 实现完整功能"
+    "appearance": {
+      "title": "外观",
+      "theme": "主题",
+      "themeLight": "浅色",
+      "themeDark": "深色",
+      "themeSystem": "跟随系统",
+      "language": "语言",
+      "langZh": "中文",
+      "langEn": "English"
+    },
+    "providers": {
+      "title": "AI Providers",
+      "description": "管理 AI 模型供应商配置",
+      "add": "添加 Provider",
+      "empty": "尚未配置 AI Provider",
+      "emptyHint": "点击上方按钮添加第一个 Provider",
+      "apiKeyConfigured": "已配置",
+      "apiKeyNotConfigured": "未配置",
+      "models": "{{count}} 个模型",
+      "deleteTitle": "删除 Provider",
+      "deleteDescription": "确认要删除 Provider「{{name}}」吗？删除后需要重新配置。",
+      "addDialog": {
+        "title": "添加 Provider",
+        "selectType": "选择 Provider 类型",
+        "providerId": "Provider ID",
+        "providerIdHint": "配置文件中的唯一标识",
+        "baseUrl": "Base URL",
+        "apiKey": "API Key",
+        "apiType": "API 类型",
+        "idConflict": "该 Provider ID 已存在",
+        "cancel": "取消",
+        "save": "保存"
+      },
+      "editDialog": {
+        "title": "编辑 Provider",
+        "apiKeyPlaceholder": "留空保持不变",
+        "cancel": "取消",
+        "save": "保存"
+      }
+    },
+    "gateway": {
+      "title": "Gateway",
+      "description": "Gateway 运行状态",
+      "version": "版本",
+      "port": "端口",
+      "uptime": "运行时间",
+      "mode": "运行模式",
+      "nodeVersion": "Node.js",
+      "platform": "平台",
+      "refresh": "刷新",
+      "notConnected": "Gateway 未连接",
+      "notConnectedHint": "请确保 OpenClaw Gateway 正在运行",
+      "uptimeFormat": "{{hours}}h {{minutes}}m"
+    },
+    "update": {
+      "title": "更新",
+      "currentVersion": "当前版本",
+      "channel": "更新通道",
+      "checkUpdate": "检查更新",
+      "updating": "正在更新...",
+      "confirmTitle": "确认更新",
+      "confirmDescription": "更新过程中 Gateway 将重启，连接将短暂中断。确定继续？",
+      "resultOk": "更新成功，版本从 {{before}} 升级到 {{after}}，Gateway 正在重启",
+      "resultNoop": "已是最新版本",
+      "resultError": "更新失败：{{reason}}"
+    },
+    "advanced": {
+      "title": "高级",
+      "devMode": "开发者模式",
+      "devModeHint": "启用后将显示开发者工具选项"
+    },
+    "developer": {
+      "title": "开发者工具",
+      "gatewayToken": "Gateway Token",
+      "tokenConfigured": "已配置",
+      "tokenHint": "使用 CLI `openclaw config get gateway.auth.token` 查看完整 Token",
+      "configPath": "配置文件路径",
+      "rawConfig": "原始配置",
+      "showConfig": "展开",
+      "hideConfig": "收起",
+      "wsUrl": "WebSocket URL",
+      "connectionStatus": "连接状态",
+      "copied": "已复制"
+    },
+    "about": {
+      "title": "关于",
+      "appName": "OpenClaw Office",
+      "tagline": "多 Agent 协作可视化监控",
+      "version": "版本",
+      "docs": "文档",
+      "github": "GitHub"
+    },
+    "restartWarning": "保存配置后 Gateway 将自动重启，连接将短暂中断",
+    "configConflict": "配置已被其他客户端修改，已自动重新加载"
   },
   "viewModels": {
     "statusLabels": {

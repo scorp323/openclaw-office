@@ -30,6 +30,7 @@ export class GatewayWsClient {
   private responseHandlers = new Map<string, ResponseHandler>();
 
   private snapshot: HelloOk["snapshot"] | null = null;
+  private serverInfo: HelloOk["server"] | null = null;
   private handleClose: () => void = () => {};
 
   getStatus(): ConnectionStatus {
@@ -38,6 +39,10 @@ export class GatewayWsClient {
 
   getSnapshot(): HelloOk["snapshot"] | null {
     return this.snapshot;
+  }
+
+  getServerInfo(): HelloOk["server"] | null {
+    return this.serverInfo;
   }
 
   isConnected(): boolean {
@@ -204,6 +209,7 @@ export class GatewayWsClient {
 
   private handleConnectSuccess(payload: HelloOk): void {
     this.snapshot = payload.snapshot ?? null;
+    this.serverInfo = payload.server ?? null;
     this.reconnectAttempt = 0;
     this.setStatus("connected");
   }

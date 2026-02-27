@@ -5,12 +5,17 @@ import type {
   ChannelInfo,
   ChatMessage,
   ChatSendParams,
+  ConfigPatchResult,
+  ConfigSchemaResponse,
+  ConfigSnapshot,
   CronTask,
   CronTaskInput,
   SessionInfo,
   SessionPreview,
   SkillInfo,
+  StatusSummary,
   ToolCatalog,
+  UpdateRunResult,
   UsageInfo,
 } from "./adapter-types";
 import type { AgentsListResponse } from "./types";
@@ -59,4 +64,11 @@ export interface GatewayAdapter {
   agentsList(): Promise<AgentsListResponse>;
   toolsCatalog(): Promise<ToolCatalog>;
   usageStatus(): Promise<UsageInfo>;
+
+  // Config / Status / Update (Phase D)
+  configGet(): Promise<ConfigSnapshot>;
+  configPatch(raw: string, baseHash?: string): Promise<ConfigPatchResult>;
+  configSchema(): Promise<ConfigSchemaResponse>;
+  statusSummary(): Promise<StatusSummary>;
+  updateRun(params?: { restartDelayMs?: number }): Promise<UpdateRunResult>;
 }

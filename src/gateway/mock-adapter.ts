@@ -3,12 +3,17 @@ import type {
   ChannelInfo,
   ChatMessage,
   ChatSendParams,
+  ConfigPatchResult,
+  ConfigSchemaResponse,
+  ConfigSnapshot,
   CronTask,
   CronTaskInput,
   SessionInfo,
   SessionPreview,
   SkillInfo,
+  StatusSummary,
   ToolCatalog,
+  UpdateRunResult,
   UsageInfo,
 } from "./adapter-types";
 import type { AgentsListResponse } from "./types";
@@ -71,10 +76,55 @@ const MOCK_CRON_TASKS: CronTask[] = [
   },
 ];
 
+const REDACTED = "__OPENCLAW_REDACTED__";
+
+function mockConfigData(): Record<string, unknown> {
+  return {
+    models: {
+      providers: {
+        anthropic: {
+          baseUrl: "https://api.anthropic.com",
+          apiKey: REDACTED,
+          api: "anthropic-messages",
+          models: [
+            { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", reasoning: true, input: ["text", "image"], cost: { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 }, contextWindow: 200000, maxTokens: 16384 },
+          ],
+        },
+        openai: {
+          baseUrl: "https://api.openai.com/v1",
+          apiKey: REDACTED,
+          api: "openai-responses",
+          models: [
+            { id: "gpt-4o", name: "GPT-4o", reasoning: false, input: ["text", "image"], cost: { input: 2.5, output: 10, cacheRead: 1.25, cacheWrite: 0 }, contextWindow: 128000, maxTokens: 16384 },
+          ],
+        },
+      },
+    },
+    update: { channel: "stable" },
+    gateway: { auth: { token: REDACTED } },
+  };
+}
+
+function deepMergePatch(target: Record<string, unknown>, patch: Record<string, unknown>): Record<string, unknown> {
+  const result = { ...target };
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === null) {
+      delete result[key];
+    } else if (typeof value === "object" && !Array.isArray(value) && typeof result[key] === "object" && !Array.isArray(result[key]) && result[key] !== null) {
+      result[key] = deepMergePatch(result[key] as Record<string, unknown>, value as Record<string, unknown>);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
 export class MockAdapter implements GatewayAdapter {
   private handlers: Set<AdapterEventHandler> = new Set();
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private pendingTimers: ReturnType<typeof setTimeout>[] = [];
+  private mockConfig: Record<string, unknown> = mockConfigData();
+  private mockHash = Date.now().toString(36);
 
   async connect(): Promise<void> {
     this.heartbeatTimer = setInterval(() => {
@@ -314,6 +364,57 @@ export class MockAdapter implements GatewayAdapter {
           ],
         },
       ],
+    };
+  }
+
+  async configGet(): Promise<ConfigSnapshot> {
+    return {
+      config: this.mockConfig,
+      hash: this.mockHash,
+      raw: JSON.stringify(this.mockConfig, null, 2),
+      valid: true,
+      path: "~/.openclaw/openclaw.json",
+    };
+  }
+
+  async configPatch(raw: string, baseHash?: string): Promise<ConfigPatchResult> {
+    if (baseHash && baseHash !== this.mockHash) {
+      return { ok: false, config: this.mockConfig, error: "config changed since last load; re-run config.get and retry" };
+    }
+    const patch = JSON.parse(raw) as Record<string, unknown>;
+    this.mockConfig = deepMergePatch(this.mockConfig, patch);
+    this.mockHash = Date.now().toString(36);
+    return { ok: true, config: this.mockConfig, restart: { scheduled: true, delayMs: 2000 } };
+  }
+
+  async configSchema(): Promise<ConfigSchemaResponse> {
+    return {
+      schema: {},
+      uiHints: {
+        "models.providers.*.apiKey": { sensitive: true, label: "API Key" },
+        "gateway.auth.token": { sensitive: true, label: "Gateway Token" },
+      },
+      version: "mock",
+    };
+  }
+
+  async statusSummary(): Promise<StatusSummary> {
+    return {
+      version: "2026.2.27-mock",
+      port: 18789,
+      uptime: 86400,
+      mode: "local",
+      pid: 12345,
+      nodeVersion: "v22.0.0",
+      platform: "darwin",
+    };
+  }
+
+  async updateRun(_params?: { restartDelayMs?: number }): Promise<UpdateRunResult> {
+    return {
+      ok: true,
+      result: { status: "noop", mode: "npm", reason: "already up to date", steps: [], durationMs: 1200 },
+      restart: null,
     };
   }
 }

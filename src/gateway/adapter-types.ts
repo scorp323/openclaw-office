@@ -198,3 +198,74 @@ export type ChatStreamEvent =
   | { type: "stream.start"; runId: string; sessionKey?: string }
   | { type: "stream.delta"; runId: string; text: string }
   | { type: "stream.end"; runId: string; aborted?: boolean };
+
+// --- Config / Status / Update types (Phase D) ---
+
+export interface ConfigSnapshot {
+  config: Record<string, unknown>;
+  hash?: string;
+  raw?: string | null;
+  valid: boolean;
+  path?: string;
+  issues?: Array<{ path: string; message: string }>;
+}
+
+export interface ConfigPatchResult {
+  ok: boolean;
+  config: Record<string, unknown>;
+  restart?: {
+    scheduled: boolean;
+    delayMs: number;
+    coalesced?: boolean;
+  };
+  error?: string;
+}
+
+export interface ConfigUiHint {
+  label?: string;
+  help?: string;
+  sensitive?: boolean;
+  placeholder?: string;
+  group?: string;
+  order?: number;
+  advanced?: boolean;
+  tags?: string[];
+}
+
+export interface ConfigSchemaResponse {
+  schema: unknown;
+  uiHints: Record<string, ConfigUiHint>;
+  version: string;
+}
+
+export interface StatusSummary {
+  version?: string;
+  port?: number;
+  uptime?: number;
+  mode?: string;
+  pid?: number;
+  nodeVersion?: string;
+  platform?: string;
+  [key: string]: unknown;
+}
+
+export interface UpdateRunResult {
+  ok: boolean;
+  result: {
+    status: "ok" | "error" | "noop";
+    mode: string;
+    before?: string | null;
+    after?: string | null;
+    reason?: string | null;
+    steps: Array<{
+      name: string;
+      command: string;
+      durationMs: number;
+    }>;
+    durationMs: number;
+  };
+  restart?: {
+    scheduled: boolean;
+    delayMs: number;
+  } | null;
+}

@@ -4,12 +4,17 @@ import type {
   ChannelType,
   ChatMessage,
   ChatSendParams,
+  ConfigPatchResult,
+  ConfigSchemaResponse,
+  ConfigSnapshot,
   CronTask,
   CronTaskInput,
   SessionInfo,
   SessionPreview,
   SkillInfo,
+  StatusSummary,
   ToolCatalog,
+  UpdateRunResult,
   UsageInfo,
 } from "./adapter-types";
 import type { AgentsListResponse } from "./types";
@@ -137,6 +142,37 @@ export class WsAdapter implements GatewayAdapter {
 
   async usageStatus(): Promise<UsageInfo> {
     return this.rpcClient.request<UsageInfo>("usage.status");
+  }
+
+  async configGet(): Promise<ConfigSnapshot> {
+    return this.rpcClient.request<ConfigSnapshot>("config.get");
+  }
+
+  async configPatch(raw: string, baseHash?: string): Promise<ConfigPatchResult> {
+    return this.rpcClient.request<ConfigPatchResult>(
+      "config.patch",
+      { raw, ...(baseHash ? { baseHash } : {}) },
+    );
+  }
+
+  async configSchema(): Promise<ConfigSchemaResponse> {
+    return this.rpcClient.request<ConfigSchemaResponse>("config.schema");
+  }
+
+  async statusSummary(): Promise<StatusSummary> {
+    const snapshot = this.wsClient.getSnapshot();
+    const serverInfo = this.wsClient.getServerInfo();
+    return {
+      version: serverInfo?.version,
+      port: 18789,
+      uptime: snapshot?.uptimeMs != null ? Math.floor(snapshot.uptimeMs / 1000) : undefined,
+      mode: "local",
+      configPath: snapshot?.configPath,
+    };
+  }
+
+  async updateRun(params?: { restartDelayMs?: number }): Promise<UpdateRunResult> {
+    return this.rpcClient.request<UpdateRunResult>("update.run", params ?? {});
   }
 }
 

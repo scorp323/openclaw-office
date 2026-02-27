@@ -80,6 +80,10 @@ export interface HelloOk {
     presence?: unknown;
     health?: HealthSnapshot;
     sessionDefaults?: unknown;
+    uptimeMs?: number;
+    configPath?: string;
+    stateDir?: string;
+    authMode?: string;
   };
   policy?: Record<string, unknown>;
 }
