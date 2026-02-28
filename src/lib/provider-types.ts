@@ -79,6 +79,7 @@ export interface ProviderTypeMeta {
 export const PROVIDER_TYPE_INFO: ProviderTypeMeta[] = [
   { id: "anthropic", name: "Anthropic", icon: "🤖", defaultBaseUrl: "https://api.anthropic.com", defaultApi: "anthropic-messages", requiresApiKey: true, placeholder: "sk-ant-..." },
   { id: "openai", name: "OpenAI", icon: "🧠", defaultBaseUrl: "https://api.openai.com/v1", defaultApi: "openai-responses", requiresApiKey: true, placeholder: "sk-..." },
+  { id: "openai-codex", name: "OpenAI Codex", icon: "🧬", defaultBaseUrl: "https://api.openai.com/v1", defaultApi: "openai-codex-responses", requiresApiKey: false },
   { id: "google", name: "Google AI", icon: "🔮", defaultBaseUrl: "https://generativelanguage.googleapis.com", defaultApi: "google-generative-ai", requiresApiKey: true },
   { id: "openrouter", name: "OpenRouter", icon: "🔀", defaultBaseUrl: "https://openrouter.ai/api/v1", defaultApi: "openai-completions", requiresApiKey: true, placeholder: "sk-or-..." },
   { id: "deepseek", name: "DeepSeek", icon: "🔍", defaultBaseUrl: "https://api.deepseek.com/v1", defaultApi: "openai-completions", requiresApiKey: true, placeholder: "sk-..." },

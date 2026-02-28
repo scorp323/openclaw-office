@@ -17,6 +17,7 @@ import type {
   ConfigSnapshot,
   CronTask,
   CronTaskInput,
+  ModelCatalogEntry,
   SessionInfo,
   SessionPreview,
   SkillInfo,
@@ -425,6 +426,18 @@ export class MockAdapter implements GatewayAdapter {
         },
       ],
     };
+  }
+
+  async modelsList(): Promise<ModelCatalogEntry[]> {
+    return [
+      { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", provider: "anthropic", reasoning: true, input: ["text", "image"], contextWindow: 200000 },
+      { id: "claude-opus-4-20250514", name: "Claude Opus 4", provider: "anthropic", reasoning: true, input: ["text", "image"], contextWindow: 200000 },
+      { id: "gpt-4o", name: "GPT-4o", provider: "openai", reasoning: false, input: ["text", "image"], contextWindow: 128000 },
+      { id: "o3", name: "o3", provider: "openai", reasoning: true, input: ["text", "image"], contextWindow: 200000 },
+      { id: "gpt-5.3-codex", name: "gpt-5.3-codex", provider: "openai-codex", reasoning: true, input: ["text"], contextWindow: 1048576 },
+      { id: "gpt-5.3-codex-spark", name: "gpt-5.3-codex-spark", provider: "openai-codex", reasoning: true, input: ["text"], contextWindow: 1048576 },
+      { id: "gpt-5.1-codex", name: "gpt-5.1-codex", provider: "openai-codex", reasoning: true, input: ["text"], contextWindow: 200000 },
+    ];
   }
 
   async configGet(): Promise<ConfigSnapshot> {

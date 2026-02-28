@@ -84,22 +84,37 @@ export const useAgentsStore = create<AgentsStoreState>((set, get) => ({
   fetchSystemModels: async () => {
     try {
       await waitForAdapter();
-      const snap = await getAdapter().configGet();
+      const adapter = getAdapter();
+      const [snap, catalogModels] = await Promise.all([
+        adapter.configGet(),
+        adapter.modelsList().catch(() => [] as Array<{ id: string; name: string; provider: string }>),
+      ]);
       const config = snap.config;
+
+      const seen = new Set<string>();
+      const options: SystemModelOption[] = [];
+
+      const catalogByProvider = new Map<string, Array<{ id: string; name: string; provider: string }>>();
+      for (const m of catalogModels) {
+        const key = `${m.provider}/${m.id}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        options.push({ id: key, label: m.name ?? m.id, provider: m.provider });
+        if (!catalogByProvider.has(m.provider)) catalogByProvider.set(m.provider, []);
+        catalogByProvider.get(m.provider)!.push(m);
+      }
 
       const models = config?.models as Record<string, unknown> | undefined;
       const providers = models?.providers as Record<string, Record<string, unknown>> | undefined;
-      const options: SystemModelOption[] = [];
       if (providers) {
         for (const [providerId, provConfig] of Object.entries(providers)) {
           const modelList = provConfig.models as Array<{ id: string; name?: string }> | undefined;
           if (!modelList) continue;
           for (const m of modelList) {
-            options.push({
-              id: `${providerId}/${m.id}`,
-              label: m.name ?? m.id,
-              provider: providerId,
-            });
+            const key = `${providerId}/${m.id}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            options.push({ id: key, label: m.name ?? m.id, provider: providerId });
           }
         }
       }

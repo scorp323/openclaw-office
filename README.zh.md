@@ -42,7 +42,7 @@
 | **Channels** | 渠道卡片、配置对话框、统计、WhatsApp QR 绑定流程 |
 | **Skills** | 技能市场、安装选项、技能详情 |
 | **Cron** | 定时任务管理和统计 |
-| **Settings** | Provider 管理（添加/编辑/模型编辑器）、外观/Gateway/开发者/高级/关于/更新 |
+| **Settings** | Provider 管理（添加/编辑/模型编辑器、系统发现的 Provider 如 OpenAI Codex OAuth）、外观/Gateway/开发者/高级/关于/更新 |
 
 ![console-dashboard](./assets/console-dashboard.png)
 

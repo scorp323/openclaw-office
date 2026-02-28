@@ -327,6 +327,15 @@ export interface StatusSummary {
   [key: string]: unknown;
 }
 
+export interface ModelCatalogEntry {
+  id: string;
+  name: string;
+  provider: string;
+  contextWindow?: number;
+  reasoning?: boolean;
+  input?: Array<"text" | "image">;
+}
+
 export interface UpdateRunResult {
   ok: boolean;
   result: {

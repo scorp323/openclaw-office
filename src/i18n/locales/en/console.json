@@ -244,6 +244,7 @@
       "emptyHint": "Click the button above to add your first provider",
       "apiKeyConfigured": "Configured",
       "apiKeyNotConfigured": "Not configured",
+      "systemDiscovered": "System",
       "modelCount": "{{count}} model(s)",
       "deleteTitle": "Delete Provider",
       "deleteDescription": "Are you sure you want to delete provider \"{{name}}\"? You will need to reconfigure it.",

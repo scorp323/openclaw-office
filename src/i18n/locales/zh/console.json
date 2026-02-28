@@ -244,6 +244,7 @@
       "emptyHint": "点击上方按钮添加第一个 AI 提供方",
       "apiKeyConfigured": "已配置",
       "apiKeyNotConfigured": "未配置",
+      "systemDiscovered": "系统发现",
       "modelCount": "{{count}} 个模型",
       "deleteTitle": "删除提供方",
       "deleteDescription": "确认要删除提供方「{{name}}」吗？删除后需要重新配置。",

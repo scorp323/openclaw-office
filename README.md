@@ -42,7 +42,7 @@ Full system management interface with dedicated pages:
 | **Channels** | Channel cards, configuration dialogs, stats, WhatsApp QR binding |
 | **Skills** | Skill marketplace, install options, skill detail dialogs |
 | **Cron** | Scheduled task management and statistics |
-| **Settings** | Provider management (add/edit/model editor), appearance, Gateway, developer, advanced, about, update |
+| **Settings** | Provider management (add/edit/model editor, system-discovered providers like OpenAI Codex OAuth), appearance, Gateway, developer, advanced, about, update |
 
 ![console-dashboard](./assets/console-dashboard.png)
 

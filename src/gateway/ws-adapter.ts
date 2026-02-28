@@ -18,6 +18,7 @@ import type {
   ConfigSnapshot,
   CronTask,
   CronTaskInput,
+  ModelCatalogEntry,
   SessionInfo,
   SessionPreview,
   SkillInfo,
@@ -175,6 +176,11 @@ export class WsAdapter implements GatewayAdapter {
 
   async usageStatus(): Promise<UsageInfo> {
     return this.rpcClient.request<UsageInfo>("usage.status");
+  }
+
+  async modelsList(): Promise<ModelCatalogEntry[]> {
+    const result = await this.rpcClient.request<{ models: ModelCatalogEntry[] }>("models.list");
+    return result.models ?? [];
   }
 
   async configGet(): Promise<ConfigSnapshot> {

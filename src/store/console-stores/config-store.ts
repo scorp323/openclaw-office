@@ -3,6 +3,7 @@ import type {
   ConfigPatchResult,
   ConfigSchemaResponse,
   ConfigSnapshot,
+  ModelCatalogEntry,
   StatusSummary,
   UpdateRunResult,
 } from "@/gateway/adapter-types";
@@ -26,10 +27,14 @@ interface ConfigStoreState {
   updateResult: UpdateRunResult | null;
   updateLoading: boolean;
 
+  catalogModels: ModelCatalogEntry[];
+  catalogLoading: boolean;
+
   fetchConfig: () => Promise<void>;
   patchConfig: (patch: Record<string, unknown>) => Promise<ConfigPatchResult>;
   fetchSchema: () => Promise<void>;
   fetchStatus: () => Promise<void>;
+  fetchCatalogModels: () => Promise<void>;
   runUpdate: (params?: { restartDelayMs?: number }) => Promise<UpdateRunResult>;
 }
 
@@ -50,6 +55,9 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => ({
 
   updateResult: null,
   updateLoading: false,
+
+  catalogModels: [],
+  catalogLoading: false,
 
   fetchConfig: async () => {
     set({ loading: true, error: null });
@@ -115,6 +123,17 @@ export const useConfigStore = create<ConfigStoreState>((set, get) => ({
       set({ status, statusLoading: false });
     } catch (err) {
       set({ statusLoading: false, statusError: String(err) });
+    }
+  },
+
+  fetchCatalogModels: async () => {
+    set({ catalogLoading: true });
+    try {
+      const adapter = await waitForAdapter();
+      const models = await adapter.modelsList();
+      set({ catalogModels: models, catalogLoading: false });
+    } catch {
+      set({ catalogLoading: false });
     }
   },
 
