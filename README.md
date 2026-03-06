@@ -33,7 +33,9 @@
 
 #### Demo Video
 
-https://github.com/WW-AI-Lab/openclaw-office/raw/main/assets/iShot_2026-03-02_21.33.38.mp4
+[![Watch the demo video](./assets/office-3d.png)](https://github.com/WW-AI-Lab/openclaw-office/raw/main/assets/iShot_2026-03-02_21.33.38.mp4)
+
+> GitHub README does not reliably render repository `raw` `.mp4` files as an inline player. Click the preview image above to open the demo video directly.
 
 ### Console
 
