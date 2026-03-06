@@ -633,37 +633,70 @@ export const useOfficeStore = create<OfficeStore>()(
           event.stream === "lifecycle" &&
           event.data.phase === "start";
 
-        // Resolve agentId:
-        // 1) runIdMap (streaming chunks for known agent)
-        // 2) explicit payload agentId
-        // 3) sessionKeyMap (only if the session is associated with a confirmed agent)
-        // 4) sessionKey pattern: "agent:<name>:main" → resolve <name> to a known agent
-        // 5) runId itself (fallback)
-        let agentId = state.runIdMap.get(event.runId);
-        if (!agentId && dataAgentId) {
-          agentId = dataAgentId;
-        }
-        if (!agentId && event.sessionKey) {
-          const sessionAgents = state.sessionKeyMap.get(event.sessionKey);
-          if (sessionAgents && sessionAgents.length > 0) {
-            agentId = sessionAgents[0];
+        // Early sub-agent detection from sessionKey
+        const sessionKeyHintEarly = event.sessionKey ?? "";
+        const isSubAgentSession =
+          sessionKeyHintEarly.includes(":subagent:") && !sessionKeyHintEarly.startsWith("announce:");
+
+        // Resolve agentId — sub-agent events use a dedicated path to avoid
+        // resolving to the parent agent that shares the same name prefix.
+        let agentId: string | undefined;
+
+        if (isSubAgentSession) {
+          // Sub-agent event: use sub-agent–aware resolution
+          // 1) runIdMap (continuing events for a known sub-agent)
+          agentId = state.runIdMap.get(event.runId);
+          // 2) sessionKeyMap (already registered sub-agent)
+          if (!agentId) {
+            const sessionAgents = state.sessionKeyMap.get(sessionKeyHintEarly);
+            if (sessionAgents && sessionAgents.length > 0) {
+              agentId = sessionAgents[0];
+            }
           }
-        }
-        if (!agentId && event.sessionKey) {
-          // Parse "agent:<name>:main" → look up <name> in agents map directly
-          const skMatch = event.sessionKey.match(/^agent:(.+):main$/);
-          if (skMatch) {
-            const agentName = skMatch[1];
-            for (const [id, a] of state.agents) {
-              if (!a.isSubAgent && !a.isPlaceholder && (a.id === agentName || a.name === agentName)) {
-                agentId = id;
-                break;
+          // 3) Extract UUID from "agent:<parent>:subagent:<uuid>"
+          if (!agentId) {
+            const subMarker = ":subagent:";
+            const subIdx = sessionKeyHintEarly.indexOf(subMarker);
+            if (subIdx >= 0) {
+              agentId = sessionKeyHintEarly.slice(subIdx + subMarker.length);
+            }
+          }
+          // 4) Fallback: use runId
+          if (!agentId) {
+            agentId = event.runId;
+          }
+        } else {
+          // Normal (non-sub-agent) event resolution:
+          // 1) runIdMap (streaming chunks for known agent)
+          agentId = state.runIdMap.get(event.runId);
+          // 2) explicit payload agentId
+          if (!agentId && dataAgentId) {
+            agentId = dataAgentId;
+          }
+          // 3) sessionKeyMap (only if the session is associated with a confirmed agent)
+          if (!agentId && event.sessionKey) {
+            const sessionAgents = state.sessionKeyMap.get(event.sessionKey);
+            if (sessionAgents && sessionAgents.length > 0) {
+              agentId = sessionAgents[0];
+            }
+          }
+          // 4) sessionKey pattern: "agent:<name>:main" → resolve <name> to a known agent
+          if (!agentId && event.sessionKey) {
+            const skAgentMatch = event.sessionKey.match(/^agent:([^:]+):/);
+            if (skAgentMatch) {
+              const agentName = skAgentMatch[1];
+              for (const [id, a] of state.agents) {
+                if (!a.isSubAgent && !a.isPlaceholder && (a.id === agentName || a.name === agentName)) {
+                  agentId = id;
+                  break;
+                }
               }
             }
           }
-        }
-        if (!agentId) {
-          agentId = event.runId;
+          // 5) runId itself (fallback)
+          if (!agentId) {
+            agentId = event.runId;
+          }
         }
 
         // Skip events for recently removed agents (stale scheduled events)
@@ -678,11 +711,8 @@ export const useOfficeStore = create<OfficeStore>()(
 
         // Detect sub-agent from sessionKey pattern (real Gateway: ":subagent:" in sessionKey)
         // or from explicit payload fields (mock adapter: parentAgentId + agentId)
-        const sessionKeyHint = event.sessionKey ?? "";
-        const isSubAgentFromSessionKey =
-          sessionKeyHint.includes(":subagent:") && !sessionKeyHint.startsWith("announce:");
-        const parentFromSessionKey = isSubAgentFromSessionKey
-          ? extractParentFromSessionKey(state, sessionKeyHint)
+        const parentFromSessionKey = isSubAgentSession
+          ? extractParentFromSessionKey(state, sessionKeyHintEarly)
           : null;
 
         if (isSubAgentStart && dataAgentId && parentAgentId && !state.agents.has(dataAgentId)) {
@@ -698,16 +728,16 @@ export const useOfficeStore = create<OfficeStore>()(
               startedAt: event.ts,
             },
           };
-        } else if (!state.agents.has(agentId) && isSubAgentFromSessionKey && parentFromSessionKey) {
+        } else if (!state.agents.has(agentId) && isSubAgentSession && parentFromSessionKey) {
           // Real Gateway sub-agent detected from sessionKey pattern — create via addSubAgent
           pendingSubAgentRef.value = {
             parentId: parentFromSessionKey,
             info: {
-              sessionKey: sessionKeyHint,
+              sessionKey: sessionKeyHintEarly,
               agentId,
               label: `Sub-${agentId.slice(0, 8)}`,
               task: "",
-              requesterSessionKey: sessionKeyHint,
+              requesterSessionKey: sessionKeyHintEarly,
               startedAt: event.ts,
             },
           };
@@ -743,9 +773,9 @@ export const useOfficeStore = create<OfficeStore>()(
           }
           updateCollaborationLinks(state, event.sessionKey, agentId);
 
-          if (state.agentToAgentConfig.enabled) {
-            scheduleMeetingGathering();
-          }
+          // Trigger meeting gathering when collaboration is detected
+          // (works regardless of agentToAgent config — visual-only feature)
+          scheduleMeetingGathering();
         }
 
         const agent = state.agents.get(agentId);
@@ -800,16 +830,28 @@ export const useOfficeStore = create<OfficeStore>()(
         confirmationTimers.set(id, timer);
       }
 
-      // Sub-agent lifecycle end via explicit payload (mock adapter)
-      if (
-        event.stream === "lifecycle" &&
-        event.data.phase === "end" &&
-        event.data.agentId
-      ) {
-        const endId = event.data.agentId as string;
-        const sub = useOfficeStore.getState().agents.get(endId);
-        if (sub?.isSubAgent && !sub.isPlaceholder) {
-          useOfficeStore.getState().removeSubAgent(endId);
+      // Sub-agent lifecycle end
+      if (event.stream === "lifecycle" && event.data.phase === "end") {
+        // Path 1: explicit payload agentId (mock adapter)
+        if (event.data.agentId) {
+          const endId = event.data.agentId as string;
+          const sub = useOfficeStore.getState().agents.get(endId);
+          if (sub?.isSubAgent && !sub.isPlaceholder) {
+            useOfficeStore.getState().removeSubAgent(endId);
+          }
+        }
+        // Path 2: real Gateway — resolve sub-agent from sessionKey
+        const sk = event.sessionKey ?? "";
+        if (sk.includes(":subagent:")) {
+          const subMarker = ":subagent:";
+          const subIdx = sk.indexOf(subMarker);
+          if (subIdx >= 0) {
+            const subUuid = sk.slice(subIdx + subMarker.length);
+            const sub = useOfficeStore.getState().agents.get(subUuid);
+            if (sub?.isSubAgent && !sub.isPlaceholder) {
+              useOfficeStore.getState().removeSubAgent(subUuid);
+            }
+          }
         }
       }
     },
@@ -977,19 +1019,22 @@ function extractParentFromSessionKey(
   state: { agents: Map<string, VisualAgent>; sessionKeyMap: Map<string, string[]> },
   sessionKey: string,
 ): string | null {
-  // Parse "agent:<name>:subagent:..." → parent key "agent:<name>:main"
+  // Parse "agent:<name>:subagent:..." → find parent agent "<name>"
   const parts = sessionKey.split(":");
   const subIdx = parts.indexOf("subagent");
   if (subIdx >= 2) {
     const parentName = parts.slice(1, subIdx).join(":");
-    const parentSessionKey = `agent:${parentName}:main`;
-    const mapped = state.sessionKeyMap.get(parentSessionKey);
-    if (mapped && mapped.length > 0) {
-      return mapped[0];
+
+    // Try known sessionKey patterns for the parent
+    for (const [sk, mapped] of state.sessionKeyMap) {
+      if (sk.startsWith(`agent:${parentName}:`) && !sk.includes(":subagent:") && mapped.length > 0) {
+        return mapped[0];
+      }
     }
-    // Fallback: find agent whose name matches parentName
+
+    // Fallback: find agent whose id or name matches parentName
     for (const [id, a] of state.agents) {
-      if (!a.isSubAgent && !a.isPlaceholder && a.name === parentName) {
+      if (!a.isSubAgent && !a.isPlaceholder && (a.id === parentName || a.name === parentName)) {
         return id;
       }
     }
@@ -1050,12 +1095,14 @@ function scheduleMeetingGathering(): void {
   meetingGatheringTimer = setTimeout(() => {
     meetingGatheringTimer = null;
     const state = useOfficeStore.getState();
-    if (!state.agentToAgentConfig.enabled) return;
 
+    const allowList = state.agentToAgentConfig.enabled
+      ? state.agentToAgentConfig.allow
+      : undefined;
     const groups = detectMeetingGroups(
       state.links,
       state.agents,
-      state.agentToAgentConfig.allow,
+      allowList,
     );
     const hash = JSON.stringify(groups.map((g) => g.agentIds.sort()));
     if (hash === lastMeetingGroupsHash) return;
