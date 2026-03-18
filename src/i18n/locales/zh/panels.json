@@ -5,6 +5,7 @@
     "collaboration": "协作度",
     "tokenRate": "Token 速率",
     "tokenRateUnit": "/min",
+    "costLabel": "累计成本",
     "tabs": {
       "overview": "概览",
       "trend": "趋势",

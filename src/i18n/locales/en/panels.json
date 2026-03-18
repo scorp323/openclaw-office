@@ -5,6 +5,7 @@
     "collaboration": "Collaboration",
     "tokenRate": "Token Rate",
     "tokenRateUnit": "/min",
+    "costLabel": "Total Cost",
     "tabs": {
       "overview": "Overview",
       "trend": "Trend",

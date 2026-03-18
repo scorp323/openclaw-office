@@ -4,6 +4,7 @@ import type { SubAgentInfo } from "@/gateway/types";
 import { useOfficeStore } from "@/store/office-store";
 
 const POLL_INTERVAL_MS = 3_000;
+const SUB_AGENT_MAX_IDLE_MS = 5 * 60_000;
 
 interface SessionEntry {
   sessionKey: string;
@@ -108,6 +109,23 @@ export function useSubAgentPoller(rpcClient: React.RefObject<GatewayRpcClient | 
         }
 
         useOfficeStore.getState().setSessionsSnapshot({ sessions: nextSubs, fetchedAt: Date.now() });
+
+        // Safety net: retire idle sub-agents that have been around too long
+        // without pendingRetire (missed lifecycle:end or stale session).
+        const now = Date.now();
+        const activeSessionIds = new Set(nextSubs.map((s) => s.agentId));
+        for (const [id, agent] of useOfficeStore.getState().agents) {
+          if (
+            agent.isSubAgent &&
+            !agent.isPlaceholder &&
+            !agent.pendingRetire &&
+            agent.status === "idle" &&
+            !activeSessionIds.has(id) &&
+            now - agent.lastActiveAt > SUB_AGENT_MAX_IDLE_MS
+          ) {
+            useOfficeStore.getState().retireSubAgent(id);
+          }
+        }
       } catch {
         // RPC failure — skip this cycle
       }

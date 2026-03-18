@@ -735,6 +735,7 @@ export const useOfficeStore = create<OfficeStore>()(
       } = { value: null };
       let newUnconfirmedId: string | null = null;
       let turnAroundToHotDesk: string | null = null;
+      let resolvedSubAgentForRetire: string | null = null;
 
       set((state) => {
         const parsed = parseAgentEvent(event);
@@ -921,6 +922,16 @@ export const useOfficeStore = create<OfficeStore>()(
           }
         }
 
+        // Capture sub-agent lifecycle:end for post-set retirement
+        if (
+          event.stream === "lifecycle" &&
+          event.data.phase === "end" &&
+          agent?.isSubAgent &&
+          !agent.isPlaceholder
+        ) {
+          resolvedSubAgentForRetire = agentId;
+        }
+
         // Event history
         const historyItem: EventHistoryItem = {
           timestamp: event.ts,
@@ -968,20 +979,8 @@ export const useOfficeStore = create<OfficeStore>()(
       }
 
       // Sub-agent lifecycle end — retire via unified state machine
-      if (event.stream === "lifecycle" && event.data.phase === "end") {
-        // Path 1: explicit payload agentId (mock adapter)
-        if (event.data.agentId) {
-          useOfficeStore.getState().retireSubAgent(event.data.agentId as string);
-        }
-        // Path 2: real Gateway — resolve sub-agent from sessionKey
-        const sk = event.sessionKey ?? "";
-        if (sk.includes(":subagent:")) {
-          const subMarker = ":subagent:";
-          const subIdx = sk.indexOf(subMarker);
-          if (subIdx >= 0) {
-            useOfficeStore.getState().retireSubAgent(sk.slice(subIdx + subMarker.length));
-          }
-        }
+      if (resolvedSubAgentForRetire) {
+        useOfficeStore.getState().retireSubAgent(resolvedSubAgentForRetire);
       }
     },
 
