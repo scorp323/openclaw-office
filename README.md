@@ -1,52 +1,50 @@
 # OpenClaw Office
 
-> [中文文档](./README.zh.md)
+> [English](./README.en.md)
 
-> Visualize AI agent collaboration as a real-time digital twin office.
+> 将 AI 智能体的协作逻辑具象化为实时的数字孪生办公室。
 
-**OpenClaw Office** is the visual monitoring and management frontend for the [OpenClaw](https://github.com/openclaw/openclaw) Multi-Agent system. It renders Agent work status, collaboration links, tool calls, and resource consumption through an isometric-style virtual office scene, along with a full-featured console for system management.
+**OpenClaw Office** 是 [OpenClaw](https://github.com/openclaw/openclaw) Multi-Agent 系统的可视化监控与管理前端。它通过等距投影（Isometric）风格的虚拟办公室场景，实时展示 Agent 的工作状态、协作链路、工具调用和资源消耗，同时提供完整的控制台管理界面和 Chat 对话工作区。
 
-**Core Metaphor:** Agent = Digital Employee | Office = Agent Runtime | Desk = Session | Meeting Pod = Collaboration Context
+**核心隐喻：** Agent = 数字员工 | 办公室 = Agent 运行时 | 工位 = Session | 会议室 = 协作上下文
 
 ---
 
-## Features
+## 功能概览
 
-### Virtual Office
+### 虚拟办公室
 
-- **2D Floor Plan** — SVG-rendered isometric office with desk zones, hot desks, meeting areas, and rich furniture (desks, chairs, sofas, plants, coffee cups)
-- **3D Scene** — React Three Fiber 3D office with character models, skill holograms, spawn portal effects, and post-processing
-- **Agent Avatars** — Deterministically generated SVG avatars from agent IDs with real-time status animations (idle, working, speaking, tool calling, error)
-- **Collaboration Lines** — Visual connections showing inter-Agent message flow
-- **Speech Bubbles** — Live Markdown text streaming and tool call display
-- **Side Panels** — Agent details, Token line charts, cost pie charts, activity heatmaps, SubAgent relationship graphs, event timelines
+- **2D 平面图** — SVG 渲染的等距办公室场景，包含工位区、临时工位、会议区和丰富的家具（桌椅/沙发/植物/咖啡杯）
+- **Agent 头像** — 基于 agentId 确定性生成的 SVG 头像，支持实时状态动画（空闲/工作中/发言/工具调用/错误）
+- **协作连线** — Agent 间消息传递的可视化连接
+- **气泡面板** — 实时 Markdown 文本流和工具调用展示
+- **侧边面板** — Agent 详情、Token 折线图、成本饼图、活跃热力图、子 Agent 关系图、事件时间轴
 
-### Chat
+![office](./assets/office.png)
 
-- Dedicated top-navigation Chat workspace at `/#/chat`, with the dock retained as a quick-entry surface
-- Session switching, new-session creation, agent targeting, live streaming transcript, and abort support
-- Slash commands, image attachments, search, export, focus mode, and pinned-reference workflows
+### Chat 对话工作区
 
-![office-2D](./assets/office-2d.png)
+- 顶部导航可直达的独立 Chat 工作区（`/#/chat`），底部停靠栏保留为快捷入口
+- 会话管理 — 创建新会话、切换历史会话、按 Agent 路由，支持多 Agent 并行对话
+- 实时流式转录 — 流式展示 AI 回复，支持中止/重发
+- 聊天历史持久化 — 服务端按天分片缓存聊天记录（`~/.openclaw/office-cache/chat/`），跨浏览器/设备/刷新稳定可见
+- 工具调用可视化 — 在对话流中嵌入 Agent 工具调用状态（调用中/已完成），可折叠查看
+- 斜杠命令 — `/help`、`/new`、`/reset`、`/model`、`/think`、`/export` 等快捷指令
+- 附件支持 — 支持图片及任意文件附件
+- 辅助功能 — 搜索、导出 Markdown、专注模式、消息置顶引用
 
-![office-3D](./assets/office-3d.png)
+### 控制台
 
-#### Demo Video
+完整的系统管理界面：
 
-https://github.com/WW-AI-Lab/openclaw-office/raw/main/assets/iShot_2026-03-02_21.33.38.mp4
-
-### Console
-
-Full system management interface with dedicated pages:
-
-| Page          | Features                                                                                                                                                  |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Dashboard** | Overview stats, alert banners, Channel/Skill overview, quick navigation                                                                                   |
-| **Agents**    | Agent list/create/delete, detail tabs (Overview, Channels, Cron, Skills, Tools, Files)                                                                    |
-| **Channels**  | Channel cards, configuration dialogs, stats, WhatsApp QR binding                                                                                          |
-| **Skills**    | Skill marketplace, install options, skill detail dialogs                                                                                                  |
-| **Cron**      | Scheduled task management and statistics                                                                                                                  |
-| **Settings**  | Provider management (add/edit/model editor, system-discovered providers like OpenAI Codex OAuth), appearance, Gateway, developer, advanced, about, update |
+| 页面          | 功能                                                                                                                 |
+| ------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Dashboard** | 概览统计卡片、告警横幅、Channel/Skill 概览、快捷导航                                                                 |
+| **Agents**    | Agent 列表/创建/删除，详情多 Tab（Overview/Channels/Cron/Skills/Tools/Files）                                        |
+| **Channels**  | 渠道卡片、配置对话框、统计、WhatsApp QR 绑定流程                                                                     |
+| **Skills**    | 技能市场、安装选项、技能详情                                                                                         |
+| **Cron**      | 定时任务管理和统计                                                                                                   |
+| **Settings**  | Provider 管理（添加/编辑/模型编辑器）、外观/Gateway/开发者/高级/关于/更新                                            |
 
 ![console-dashboard](./assets/console-dashboard.png)
 
@@ -54,235 +52,182 @@ Full system management interface with dedicated pages:
 
 ![console-setting](./assets/console-setting.png)
 
-### Other
+### 其他特性
 
-- **i18n** — Full Chinese/English bilingual support with runtime language switching
-- **Mock Mode** — Develop without a live Gateway connection
-- **Responsive** — Mobile-optimized with automatic 2D fallback
-
----
-
-## Tech Stack
-
-| Layer            | Technology                                      |
-| ---------------- | ----------------------------------------------- |
-| Build Tool       | Vite 6                                          |
-| UI Framework     | React 19                                        |
-| 2D Rendering     | SVG + CSS Animations                            |
-| 3D Rendering     | React Three Fiber (R3F) + @react-three/drei     |
-| State Management | Zustand 5 + Immer                               |
-| Styling          | Tailwind CSS 4                                  |
-| Routing          | React Router 7                                  |
-| Charts           | Recharts                                        |
-| i18n             | i18next + react-i18next                         |
-| Real-time        | Native WebSocket (connects to OpenClaw Gateway) |
+- **国际化** — 完整的中英文双语支持，运行时语言切换
+- **Mock 模式** — 无需连接 Gateway 即可开发
+- **响应式** — 移动端优化，自动切换 2D 模式
 
 ---
 
-## Prerequisites
+## 技术栈
+
+| 层       | 技术                                        |
+| -------- | ------------------------------------------- |
+| 构建工具 | Vite 6                                      |
+| UI 框架  | React 19                                    |
+| 2D 渲染  | SVG + CSS Animations                        |
+| 状态管理 | Zustand 5 + Immer                           |
+| 样式     | Tailwind CSS 4                              |
+| 路由     | React Router 7                              |
+| 图表     | Recharts                                    |
+| 国际化   | i18next + react-i18next                     |
+| 实时通信 | 原生 WebSocket（对接 OpenClaw Gateway）     |
+
+---
+
+## 前提条件
 
 - **Node.js 22+**
-- **pnpm** (package manager)
-- **[OpenClaw](https://github.com/openclaw/openclaw)** installed and configured
+- **pnpm**（包管理器）
+- **[OpenClaw](https://github.com/openclaw/openclaw)** 已安装并配置
 
-OpenClaw Office is a companion frontend that connects to a running OpenClaw Gateway. It does **not** start or manage the Gateway itself.
+OpenClaw Office 是一个配套前端，连接到正在运行的 OpenClaw Gateway。它**不会**启动或管理 Gateway。
 
 ---
 
-## Quick Launch
+## 快捷启动
 
-The fastest way to run OpenClaw Office — no cloning required:
+无需克隆仓库，最快速的运行方式：
 
 ```bash
-# Run directly (one-time)
+# 直接运行（一次性使用）
 npx @ww-ai-lab/openclaw-office
 
-# Or install globally
+# 或全局安装
 npm install -g @ww-ai-lab/openclaw-office
 openclaw-office
 ```
 
-### Gateway Token Auto-Detection
+### Gateway Token 自动检测
 
-If [OpenClaw](https://github.com/openclaw/openclaw) is installed locally, the Gateway auth token is **automatically detected** from `~/.openclaw/openclaw.json` — no manual configuration needed.
+如果本地已安装 [OpenClaw](https://github.com/openclaw/openclaw)，Gateway 认证 token 会从 `~/.openclaw/openclaw.json` **自动读取**，无需手动配置。
 
-You can also provide the token explicitly:
+也可以手动指定 token：
 
 ```bash
-openclaw-office --token <your-gateway-token>
-# or via environment variable
+openclaw-office --token <你的-gateway-token>
+# 或通过环境变量
 OPENCLAW_GATEWAY_TOKEN=<token> openclaw-office
 ```
 
-### CLI Options
+### CLI 参数
 
-| Flag                  | Description           | Default                |
-| --------------------- | --------------------- | ---------------------- |
-| `-t, --token <token>` | Gateway auth token    | auto-detected          |
-| `-g, --gateway <url>` | Gateway WebSocket URL | `ws://localhost:18789` |
-| `-p, --port <port>`   | Server port           | `5180`                 |
-| `--host <host>`       | Bind address          | `0.0.0.0`              |
-| `-h, --help`          | Show help             | —                      |
+| 参数                  | 说明                   | 默认值                 |
+| --------------------- | ---------------------- | ---------------------- |
+| `-t, --token <token>` | Gateway 认证 token     | 自动检测               |
+| `-g, --gateway <url>` | Gateway WebSocket 地址 | `ws://localhost:18789` |
+| `-p, --port <port>`   | 服务端口               | `5180`                 |
+| `--host <host>`       | 绑定地址               | `0.0.0.0`              |
+| `-h, --help`          | 显示帮助               | —                      |
 
-> **Note:** This serves the pre-built production bundle. For development with hot reload, see [Development](#development) below.
+> **说明：** 此方式运行的是预构建的生产版本。如需热重载开发，请参见下方 [开发](#开发) 部分。
 
 ---
 
-## Quick Start (from source)
+## 快速开始（从源码）
 
-### 1. Install Dependencies
+### 1. 安装依赖
 
 ```bash
 pnpm install
 ```
 
-### 2. Configure Gateway Connection
+### 2. 配置 Gateway 连接
 
-Create a `.env.local` file (gitignored) with your Gateway connection details:
+创建 `.env.local` 文件（已在 `.gitignore` 中，不会被提交），填入 Gateway 连接信息：
 
 ```bash
 cat > .env.local << 'EOF'
 VITE_GATEWAY_URL=ws://localhost:18789
-VITE_GATEWAY_TOKEN=<your-gateway-token>
+VITE_GATEWAY_TOKEN=<你的 gateway token>
 EOF
 ```
 
-Get your Gateway token:
+获取 Gateway token：
 
 ```bash
 openclaw config get gateway.auth.token
 ```
 
-### 3. Browser Device Identity
+### 3. 启动 Gateway
 
-OpenClaw Office now performs the same browser-side device identity signing flow as the built-in OpenClaw Control UI. In the common cases below, you should not need `gateway.controlUi.dangerouslyDisableDeviceAuth`:
+确保 OpenClaw Gateway 在配置的地址上运行（默认 `localhost:18789`）。可通过以下方式启动：
 
-- OpenClaw Office opened on `http://localhost:*` or `http://127.0.0.1:*`
-- OpenClaw Office served over HTTPS
+- OpenClaw macOS 应用
+- `openclaw gateway run` CLI 命令
+- 其他部署方式（参见 [OpenClaw 文档](https://github.com/openclaw/openclaw)）
 
-If you open OpenClaw Office from a remote machine over plain HTTP, the browser may not expose `crypto.subtle`, so Gateway can still reject the connection. In that case, prefer HTTPS first. Only use the dangerous bypass as a temporary last resort:
-
-```bash
-openclaw config set gateway.controlUi.dangerouslyDisableDeviceAuth true
-```
-
-If you change Gateway auth policy, restart Gateway afterward.
-
-### 4. Start the Gateway
-
-Ensure the OpenClaw Gateway is running on the configured address (default `localhost:18789`). You can start it via:
-
-- The OpenClaw macOS app
-- `openclaw gateway run` CLI command
-- Other deployment methods (see [OpenClaw documentation](https://github.com/openclaw/openclaw))
-
-### 5. Start the Dev Server
+### 4. 启动开发服务器
 
 ```bash
 pnpm dev
 ```
 
-Open `http://localhost:5180` in your browser.
+在浏览器中打开 `http://localhost:5180`。
 
-### Environment Variables
+### 环境变量
 
-| Variable             | Required                              | Default                | Description                          |
-| -------------------- | ------------------------------------- | ---------------------- | ------------------------------------ |
-| `VITE_GATEWAY_URL`   | No                                    | `ws://localhost:18789` | Gateway WebSocket address            |
-| `VITE_GATEWAY_WS_PATH` | No                                  | `/gateway-ws`          | Browser-side reverse proxy WS path   |
-| `VITE_GATEWAY_TOKEN` | Yes (when connecting to real Gateway) | —                      | Gateway auth token                   |
-| `VITE_MOCK`          | No                                    | `false`                | Enable mock mode (no Gateway needed) |
+| 变量                    | 必须                      | 默认值                 | 说明                             |
+| ----------------------- | ------------------------- | ---------------------- | -------------------------------- |
+| `VITE_GATEWAY_URL`      | 否                        | `ws://localhost:18789` | Gateway WebSocket 地址           |
+| `VITE_GATEWAY_WS_PATH`  | 否                        | `/gateway-ws`          | 浏览器侧反向代理 WS 路径        |
+| `VITE_GATEWAY_TOKEN`    | 是（连接真实 Gateway 时） | —                      | Gateway 认证 token               |
+| `VITE_MOCK`             | 否                        | `false`                | 启用 Mock 模式（不需要 Gateway） |
 
-### Mock Mode (No Gateway)
+### Mock 模式（无需 Gateway）
 
-To develop without a running Gateway, enable mock mode:
+如需在没有运行中的 Gateway 的情况下开发，启用 Mock 模式：
 
 ```bash
 VITE_MOCK=true pnpm dev
 ```
 
-This uses simulated Agent data for UI development.
+这会使用模拟的 Agent 数据进行 UI 开发。
 
 ---
 
-## Project Structure
+## 开发
 
-```
-OpenClaw-Office/
-├── src/
-│   ├── main.tsx / App.tsx           # Entry point and routing
-│   ├── i18n/                        # Internationalization (zh/en)
-│   ├── gateway/                     # Gateway communication layer
-│   │   ├── ws-client.ts             # WebSocket client + auth + reconnect
-│   │   ├── rpc-client.ts            # RPC request wrapper
-│   │   ├── event-parser.ts          # Event parsing + state mapping
-│   │   └── mock-adapter.ts          # Mock mode adapter
-│   ├── store/                       # Zustand state management
-│   │   ├── office-store.ts          # Main store (Agent state, connection, UI)
-│   │   └── console-stores/          # Per-page console stores
-│   ├── components/
-│   │   ├── layout/                  # AppShell, ConsoleLayout, Sidebar, TopBar
-│   │   ├── office-2d/               # 2D SVG floor plan + furniture
-│   │   ├── office-3d/               # 3D R3F scene
-│   │   ├── overlays/                # HTML overlays (speech bubbles)
-│   │   ├── panels/                  # Detail/metrics/chart panels
-│   │   ├── chat/                    # Shared chat workspace UI (page + dock)
-│   │   ├── console/                 # Console feature components
-│   │   ├── pages/                   # Console route pages
-│   │   └── shared/                  # Shared components
-│   ├── hooks/                       # Custom React hooks
-│   ├── lib/                         # Utility library
-│   └── styles/                      # Global styles
-├── public/                          # Static assets
-├── tests/                           # Test files
-├── package.json
-├── vite.config.ts
-└── tsconfig.json
-```
-
----
-
-## Development
-
-### Commands
+### 命令
 
 ```bash
-pnpm install              # Install dependencies
-pnpm dev                  # Start dev server (port 5180)
-pnpm build                # Production build
-pnpm test                 # Run tests
-pnpm test:watch           # Test watch mode
-pnpm typecheck            # TypeScript type check
-pnpm lint                 # Oxlint linting
-pnpm format               # Oxfmt formatting
-pnpm check                # lint + format check
+pnpm install              # 安装依赖
+pnpm dev                  # 启动开发服务器 (port 5180)
+pnpm build                # 构建生产版本
+pnpm test                 # 运行测试
+pnpm test:watch           # 测试 watch 模式
+pnpm typecheck            # TypeScript 类型检查
+pnpm lint                 # Oxlint 检查
+pnpm format               # Oxfmt 格式化
+pnpm check                # lint + format 检查
 ```
 
-### Architecture
+### 架构
 
-OpenClaw Office connects to the Gateway via WebSocket and follows this data flow:
+OpenClaw Office 通过 WebSocket 连接 Gateway，数据流如下：
 
 ```
-OpenClaw Gateway  ──WebSocket──>  ws-client.ts  ──>  event-parser.ts  ──>  Zustand Store  ──>  React Components
+OpenClaw Gateway  ──WebSocket──>  ws-client.ts  ──>  event-parser.ts  ──>  Zustand Store  ──>  React 组件
      │                                                                          │
      └── RPC (agents.list, chat.send, ...)  ──>  rpc-client.ts  ──────────────>─┘
 ```
 
-The Gateway broadcasts real-time events (`agent`, `presence`, `health`, `heartbeat`) and responds to RPC requests. The frontend maps Agent lifecycle events to visual states (idle, working, speaking, tool_calling, error) and renders them in the office scene.
+Gateway 广播实时事件（`agent`、`presence`、`health`、`heartbeat`）并响应 RPC 请求。前端将 Agent 生命周期事件映射为可视化状态（idle/working/speaking/tool_calling/error），在办公室场景中渲染。
 
 ---
 
-## Contributing
+## 贡献
 
-Contributions are welcome! Whether it's new visualization effects, 3D model improvements, console features, or performance optimizations.
+欢迎任何贡献！无论是新的可视化效果、控制台功能还是性能优化。
 
-1. Fork this repository
-2. Create a feature branch (`git checkout -b feature/cool-effect`)
-3. Commit your changes (use [Conventional Commits](https://www.conventionalcommits.org/))
-4. Open a Pull Request
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/cool-effect`)
+3. 提交更改（使用 [Conventional Commits](https://www.conventionalcommits.org/) 格式）
+4. 开启 Pull Request
 
 ---
 
-## License
+## 许可证
 
 [MIT](./LICENSE)
