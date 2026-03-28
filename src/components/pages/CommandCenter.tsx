@@ -457,7 +457,7 @@ function SectionHeader({ title, count }: { title: string; count?: number }) {
 export function CommandCenter() {
   const metrics = useOfficeStore((s) => s.globalMetrics);
   const connectionStatus = useOfficeStore((s) => s.connectionStatus);
-  const { crons, system, gateway, loading, error, lastRefresh, refresh, agents: realAgents, history } = useLiveData(15000);
+  const { crons, system, gateway, loading, error, lastRefresh, refresh, agents: realAgents, history, activity } = useLiveData(15000);
 
   useRealAgentSync(realAgents);
 
@@ -532,6 +532,37 @@ export function CommandCenter() {
             <DemoControls />
           </div>
 
+          {/* Navigation */}
+          <div>
+            <SectionHeader title="Navigate" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {[
+                { icon: "🏠", label: "Dashboard", href: "/" },
+                { icon: "🏢", label: "Office", href: "/office" },
+                { icon: "🤖", label: "Agents", href: "/agents" },
+                { icon: "⏰", label: "Crons", href: "/cron" },
+                { icon: "📡", label: "Channels", href: "/channels" },
+                { icon: "💬", label: "Chat", href: "/chat" },
+                { icon: "⚙️", label: "Settings", href: "/settings" },
+              ].map(nav => (
+                <a key={nav.href} href={nav.href} style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "7px 10px", borderRadius: 8, fontSize: 11,
+                  color: "rgba(255,255,255,0.45)", textDecoration: "none",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  transition: "all 0.15s",
+                  background: window.location.pathname === nav.href ? "rgba(0,255,65,0.08)" : "transparent",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = "#00ff41"; e.currentTarget.style.background = "rgba(0,255,65,0.06)"; }}
+                onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.45)"; e.currentTarget.style.background = window.location.pathname === nav.href ? "rgba(0,255,65,0.08)" : "transparent"; }}
+                >
+                  <span>{nav.icon}</span>
+                  <span>{nav.label}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+
           {/* System info */}
           <div style={{ marginTop: "auto", padding: "10px 0" }}>
             <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.6 }}>
@@ -592,14 +623,54 @@ export function CommandCenter() {
             ))}
           </div>
 
-          {/* Cron Status Board */}
-          <SectionHeader title="Cron Jobs" count={crons.length} />
-          <div style={{ ...glassStyle({ padding: "14px 18px" }), marginBottom: 24 }}>
-            {crons.length > 0 ? <CronBoard crons={crons} /> : (
-              <div style={{ textAlign: "center", padding: 20, color: "rgba(255,255,255,0.25)", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
-                {loading ? "Loading crons..." : "No cron data"}
+          {/* Activity Feed + Crons side by side */}
+          <div className="mc-bottom-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+            {/* Activity Feed */}
+            <div style={{ ...glassStyle({ padding: "14px 18px" }) }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(0, 255, 65, 0.5)", marginBottom: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+                LIVE ACTIVITY
               </div>
-            )}
+              <div style={{ maxHeight: 320, overflowY: "auto" }}>
+                {activity.length > 0 ? activity.map((evt, i) => (
+                  <div key={i} style={{
+                    display: "flex", gap: 10, padding: "6px 0",
+                    borderBottom: "1px solid rgba(0, 255, 65, 0.04)",
+                    fontSize: 10, fontFamily: "'JetBrains Mono', monospace", alignItems: "flex-start",
+                  }}>
+                    <span style={{ flexShrink: 0 }}>
+                      {evt.type === "error" ? "🔴" : evt.type === "cron" ? "⚡" : "💬"}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        color: evt.type === "error" ? "#ff4444" : "#e2e8f0",
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      }}>
+                        {evt.message}
+                      </div>
+                      <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 9, marginTop: 2 }}>
+                        {evt.agent} · {evt.ts ? timeAgo(evt.ts) : "—"}
+                      </div>
+                    </div>
+                  </div>
+                )) : (
+                  <div style={{ color: "rgba(255,255,255,0.2)", padding: 16, textAlign: "center" }}>
+                    {loading ? "Loading..." : "No recent activity"}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Cron Status Board */}
+            <div style={{ ...glassStyle({ padding: "14px 18px" }) }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(0, 255, 65, 0.5)", marginBottom: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+                CRON JOBS ({crons.length})
+              </div>
+              {crons.length > 0 ? <CronBoard crons={crons} /> : (
+                <div style={{ textAlign: "center", padding: 20, color: "rgba(255,255,255,0.25)", fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
+                  {loading ? "Loading crons..." : "No cron data"}
+                </div>
+              )}
+            </div>
           </div>
         </main>
       </div>
@@ -617,6 +688,9 @@ export function CommandCenter() {
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
+        }
+        @media (max-width: 1024px) {
+          .mc-bottom-grid { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 768px) {
           aside { display: none !important; }

@@ -105,6 +105,37 @@ const routes = {
   "/api/agents": () => {
     return { agents: getAgentStatuses() };
   },
+  "/api/activity": () => {
+    // Build activity feed from recent cron runs + session activity
+    const events = [];
+    try {
+      const crons = jsonExec("openclaw cron list --json 2>/dev/null");
+      for (const job of (crons.jobs || []).slice(0, 50)) {
+        if (job.state?.lastRunAtMs) {
+          events.push({
+            type: job.state.consecutiveErrors > 0 ? "error" : "cron",
+            agent: job.name.split(" ")[0] || "system",
+            message: `${job.name} — ${job.state.lastRunStatus || "unknown"}` +
+              (job.state.lastDurationMs ? ` (${Math.round(job.state.lastDurationMs / 1000)}s)` : ""),
+            ts: job.state.lastRunAtMs,
+          });
+        }
+      }
+    } catch {}
+    try {
+      const status = jsonExec("openclaw status --json 2>/dev/null");
+      for (const s of (status?.sessions?.recent || []).slice(0, 10)) {
+        events.push({
+          type: "session",
+          agent: s.agentId || "unknown",
+          message: `Session ${s.kind} — ${s.model || "?"} (${s.percentUsed || 0}% ctx)`,
+          ts: s.updatedAt,
+        });
+      }
+    } catch {}
+    events.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+    return { events: events.slice(0, 30) };
+  },
   "/api/history": () => {
     // Append current data point and return history
     const crons = jsonExec("openclaw cron list --json 2>/dev/null");

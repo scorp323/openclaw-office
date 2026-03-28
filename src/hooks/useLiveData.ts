@@ -49,12 +49,20 @@ interface HistoryPoint {
   sessionCount: number;
 }
 
+interface ActivityEvent {
+  type: string;
+  agent: string;
+  message: string;
+  ts: number;
+}
+
 interface LiveData {
   crons: CronJob[];
   system: SystemInfo | null;
   gateway: GatewayStatus | null;
   agents: RealAgent[];
   history: HistoryPoint[];
+  activity: ActivityEvent[];
   loading: boolean;
   error: string | null;
   lastRefresh: number;
@@ -75,24 +83,27 @@ export function useLiveData(pollIntervalMs = 30000): LiveData {
   const [gateway, setGateway] = useState<GatewayStatus | null>(null);
   const [agents, setAgents] = useState<RealAgent[]>([]);
   const [history, setHistory] = useState<HistoryPoint[]>([]);
+  const [activity, setActivity] = useState<ActivityEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState(0);
 
   const refresh = useCallback(async () => {
     try {
-      const [cronData, sysData, statusData, agentData, historyData] = await Promise.all([
+      const [cronData, sysData, statusData, agentData, historyData, activityData] = await Promise.all([
         fetchJson<{ jobs: CronJob[] }>('/crons'),
         fetchJson<SystemInfo>('/system'),
         fetchJson<GatewayStatus>('/status'),
         fetchJson<{ agents: RealAgent[] }>('/agents'),
         fetchJson<{ history: HistoryPoint[] }>('/history'),
+        fetchJson<{ events: ActivityEvent[] }>('/activity'),
       ]);
       setCrons(cronData.jobs || []);
       setSystem(sysData);
       setGateway(statusData);
       setAgents(agentData.agents || []);
       setHistory(historyData.history || []);
+      setActivity(activityData.events || []);
       setError(null);
       setLastRefresh(Date.now());
     } catch (e: any) {
@@ -108,5 +119,5 @@ export function useLiveData(pollIntervalMs = 30000): LiveData {
     return () => clearInterval(interval);
   }, [refresh, pollIntervalMs]);
 
-  return { crons, system, gateway, agents, history, loading, error, lastRefresh, refresh };
+  return { crons, system, gateway, agents, history, activity, loading, error, lastRefresh, refresh };
 }
