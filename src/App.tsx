@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
 import { ConsoleLayout } from "@/components/layout/ConsoleLayout";
 import { FloorPlan } from "@/components/office-2d/FloorPlan";
+import { CommandCenter } from "@/components/pages/CommandCenter";
 import { AgentsPage } from "@/components/pages/AgentsPage";
 import { ChannelsPage } from "@/components/pages/ChannelsPage";
 import { CronPage } from "@/components/pages/CronPage";
@@ -32,7 +33,8 @@ function ThemeSync() {
 }
 
 const PAGE_MAP: Record<string, PageId> = {
-  "/": "office",
+  "/": "dashboard",
+  "/office": "office",
   "/chat": "chat",
   "/dashboard": "dashboard",
   "/agents": "agents",
@@ -90,7 +92,8 @@ export function App() {
       <PageTracker />
       <ChatWorkspaceBootstrap wsClient={wsClient} />
       <Routes>
-        <Route path="/" element={<AppShell isMobile={isMobile}><FloorPlan /></AppShell>} />
+        <Route path="/" element={<CommandCenter />} />
+        <Route path="/office" element={<AppShell isMobile={isMobile}><FloorPlan /></AppShell>} />
         <Route element={<ConsoleLayout />}>
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
