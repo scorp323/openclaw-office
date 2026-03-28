@@ -8,9 +8,9 @@ interface SofaProps {
 }
 
 export const Sofa = memo(function Sofa({ x, y, rotation = 0, isDark = false }: SofaProps) {
-  const cushion = isDark ? "#475569" : "#a5b4c8";
-  const frame = isDark ? "#334155" : "#8494a7";
-  const pillow = isDark ? "#5b6b80" : "#c8d5e3";
+  const cushion = isDark ? "#0a3d0a" : "#a5b4c8";
+  const frame = isDark ? "#062806" : "#8494a7";
+  const pillow = isDark ? "#0d5a0d" : "#c8d5e3";
 
   return (
     <g transform={`translate(${x}, ${y}) rotate(${rotation})`}>

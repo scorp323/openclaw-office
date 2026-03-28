@@ -49,12 +49,12 @@ export const ZONE_COLORS = {
 } as const;
 
 export const ZONE_COLORS_DARK = {
-  desk: "#1e293b",
-  meeting: "#1a2744",
-  hotDesk: "#1e2433",
-  lounge: "#231e33",
-  corridor: "#0f172a",
-  wall: "#475569",
+  desk: "#001a00",
+  meeting: "#002200",
+  hotDesk: "#001a00",
+  lounge: "#0a1a0a",
+  corridor: "#000d00",
+  wall: "#0a3d0a",
 } as const;
 
 export const STATUS_COLORS: Record<AgentVisualStatus, string> = {
@@ -86,13 +86,17 @@ export function getStatusLabel(status: AgentVisualStatus): string {
 }
 
 export const AGENT_COLORS: Record<string, string> = {
-  morpheus: "#00d4aa",
-  jack: "#f59e0b",
-  scout: "#3b82f6",
-  sentinel: "#ef4444",
-  oracle: "#ec4899",
-  link: "#06b6d4",
-  kat: "#c084fc",
+  morpheus: "#00ff41",
+  neo: "#00cc33",
+  trinity: "#00aa44",
+  tank: "#009933",
+  oracle: "#33ff66",
+  link: "#00ffaa",
+  niobe: "#66ff99",
+  jack: "#00cc33",
+  scout: "#00aa44",
+  sentinel: "#009933",
+  kat: "#66ff99",
 };
 
 export const DESK_GRID_COLS = 4;

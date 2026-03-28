@@ -7,10 +7,10 @@ interface DeskProps {
 }
 
 export const Desk = memo(function Desk({ x, y, isDark = false }: DeskProps) {
-  const surface = isDark ? "#334155" : "#dfe5ed";
-  const side = isDark ? "#283548" : "#c8d0dc";
-  const monitor = isDark ? "#1e293b" : "#f1f5f9";
-  const monitorFrame = isDark ? "#475569" : "#94a3b8";
+  const surface = isDark ? "#0a2a0a" : "#dfe5ed";
+  const side = isDark ? "#062006" : "#c8d0dc";
+  const monitor = isDark ? "#001a00" : "#f1f5f9";
+  const monitorFrame = isDark ? "#0a3d0a" : "#94a3b8";
 
   return (
     <g transform={`translate(${x}, ${y})`}>
@@ -49,7 +49,7 @@ export const Desk = memo(function Desk({ x, y, isDark = false }: DeskProps) {
         width={32}
         height={12}
         rx={2}
-        fill={isDark ? "#475569" : "#cbd5e1"}
+        fill={isDark ? "#0a3d0a" : "#cbd5e1"}
         opacity={0.6}
       />
     </g>

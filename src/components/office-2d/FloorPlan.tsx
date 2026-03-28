@@ -84,7 +84,7 @@ export function FloorPlan() {
   );
 
   return (
-    <div className="relative h-full w-full bg-gray-100 dark:bg-[#0d1117]">
+    <div className="relative h-full w-full bg-gray-100 dark:bg-black">
       <MatrixRain />
       <svg
         viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
@@ -104,7 +104,7 @@ export function FloorPlan() {
               width="27"
               height="27"
               fill="none"
-              stroke={isDark ? "#1f2937" : "#d5dbe3"}
+              stroke={isDark ? "#0a2a0a" : "#d5dbe3"}
               strokeWidth="0.3"
               rx="1"
             />
@@ -112,7 +112,7 @@ export function FloorPlan() {
           {/* Subtle carpet texture for lounge */}
           <pattern id="lounge-carpet" width="6" height="6" patternUnits="userSpaceOnUse">
             <rect width="6" height="6" fill={colors.lounge} />
-            <circle cx="3" cy="3" r="0.5" fill={isDark ? "#2d2540" : "#e5e0ed"} opacity="0.4" />
+            <circle cx="3" cy="3" r="0.5" fill={isDark ? "#0d2a0d" : "#e5e0ed"} opacity="0.4" />
           </pattern>
         </defs>
 
@@ -249,7 +249,7 @@ function CorridorFloor({ isDark }: { isDark: boolean }) {
         y1={hCorrY + cw / 2}
         x2={hCorrX + OFFICE.width}
         y2={hCorrY + cw / 2}
-        stroke={isDark ? "#334155" : "#c8d0dc"}
+        stroke={isDark ? "#0a3d0a" : "#c8d0dc"}
         strokeWidth={0.5}
         strokeDasharray="8 6"
         opacity={0.6}
@@ -259,7 +259,7 @@ function CorridorFloor({ isDark }: { isDark: boolean }) {
         y1={vCorrY}
         x2={vCorrX + cw / 2}
         y2={vCorrY + OFFICE.height}
-        stroke={isDark ? "#334155" : "#c8d0dc"}
+        stroke={isDark ? "#0a3d0a" : "#c8d0dc"}
         strokeWidth={0.5}
         strokeDasharray="8 6"
         opacity={0.6}
@@ -270,8 +270,8 @@ function CorridorFloor({ isDark }: { isDark: boolean }) {
 
 /** Internal partition walls between zones — double-line architectural style */
 function PartitionWalls({ isDark }: { isDark: boolean }) {
-  const wallColor = isDark ? "#475569" : "#8b9bb0";
-  const fillColor = isDark ? "#334155" : "#c8d0dc";
+  const wallColor = isDark ? "#0a3d0a" : "#8b9bb0";
+  const fillColor = isDark ? "#062806" : "#c8d0dc";
   const wallW = 4;
   const cw = OFFICE.corridorWidth;
   const midX = OFFICE.x + (OFFICE.width - cw) / 2;
@@ -318,7 +318,7 @@ function DoorOpenings({ isDark }: { isDark: boolean }) {
   const midY = OFFICE.y + (OFFICE.height - cw) / 2;
   const doorWidth = 40;
   const doorColor = isDark ? ZONE_COLORS_DARK.corridor : ZONE_COLORS.corridor;
-  const arcColor = isDark ? "#64748b" : "#94a3b8";
+  const arcColor = isDark ? "#0a5d0a" : "#94a3b8";
 
   // Door positions: where walls meet corridor, centered on each wall segment
   const doors = [
@@ -476,11 +476,11 @@ function LoungeDecor({ isDark }: { isDark: boolean }) {
   const lz = ZONES.lounge;
   const cx = lz.x + lz.width / 2;
 
-  const wallColor = isDark ? "#334155" : "#5a6878";
-  const deskColor = isDark ? "#475569" : "#8494a7";
-  const deskTop = isDark ? "#64748b" : "#a5b4c8";
-  const logoTextColor = isDark ? "#94a3b8" : "#ffffff";
-  const logoBg = isDark ? "#1e293b" : "#3b4f6b";
+  const wallColor = isDark ? "#062806" : "#5a6878";
+  const deskColor = isDark ? "#0a3d0a" : "#8494a7";
+  const deskTop = isDark ? "#0d5a0d" : "#a5b4c8";
+  const logoTextColor = isDark ? "#00ff41" : "#ffffff";
+  const logoBg = isDark ? "#001a00" : "#3b4f6b";
 
   // Logo backdrop wall — centered horizontally, at ~55% from top
   const bgWallW = 200;
@@ -518,7 +518,7 @@ function LoungeDecor({ isDark }: { isDark: boolean }) {
         width={bgWallW}
         height={3}
         rx={1.5}
-        fill={isDark ? "#64748b" : "#7a9bc0"}
+        fill={isDark ? "#0a5d0a" : "#7a9bc0"}
       />
       {/* "OpenClaw" logo text */}
       <text
@@ -528,8 +528,9 @@ function LoungeDecor({ isDark }: { isDark: boolean }) {
         fill={logoTextColor}
         fontSize={14}
         fontWeight={700}
-        fontFamily="system-ui, sans-serif"
+        fontFamily="'JetBrains Mono', monospace"
         letterSpacing="0.12em"
+        style={isDark ? { filter: "drop-shadow(0 0 6px rgba(0,255,65,0.5))" } : undefined}
       >
         OpenClaw
       </text>
@@ -576,9 +577,9 @@ function EntranceDoor({ isDark }: { isDark: boolean }) {
   const half = doorW / 2;
 
   const bgColor = isDark ? ZONE_COLORS_DARK.lounge : ZONE_COLORS.lounge;
-  const arcColor = isDark ? "#64748b" : "#8b9bb0";
-  const matColor = isDark ? "#374151" : "#b0a090";
-  const textColor = isDark ? "#64748b" : "#94a3b8";
+  const arcColor = isDark ? "#0a5d0a" : "#8b9bb0";
+  const matColor = isDark ? "#0a2a0a" : "#b0a090";
+  const textColor = isDark ? "#0a5d0a" : "#94a3b8";
 
   return (
     <g>
@@ -628,8 +629,9 @@ function EntranceDoor({ isDark }: { isDark: boolean }) {
         fill={textColor}
         fontSize={9}
         fontWeight={600}
-        fontFamily="system-ui, sans-serif"
+        fontFamily="'JetBrains Mono', monospace"
         letterSpacing="0.15em"
+        style={isDark ? { filter: "drop-shadow(0 0 4px rgba(0,255,65,0.4))" } : undefined}
       >
         ENTRANCE
       </text>

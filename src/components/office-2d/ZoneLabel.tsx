@@ -11,7 +11,7 @@ export function ZoneLabel({ zone, zoneKey }: ZoneLabelProps) {
   const { t } = useTranslation("common");
   const theme = useOfficeStore((s) => s.theme);
   const isDark = theme === "dark";
-  const textColor = isDark ? "#64748b" : "#94a3b8";
+  const textColor = isDark ? "#00ff41" : "#94a3b8";
 
   return (
     <text
@@ -20,8 +20,9 @@ export function ZoneLabel({ zone, zoneKey }: ZoneLabelProps) {
       fill={textColor}
       fontSize={11}
       fontWeight={600}
-      fontFamily="system-ui, sans-serif"
-      letterSpacing="0.05em"
+      fontFamily="'JetBrains Mono', monospace"
+      letterSpacing="0.08em"
+      style={isDark ? { filter: "drop-shadow(0 0 4px rgba(0,255,65,0.4))" } : undefined}
     >
       {t(`zones.${zoneKey}`)}
     </text>

@@ -59,10 +59,10 @@ export function Sidebar() {
 
   if (collapsed) {
     return (
-      <aside className="flex w-12 flex-col items-center border-l border-gray-200 bg-white py-3 dark:border-gray-700 dark:bg-[#0a0a0f]">
+      <aside className="flex w-12 flex-col items-center border-l border-gray-200 bg-white py-3 dark:border-[rgba(0,255,65,0.15)] dark:bg-black">
         <button
           onClick={() => setSidebarCollapsed(false)}
-          className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+          className="text-gray-400 hover:text-gray-700 dark:text-[#0a3d0a] dark:hover:text-[#00ff41]"
           title={t("sidebar.expand")}
         >
           ◀
@@ -78,15 +78,15 @@ export function Sidebar() {
   const timelineSection = getSection("timeline");
 
   return (
-    <aside className="flex w-80 flex-col border-l border-gray-200 bg-white dark:border-gray-700 dark:bg-[#0a0a0f]">
+    <aside className="flex w-80 flex-col border-l border-gray-200 bg-white dark:border-[rgba(0,255,65,0.15)] dark:bg-black">
       {/* Sidebar header */}
-      <div className="flex h-8 shrink-0 items-center justify-between border-b border-gray-200 px-3 dark:border-gray-700">
-        <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <div className="flex h-8 shrink-0 items-center justify-between border-b border-gray-200 px-3 dark:border-[rgba(0,255,65,0.1)]">
+        <span className="glow-green text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-[#00ff41]">
           {t("sidebar.agents")}
         </span>
         <button
           onClick={() => setSidebarCollapsed(true)}
-          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          className="text-gray-400 hover:text-gray-600 dark:text-[#0a3d0a] dark:hover:text-[#00ff41]"
           title={t("sidebar.collapse")}
         >
           ▶
@@ -121,23 +121,23 @@ export function Sidebar() {
         badge={agentList.length}
         headerExtra={<AgentSearchBadge filter={filter} filterTags={filterTags} />}
       >
-        <div className="border-b border-gray-100 px-3 py-1.5 dark:border-gray-800">
+        <div className="border-b border-gray-100 px-3 py-1.5 dark:border-[rgba(0,255,65,0.08)]">
           <input
             type="text"
             placeholder={t("sidebar.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded border border-gray-200 bg-gray-50 px-2 py-1 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500"
+            className="w-full rounded border border-gray-200 bg-gray-50 px-2 py-1 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-[#0a3d0a] dark:bg-[#000a00] dark:text-[#00ff41] dark:placeholder-[#0a5d0a] dark:focus:border-[#00ff41] dark:focus:ring-[rgba(0,255,65,0.3)]"
           />
           <div className="mt-1.5 flex gap-1">
             {filterTags.map((tag) => (
               <button
                 key={tag.key}
                 onClick={() => setFilter(tag.key)}
-                className={`rounded px-2 py-0.5 text-xs transition-colors ${
+                className={`rounded px-2 py-0.5 text-xs transition-all ${
                   filter === tag.key
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+                    ? "bg-blue-600 text-white dark:bg-[rgba(0,255,65,0.2)] dark:text-[#00ff41] dark:shadow-[0_0_6px_rgba(0,255,65,0.2)]"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-[rgba(0,255,65,0.05)] dark:text-[#0a5d0a] dark:hover:bg-[rgba(0,255,65,0.1)] dark:hover:text-[#00ff41]"
                 }`}
               >
                 {tag.label}
@@ -150,13 +150,15 @@ export function Sidebar() {
             <button
               key={agent.id}
               onClick={() => selectAgent(agent.id)}
-              className={`flex w-full items-center gap-3 border-b border-gray-50 px-3 py-2 text-left transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800 ${
-                selectedAgentId === agent.id ? "bg-blue-50 dark:bg-blue-950" : ""
+              className={`flex w-full items-center gap-3 border-b border-gray-50 px-3 py-2 text-left transition-all hover:bg-gray-50 dark:border-[rgba(0,255,65,0.05)] dark:hover:bg-[rgba(0,255,65,0.05)] ${
+                selectedAgentId === agent.id
+                  ? "bg-blue-50 dark:bg-[rgba(0,255,65,0.1)] dark:shadow-[inset_0_0_10px_rgba(0,255,65,0.08)]"
+                  : ""
               }`}
             >
               <SvgAvatar agentId={agent.id} size={24} />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-xs font-medium text-gray-800 dark:text-gray-200">
+                <div className="truncate text-xs font-medium text-gray-800 dark:text-[#00ff41]">
                   {agent.name}
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -164,12 +166,13 @@ export function Sidebar() {
                     className="inline-block h-1.5 w-1.5 rounded-full"
                     style={{
                       backgroundColor: STATUS_COLORS[agent.status as AgentVisualStatus],
+                      boxShadow: `0 0 4px ${STATUS_COLORS[agent.status as AgentVisualStatus]}`,
                     }}
                   />
-                  <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                  <span className="text-[10px] text-gray-500 dark:text-[#0a5d0a]">
                     {t(`common:agent.statusLabels.${agent.status}`)}
                   </span>
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                  <span className="text-[10px] text-gray-400 dark:text-[#073d07]">
                     · {timeAgo(t, agent.lastActiveAt)}
                   </span>
                 </div>
@@ -177,7 +180,7 @@ export function Sidebar() {
             </button>
           ))}
           {agentList.length === 0 && (
-            <div className="px-3 py-4 text-center text-xs text-gray-400 dark:text-gray-500">
+            <div className="px-3 py-4 text-center text-xs text-gray-400 dark:text-[#0a5d0a]">
               {t("common:empty.noMatchingAgents")}
             </div>
           )}
@@ -245,7 +248,7 @@ function AgentSearchBadge({
   if (filter === "all") return null;
   const label = filterTags.find((tag) => tag.key === filter)?.label ?? filter;
   return (
-    <span className="rounded bg-blue-100 px-1 text-[9px] text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+    <span className="rounded bg-blue-100 px-1 text-[9px] text-blue-700 dark:bg-[rgba(0,255,65,0.15)] dark:text-[#00ff41]">
       {label}
     </span>
   );

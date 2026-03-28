@@ -13,23 +13,85 @@
   --dot-tooltip-stroke: #d1d5db;
   --dot-tooltip-text: #374151;
   --svg-link-color: #60a5fa;
-  --morpheus-bg: #0a0a0f;
-  --morpheus-accent: #00d4aa;
-  --morpheus-gold: #d4a574;
+  --morpheus-bg: #000000;
+  --morpheus-accent: #00ff41;
+  --morpheus-gold: #0a3d0a;
 }
 
 .dark {
-  --zone-desk: #0d1117;
-  --zone-meeting: #0a1628;
-  --zone-hotDesk: #0d1117;
-  --zone-lounge: #120d1f;
-  --zone-stroke: #1e3a5f;
-  --zone-label: #00d4aa;
-  --dot-tooltip-bg: #0a0a0f;
-  --dot-tooltip-stroke: #1e3a5f;
-  --dot-tooltip-text: #e2e8f0;
-  --svg-link-color: #00d4aa;
+  --zone-desk: #001a00;
+  --zone-meeting: #002200;
+  --zone-hotDesk: #001a00;
+  --zone-lounge: #0a1a0a;
+  --zone-stroke: #0a3d0a;
+  --zone-label: #00ff41;
+  --dot-tooltip-bg: #000a00;
+  --dot-tooltip-stroke: #0a3d0a;
+  --dot-tooltip-text: #00ff41;
+  --svg-link-color: #00ff41;
+  --morpheus-bg: #000000;
+  --morpheus-accent: #00ff41;
+  --morpheus-gold: #0a3d0a;
 }
+
+/* ── Matrix Glow Utilities ── */
+
+.glow-green {
+  text-shadow:
+    0 0 7px rgba(0, 255, 65, 0.5),
+    0 0 15px rgba(0, 255, 65, 0.25);
+}
+
+.glow-border {
+  box-shadow:
+    0 0 8px rgba(0, 255, 65, 0.19),
+    inset 0 0 8px rgba(0, 255, 65, 0.06);
+}
+
+.glass-panel {
+  background: linear-gradient(135deg, rgba(0, 255, 65, 0.05) 0%, rgba(0, 0, 0, 0.8) 100%);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 255, 65, 0.15);
+  box-shadow:
+    0 0 15px rgba(0, 255, 65, 0.1),
+    inset 0 1px 0 rgba(0, 255, 65, 0.1);
+}
+
+/* ── Global Button/Tab Interactions ── */
+
+button,
+[role="tab"],
+[role="button"] {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark button:hover,
+.dark [role="tab"]:hover,
+.dark [role="button"]:hover {
+  transform: scale(1.02);
+}
+
+.dark button:active,
+.dark [role="tab"]:active,
+.dark [role="button"]:active {
+  transform: scale(0.97);
+}
+
+.dark button:focus-visible,
+.dark [role="tab"]:focus-visible,
+.dark [role="button"]:focus-visible {
+  outline: 1px solid rgba(0, 255, 65, 0.5);
+  outline-offset: 2px;
+  box-shadow: 0 0 8px rgba(0, 255, 65, 0.2);
+}
+
+/* ── Body ── */
+
+body {
+  background: #000000;
+}
+
+/* ── Animations ── */
 
 @keyframes pulse {
   0%,
@@ -47,7 +109,6 @@
   }
 }
 
-/* Agent 状态动画 */
 @keyframes agent-pulse {
   0%,
   100% {
@@ -151,4 +212,30 @@
 
 .animate-slide-down {
   animation: chat-slide-down 150ms ease-in forwards;
+}
+
+/* Green glow pulse for connection dots */
+@keyframes green-glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 4px #00ff41, 0 0 8px rgba(0, 255, 65, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 8px #00ff41, 0 0 20px rgba(0, 255, 65, 0.5);
+  }
+}
+
+/* Dark scrollbar — thin forest green */
+.dark ::-webkit-scrollbar {
+  width: 6px;
+}
+.dark ::-webkit-scrollbar-track {
+  background: #000000;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #0a3d0a;
+  border-radius: 3px;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #0d5a0d;
 }

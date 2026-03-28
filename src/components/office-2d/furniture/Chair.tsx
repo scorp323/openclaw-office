@@ -7,8 +7,8 @@ interface ChairProps {
 }
 
 export const Chair = memo(function Chair({ x, y, isDark = false }: ChairProps) {
-  const seat = isDark ? "#475569" : "#94a3b8";
-  const back = isDark ? "#334155" : "#7c8ba0";
+  const seat = isDark ? "#0a3d0a" : "#94a3b8";
+  const back = isDark ? "#062806" : "#7c8ba0";
 
   return (
     <g transform={`translate(${x}, ${y})`}>
