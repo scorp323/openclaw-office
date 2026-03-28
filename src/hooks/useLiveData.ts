@@ -56,6 +56,11 @@ interface ActivityEvent {
   ts: number;
 }
 
+interface OllamaInfo {
+  loaded: Array<{ name: string; size: string }>;
+  available: Array<{ name: string; size: string }>;
+}
+
 interface LiveData {
   crons: CronJob[];
   system: SystemInfo | null;
@@ -63,6 +68,9 @@ interface LiveData {
   agents: RealAgent[];
   history: HistoryPoint[];
   activity: ActivityEvent[];
+  ollama: OllamaInfo | null;
+  channels: string[];
+  memoryFiles: Array<{ name: string; lines: number }>;
   loading: boolean;
   error: string | null;
   lastRefresh: number;
@@ -84,19 +92,25 @@ export function useLiveData(pollIntervalMs = 30000): LiveData {
   const [agents, setAgents] = useState<RealAgent[]>([]);
   const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
+  const [ollama, setOllama] = useState<OllamaInfo | null>(null);
+  const [channels, setChannels] = useState<string[]>([]);
+  const [memoryFiles, setMemoryFiles] = useState<Array<{ name: string; lines: number }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState(0);
 
   const refresh = useCallback(async () => {
     try {
-      const [cronData, sysData, statusData, agentData, historyData, activityData] = await Promise.all([
+      const [cronData, sysData, statusData, agentData, historyData, activityData, ollamaData, channelData, memData] = await Promise.all([
         fetchJson<{ jobs: CronJob[] }>('/crons'),
         fetchJson<SystemInfo>('/system'),
         fetchJson<GatewayStatus>('/status'),
         fetchJson<{ agents: RealAgent[] }>('/agents'),
         fetchJson<{ history: HistoryPoint[] }>('/history'),
         fetchJson<{ events: ActivityEvent[] }>('/activity'),
+        fetchJson<OllamaInfo>('/ollama').catch(() => null),
+        fetchJson<{ channels: string[] }>('/channels').catch(() => ({ channels: [] })),
+        fetchJson<{ files: Array<{ name: string; lines: number }> }>('/memory').catch(() => ({ files: [] })),
       ]);
       setCrons(cronData.jobs || []);
       setSystem(sysData);
@@ -104,6 +118,9 @@ export function useLiveData(pollIntervalMs = 30000): LiveData {
       setAgents(agentData.agents || []);
       setHistory(historyData.history || []);
       setActivity(activityData.events || []);
+      if (ollamaData) setOllama(ollamaData);
+      setChannels(channelData.channels || []);
+      setMemoryFiles(memData.files || []);
       setError(null);
       setLastRefresh(Date.now());
     } catch (e: any) {
@@ -119,5 +136,5 @@ export function useLiveData(pollIntervalMs = 30000): LiveData {
     return () => clearInterval(interval);
   }, [refresh, pollIntervalMs]);
 
-  return { crons, system, gateway, agents, history, activity, loading, error, lastRefresh, refresh };
+  return { crons, system, gateway, agents, history, activity, ollama, channels, memoryFiles, loading, error, lastRefresh, refresh };
 }

@@ -136,6 +136,39 @@ const routes = {
     events.sort((a, b) => (b.ts || 0) - (a.ts || 0));
     return { events: events.slice(0, 30) };
   },
+  "/api/ollama": () => {
+    const models = getOllamaModels();
+    // Also get list of all available models
+    let available = [];
+    try {
+      const out = execSync("ollama list 2>/dev/null", { timeout: 5000, encoding: "utf8" });
+      const lines = out.split("\n").slice(1).filter(l => l.trim());
+      available = lines.map(line => {
+        const parts = line.split(/\s+/);
+        return { name: parts[0] || "?", size: parts[2] ? `${parts[2]} ${parts[3] || ""}`.trim() : "?" };
+      });
+    } catch {}
+    return { loaded: models, available };
+  },
+  "/api/channels": () => {
+    try {
+      const status = jsonExec("openclaw status --json 2>/dev/null");
+      return { channels: status?.channelSummary || [] };
+    } catch { return { channels: [] }; }
+  },
+  "/api/memory": () => {
+    // Recent memory file entries
+    try {
+      const out = textExec("ls -t /Users/morpheusqilee/.openclaw/workspace/memory/*.md 2>/dev/null | head -5");
+      const files = out.split("\n").filter(f => f.trim());
+      const entries = files.map(f => {
+        const name = f.split("/").pop();
+        const lines = textExec(`wc -l < "${f}"`).trim();
+        return { name, lines: parseInt(lines) || 0 };
+      });
+      return { files: entries };
+    } catch { return { files: [] }; }
+  },
   "/api/history": () => {
     // Append current data point and return history
     const crons = jsonExec("openclaw cron list --json 2>/dev/null");
