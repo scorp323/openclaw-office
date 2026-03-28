@@ -85,6 +85,16 @@ export function getStatusLabel(status: AgentVisualStatus): string {
   return i18n.t(`common:agent.statusLabels.${status}`);
 }
 
+export const AGENT_COLORS: Record<string, string> = {
+  morpheus: "#00d4aa",
+  jack: "#f59e0b",
+  scout: "#3b82f6",
+  sentinel: "#ef4444",
+  oracle: "#ec4899",
+  link: "#06b6d4",
+  kat: "#c084fc",
+};
+
 export const DESK_GRID_COLS = 4;
 export const DESK_GRID_ROWS = 3;
 export const DESK_MAX_AGENTS = DESK_GRID_COLS * DESK_GRID_ROWS;

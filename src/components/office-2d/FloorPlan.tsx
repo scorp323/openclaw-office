@@ -14,6 +14,7 @@ import { AgentAvatar } from "./AgentAvatar";
 import { ConnectionLine } from "./ConnectionLine";
 import { DeskUnit } from "./DeskUnit";
 import { MeetingTable, Sofa, Plant, CoffeeCup, Chair } from "./furniture";
+import { MatrixRain } from "./MatrixRain";
 import { ZoneLabel } from "./ZoneLabel";
 
 export function FloorPlan() {
@@ -83,7 +84,8 @@ export function FloorPlan() {
   );
 
   return (
-    <div className="relative h-full w-full bg-gray-100 dark:bg-gray-950">
+    <div className="relative h-full w-full bg-gray-100 dark:bg-[#0d1117]">
+      <MatrixRain />
       <svg
         viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
         className="h-full w-full"

@@ -35,7 +35,7 @@ export function TopBar({ isMobile = false }: TopBarProps) {
   const isOfficePage = currentPage === "office";
 
   return (
-    <header className="grid h-12 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 border-b border-gray-200/80 bg-white px-5 dark:border-gray-800 dark:bg-gray-900">
+    <header className="grid h-12 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 border-b border-gray-200/80 bg-white px-5 dark:border-gray-800 dark:bg-[#0a0a0f]">
       <div className="min-w-0">
         <BrandSection metrics={metrics} isOfficePage={isOfficePage} isMobile={isMobile} />
       </div>
@@ -67,9 +67,9 @@ function BrandSection({
   return (
     <div className="flex min-w-0 items-center gap-3">
       <h1 className="truncate text-sm font-semibold tracking-tight text-gray-800 dark:text-gray-100">
-        OpenClaw Office
+        🌀 Morpheus Command Center
       </h1>
-      <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] tabular-nums text-gray-400 dark:bg-gray-800 dark:text-gray-500">
+      <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] tabular-nums text-gray-400 dark:bg-teal-900/50 dark:text-teal-400">
         v{APP_VERSION}
       </span>
       {isOfficePage && !isMobile && (

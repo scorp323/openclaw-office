@@ -13,19 +13,22 @@
   --dot-tooltip-stroke: #d1d5db;
   --dot-tooltip-text: #374151;
   --svg-link-color: #60a5fa;
+  --morpheus-bg: #0a0a0f;
+  --morpheus-accent: #00d4aa;
+  --morpheus-gold: #d4a574;
 }
 
 .dark {
-  --zone-desk: #1e293b;
-  --zone-meeting: #1a2744;
-  --zone-hotDesk: #1e2433;
-  --zone-lounge: #231e33;
-  --zone-stroke: #334155;
-  --zone-label: #94a3b8;
-  --dot-tooltip-bg: #1e293b;
-  --dot-tooltip-stroke: #475569;
+  --zone-desk: #0d1117;
+  --zone-meeting: #0a1628;
+  --zone-hotDesk: #0d1117;
+  --zone-lounge: #120d1f;
+  --zone-stroke: #1e3a5f;
+  --zone-label: #00d4aa;
+  --dot-tooltip-bg: #0a0a0f;
+  --dot-tooltip-stroke: #1e3a5f;
   --dot-tooltip-text: #e2e8f0;
-  --svg-link-color: #60a5fa;
+  --svg-link-color: #00d4aa;
 }
 
 @keyframes pulse {
