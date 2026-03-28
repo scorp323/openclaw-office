@@ -3,6 +3,7 @@ import { useOfficeStore } from "@/store/office-store";
 import { MatrixRain } from "@/components/office-2d/MatrixRain";
 import { FloorPlan } from "@/components/office-2d/FloorPlan";
 import { useLiveData } from "@/hooks/useLiveData";
+import { useRealAgentSync } from "@/hooks/useRealAgentSync";
 import type { AgentVisualStatus } from "@/gateway/types";
 
 /* ── Types ─────────────────────────────────────────── */
@@ -257,6 +258,9 @@ export function CommandCenter() {
 
   // MC API data (crons, system, real agent roster)
   const { crons, system, gateway, loading, error, lastRefresh, refresh, agents: realAgents, history } = useLiveData(15000);
+
+  // Sync real agents into office store so they appear on FloorPlan
+  useRealAgentSync(realAgents);
 
   // Agent detail panel
   const [selectedAgent, setSelectedAgent] = useState<RealAgent | null>(null);
