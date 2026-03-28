@@ -228,6 +228,11 @@ export default defineConfig({
   server: {
     port: 5180,
     proxy: {
+      "/mc-api": {
+        target: "http://localhost:3335",
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/mc-api/, '/api'),
+      },
       "/gateway-ws": {
         target: gatewayTarget,
         ws: true,

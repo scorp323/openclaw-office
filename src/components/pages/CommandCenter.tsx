@@ -1,418 +1,425 @@
-import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
 import { useOfficeStore } from "@/store/office-store";
 import { MatrixRain } from "@/components/office-2d/MatrixRain";
 import { FloorPlan } from "@/components/office-2d/FloorPlan";
-import { getCodename } from "@/lib/matrix-codenames";
+import { useLiveData } from "@/hooks/useLiveData";
 import type { AgentVisualStatus } from "@/gateway/types";
 
-// ── Agent Gauge Card ──────────────────────────────────────────
-function AgentGaugeCard({
-  name,
-  codename,
-  status,
-  toolCalls,
-  lastActive,
-  isSelected,
-  onClick,
-}: {
+/* ── Types ─────────────────────────────────────────── */
+interface RealAgent {
+  id: string;
   name: string;
-  codename: string;
-  status: AgentVisualStatus;
-  toolCalls: number;
-  lastActive: number;
-  isSelected: boolean;
-  onClick: () => void;
-}) {
-  const statusConfig: Record<string, { color: string; label: string; glow: boolean }> = {
-    idle: { color: "#4ade80", label: "Idle", glow: false },
-    thinking: { color: "#00ff41", label: "Thinking", glow: true },
-    tool_calling: { color: "#fbbf24", label: "Working", glow: true },
-    speaking: { color: "#00ff41", label: "Speaking", glow: true },
-    spawning: { color: "#a78bfa", label: "Spawning", glow: true },
-    error: { color: "#ef4444", label: "Error", glow: true },
-    offline: { color: "#6b7280", label: "Offline", glow: false },
-  };
-
-  const cfg = statusConfig[status] || statusConfig.idle;
-  const ago = timeAgo(lastActive);
-
-  // Arc gauge — percentage based on tool calls (visual only)
-  const maxCalls = 100;
-  const pct = Math.min(toolCalls / maxCalls, 1);
-  const radius = 32;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDash = pct * circumference * 0.75; // 270° arc
-
-  return (
-    <button
-      onClick={onClick}
-      className={`group relative flex flex-col items-center gap-3 rounded-2xl border p-5 transition-all duration-200 active:scale-[0.97]
-        ${isSelected
-          ? "border-[#00ff41]/40 bg-[#001a00]/80 shadow-[0_0_20px_rgba(0,255,65,0.15)]"
-          : "border-[#0a3d0a]/50 bg-[#0a0f0a]/60 hover:border-[#00ff41]/25 hover:bg-[#001a00]/50 hover:shadow-[0_0_15px_rgba(0,255,65,0.08)]"
-        } backdrop-blur-md`}
-    >
-      {/* Status dot */}
-      <div className="absolute right-3 top-3 flex items-center gap-1.5">
-        <div
-          className="h-2 w-2 rounded-full"
-          style={{
-            backgroundColor: cfg.color,
-            boxShadow: cfg.glow ? `0 0 8px ${cfg.color}, 0 0 16px ${cfg.color}40` : "none",
-            animation: cfg.glow ? "pulse 2s ease-in-out infinite" : "none",
-          }}
-        />
-        <span className="text-[10px] font-medium" style={{ color: cfg.color }}>
-          {cfg.label}
-        </span>
-      </div>
-
-      {/* Arc gauge */}
-      <div className="relative mt-2">
-        <svg width="80" height="80" viewBox="0 0 80 80" className="-rotate-[135deg]">
-          {/* Background arc */}
-          <circle
-            cx="40" cy="40" r={radius}
-            fill="none"
-            stroke="#0a3d0a"
-            strokeWidth="4"
-            strokeDasharray={`${circumference * 0.75} ${circumference * 0.25}`}
-            strokeLinecap="round"
-            opacity="0.4"
-          />
-          {/* Progress arc */}
-          <circle
-            cx="40" cy="40" r={radius}
-            fill="none"
-            stroke={cfg.color}
-            strokeWidth="4"
-            strokeDasharray={`${strokeDash} ${circumference - strokeDash}`}
-            strokeLinecap="round"
-            className="transition-all duration-700"
-            style={{
-              filter: `drop-shadow(0 0 4px ${cfg.color}60)`,
-            }}
-          />
-        </svg>
-        {/* Center number */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xl font-bold text-[#e2e8f0]">{toolCalls}</span>
-          <span className="text-[9px] text-[#4ade80]/60">calls</span>
-        </div>
-      </div>
-
-      {/* Agent info */}
-      <div className="text-center">
-        <div className="text-sm font-semibold text-[#e2e8f0] group-hover:text-[#00ff41] transition-colors">
-          {codename}
-        </div>
-        <div className="text-[11px] text-[#4ade80]/50">{name}</div>
-      </div>
-
-      {/* Last active */}
-      <div className="text-[10px] text-[#4ade80]/30">{ago}</div>
-    </button>
-  );
+  role: string;
+  model: string;
+  emoji: string;
+  zone: string;
+  status: "active" | "standby" | "offline";
 }
 
-// ── KPI Card ──────────────────────────────────────────────────
-function KpiCard({ label, value, sub, color = "#00ff41" }: { label: string; value: string; sub?: string; color?: string }) {
-  return (
-    <div className="flex flex-col gap-1 rounded-xl border border-[#0a3d0a]/50 bg-[#0a0f0a]/60 p-4 backdrop-blur-md">
-      <span className="text-[11px] font-medium uppercase tracking-wider text-[#4ade80]/40">{label}</span>
-      <span className="text-2xl font-bold" style={{ color }}>{value}</span>
-      {sub && <span className="text-[10px] text-[#4ade80]/30">{sub}</span>}
-    </div>
-  );
+/* ── Helpers ───────────────────────────────────────── */
+function timeAgo(ms: number): string {
+  if (!ms) return "never";
+  const diff = Date.now() - ms;
+  if (diff < 60_000) return `${Math.round(diff / 1000)}s ago`;
+  if (diff < 3_600_000) return `${Math.round(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.round(diff / 3_600_000)}h ago`;
+  return `${Math.round(diff / 86_400_000)}d ago`;
 }
 
-// ── Brain Rain Text (overlay of real thoughts) ────────────────
-function BrainRainOverlay() {
-  // This shows recent activity as fading text streams
-  const agents = useOfficeStore((s) => s.agents);
-  const thoughts = useMemo(() => {
-    const items: string[] = [];
-    for (const a of agents.values()) {
-      if (a.isPlaceholder) continue;
-      if (a.currentTool) {
-        items.push(`${a.name}: ${a.currentTool.name}...`);
-      } else if (a.speechBubble) {
-        items.push(`${a.name}: ${a.speechBubble.text}`);
-      }
-    }
-    // Add some ambient thoughts if nothing active
-    if (items.length === 0) {
-      items.push("systems nominal...", "monitoring crons...", "all agents reporting...");
-    }
-    return items;
-  }, [agents]);
-
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-[0.06]">
-      {thoughts.map((t, i) => (
-        <div
-          key={`${t}-${i}`}
-          className="absolute font-mono text-xs text-[#00ff41] animate-[brain-fall_12s_linear_infinite]"
-          style={{
-            left: `${10 + (i * 23) % 80}%`,
-            animationDelay: `${i * 2.5}s`,
-            top: "-20px",
-          }}
-        >
-          {t}
-        </div>
-      ))}
-    </div>
-  );
+function nextIn(ms: number): string {
+  if (!ms) return "—";
+  const diff = ms - Date.now();
+  if (diff < 0) return "overdue";
+  if (diff < 60_000) return `${Math.round(diff / 1000)}s`;
+  if (diff < 3_600_000) return `${Math.round(diff / 60_000)}m`;
+  return `${Math.round(diff / 3_600_000)}h`;
 }
 
-// ── Activity Feed ─────────────────────────────────────────────
-function ActivityFeed() {
-  const agents = useOfficeStore((s) => s.agents);
-  const recentActivity = useMemo(() => {
-    const items: { name: string; action: string; time: number; status: AgentVisualStatus }[] = [];
-    for (const a of agents.values()) {
-      if (a.isPlaceholder) continue;
-      items.push({
-        name: a.name,
-        action: a.currentTool ? `Running ${a.currentTool.name}` : a.speechBubble?.text || statusLabel(a.status),
-        time: a.lastActiveAt,
-        status: a.status,
-      });
-    }
-    return items.sort((a, b) => b.time - a.time).slice(0, 8);
-  }, [agents]);
-
-  if (recentActivity.length === 0) {
-    return (
-      <div className="flex items-center justify-center p-8 text-[#4ade80]/30 text-sm">
-        Waiting for agent activity...
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col divide-y divide-[#0a3d0a]/30">
-      {recentActivity.map((item, i) => (
-        <div key={`${item.name}-${i}`} className="flex items-center gap-3 px-4 py-3">
-          <div
-            className="h-2 w-2 shrink-0 rounded-full"
-            style={{ backgroundColor: statusColor(item.status) }}
-          />
-          <div className="min-w-0 flex-1">
-            <span className="text-xs font-medium text-[#e2e8f0]">{item.name}</span>
-            <span className="text-xs text-[#4ade80]/40"> · {item.action}</span>
-          </div>
-          <span className="text-[10px] text-[#4ade80]/25 shrink-0">{timeAgo(item.time)}</span>
-        </div>
-      ))}
-    </div>
-  );
+function statusDot(status: string | undefined, errors: number): string {
+  if (errors > 0) return "🔴";
+  if (status === "ok") return "🟢";
+  if (status === "error") return "🔴";
+  return "⚪";
 }
 
-// ── Mini Office (The Construct) ───────────────────────────────
-function MiniOffice() {
-  const navigate = useNavigate();
-  return (
-    <div className="mb-6">
-      <div className="mb-3 flex items-center gap-3">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-[#00ff41]/60">The Construct</h2>
-        <div className="h-px flex-1 bg-gradient-to-r from-[#0a3d0a]/60 to-transparent" />
-      </div>
-      <button
-        onClick={() => navigate("/office")}
-        className="group w-full cursor-pointer overflow-hidden rounded-2xl border border-[#0a3d0a]/50 bg-[#0a0f0a]/60 backdrop-blur-md transition-all duration-200 hover:border-[#00ff41]/25 hover:shadow-[0_0_20px_rgba(0,255,65,0.1)]"
-      >
-        <div className="h-[150px] overflow-hidden sm:h-[200px]">
-          <div className="pointer-events-none h-full w-full scale-100 opacity-90 transition-transform duration-300 group-hover:scale-[1.02]">
-            <FloorPlan />
-          </div>
-        </div>
-        <div className="flex items-center justify-between border-t border-[#0a3d0a]/30 px-4 py-2">
-          <span className="text-[11px] font-medium text-[#4ade80]/50" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-            Click to enter The Construct
-          </span>
-          <span className="text-[11px] text-[#00ff41]/40 transition-colors group-hover:text-[#00ff41]/70">→</span>
-        </div>
-      </button>
-    </div>
-  );
+function parseUptime(raw: string): string {
+  const m = raw.match(/up\s+(.+?),\s+\d+\s+user/);
+  return m ? m[1].trim() : raw.split(",")[0]?.replace(/.*up\s+/, "").trim() || raw;
 }
 
-// ── Main Command Center ───────────────────────────────────────
-export function CommandCenter() {
-  const agents = useOfficeStore((s) => s.agents);
-  const metrics = useOfficeStore((s) => s.globalMetrics);
-  const selectedAgentId = useOfficeStore((s) => s.selectedAgentId);
-  const selectAgent = useOfficeStore((s) => s.selectAgent);
-  const connectionStatus = useOfficeStore((s) => s.connectionStatus);
-
-  const agentList = useMemo(
-    () => Array.from(agents.values()).filter((a) => !a.isPlaceholder && !a.isSubAgent),
-    [agents],
-  );
-
-  const subAgents = useMemo(
-    () => Array.from(agents.values()).filter((a) => a.isSubAgent && !a.isPlaceholder),
-    [agents],
-  );
-
-  const activeCount = agentList.filter((a) => a.status !== "idle" && a.status !== "offline").length;
-  const errorCount = agentList.filter((a) => a.status === "error").length;
-
-  return (
-    <div className="relative flex h-screen flex-col overflow-hidden bg-black">
-      {/* Matrix rain — z-index 0, behind everything */}
-      <div className="absolute inset-0 z-0">
-        <MatrixRain />
-      </div>
-
-      {/* Brain rain thoughts — z-index 1 */}
-      <div className="absolute inset-0 z-[1]">
-        <BrainRainOverlay />
-      </div>
-
-      {/* Main content — z-index 10 */}
-      <div className="relative z-10 flex h-full flex-col">
-        {/* Top Bar */}
-        <header className="flex shrink-0 items-center justify-between border-b border-[#0a3d0a]/40 bg-black/70 px-4 py-3 backdrop-blur-xl sm:px-6">
-          <div className="flex items-center gap-3">
-            <span className="text-lg font-bold text-[#e2e8f0]">🌀</span>
-            <h1 className="text-base font-semibold tracking-tight text-[#e2e8f0] sm:text-lg">
-              Morpheus <span className="text-[#00ff41]">Command Center</span>
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <div
-              className="h-2.5 w-2.5 rounded-full"
-              style={{
-                backgroundColor: connectionStatus === "connected" ? "#00ff41" : connectionStatus === "error" ? "#ef4444" : "#eab308",
-                boxShadow: connectionStatus === "connected" ? "0 0 8px #00ff41, 0 0 16px #00ff4140" : "none",
-              }}
-            />
-            <span className="text-xs text-[#4ade80]/60">
-              {connectionStatus === "connected" ? "Online" : connectionStatus}
-            </span>
-          </div>
-        </header>
-
-        {/* Scrollable content */}
-        <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-          {/* KPI Row */}
-          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <KpiCard label="Active" value={`${activeCount}/${agentList.length}`} sub="agents running" />
-            <KpiCard label="Sub-Agents" value={String(subAgents.length)} sub="spawned" color="#a78bfa" />
-            <KpiCard label="Tokens" value={formatTokens(metrics.totalTokens)} sub="session total" />
-            <KpiCard
-              label="Status"
-              value={errorCount > 0 ? `${errorCount} Error${errorCount > 1 ? "s" : ""}` : "All Clear"}
-              sub={errorCount > 0 ? "needs attention" : "systems nominal"}
-              color={errorCount > 0 ? "#ef4444" : "#00ff41"}
-            />
-          </div>
-
-          {/* Mini Office — The Construct */}
-          <MiniOffice />
-
-          {/* Section label */}
-          <div className="mb-4 flex items-center gap-3">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-[#00ff41]/60">Agent Fleet</h2>
-            <div className="h-px flex-1 bg-gradient-to-r from-[#0a3d0a]/60 to-transparent" />
-          </div>
-
-          {/* Agent Cards Grid */}
-          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {agentList.map((agent) => (
-              <AgentGaugeCard
-                key={agent.id}
-                name={agent.name}
-                codename={getCodename(agent.id, agent.name)}
-                status={agent.status}
-                toolCalls={agent.toolCallCount}
-                lastActive={agent.lastActiveAt}
-                isSelected={selectedAgentId === agent.id}
-                onClick={() => selectAgent(agent.id)}
-              />
-            ))}
-          </div>
-
-          {/* Sub-agents (if any) */}
-          {subAgents.length > 0 && (
-            <>
-              <div className="mb-4 flex items-center gap-3">
-                <h2 className="text-xs font-semibold uppercase tracking-widest text-[#a78bfa]/60">Sub-Agents</h2>
-                <div className="h-px flex-1 bg-gradient-to-r from-[#a78bfa]/20 to-transparent" />
-              </div>
-              <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {subAgents.map((agent) => (
-                  <AgentGaugeCard
-                    key={agent.id}
-                    name={agent.name}
-                    codename={agent.name}
-                    status={agent.status}
-                    toolCalls={agent.toolCallCount}
-                    lastActive={agent.lastActiveAt}
-                    isSelected={selectedAgentId === agent.id}
-                    onClick={() => selectAgent(agent.id)}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Activity Feed */}
-          <div className="mb-4 flex items-center gap-3">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-[#00ff41]/60">Live Activity</h2>
-            <div className="h-px flex-1 bg-gradient-to-r from-[#0a3d0a]/60 to-transparent" />
-          </div>
-          <div className="rounded-2xl border border-[#0a3d0a]/50 bg-[#0a0f0a]/60 backdrop-blur-md">
-            <ActivityFeed />
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-}
-
-// ── Helpers ────────────────────────────────────────────────────
-
-function statusLabel(s: AgentVisualStatus): string {
-  const labels: Record<string, string> = {
-    idle: "Standing by",
-    thinking: "Thinking...",
-    tool_calling: "Working...",
-    speaking: "Speaking",
-    spawning: "Spawning agent",
-    error: "Error",
-    offline: "Offline",
-  };
-  return labels[s] || s;
-}
-
-function statusColor(s: AgentVisualStatus): string {
-  const colors: Record<string, string> = {
-    idle: "#4ade80",
-    thinking: "#00ff41",
-    tool_calling: "#fbbf24",
-    speaking: "#00ff41",
-    spawning: "#a78bfa",
-    error: "#ef4444",
-    offline: "#6b7280",
-  };
-  return colors[s] || "#6b7280";
-}
-
-function timeAgo(ts: number): string {
-  const diff = Math.max(0, Math.floor((Date.now() - ts) / 1000));
-  if (diff < 5) return "just now";
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  return `${Math.floor(diff / 3600)}h ago`;
+function parseDisk(raw: string): { used: string; avail: string; pct: string } {
+  const parts = raw.trim().split(/\s+/);
+  return { used: parts[2] || "?", avail: parts[3] || "?", pct: parts[4] || "?" };
 }
 
 function formatTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
   return String(n);
+}
+
+function statusLabel(s: AgentVisualStatus): string {
+  const labels: Record<string, string> = {
+    idle: "Standing by", thinking: "Thinking...", tool_calling: "Working...",
+    speaking: "Speaking", spawning: "Spawning", error: "Error", offline: "Offline",
+  };
+  return labels[s] || s;
+}
+
+/* ── Sparkline SVG ─────────────────────────────────── */
+function Sparkline({ data, color = "#00ff41", height = 24, width = 80 }: { data: number[]; color?: string; height?: number; width?: number }) {
+  if (data.length < 2) return null;
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data, 0);
+  const range = max - min || 1;
+  const points = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((v - min) / range) * (height - 2) - 1;
+    return `${x},${y}`;
+  }).join(" ");
+
+  return (
+    <svg width={width} height={height} style={{ display: "block" }}>
+      <polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        style={{ filter: `drop-shadow(0 0 2px ${color}60)` }}
+      />
+    </svg>
+  );
+}
+
+/* ── Agent Card (Real Roster) ──────────────────────── */
+function AgentCard({ agent, isSelected, onClick }: { agent: RealAgent; isSelected: boolean; onClick: () => void }) {
+  const statusColors: Record<string, { bg: string; text: string; glow: boolean }> = {
+    active: { bg: "#00ff41", text: "ACTIVE", glow: true },
+    standby: { bg: "#fbbf24", text: "STANDBY", glow: false },
+    offline: { bg: "#6b7280", text: "OFFLINE", glow: false },
+  };
+  const cfg = statusColors[agent.status] || statusColors.offline;
+
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: "flex", flexDirection: "column", gap: 8, padding: "14px 16px",
+        background: isSelected ? "rgba(0, 255, 65, 0.08)" : "rgba(0, 255, 65, 0.02)",
+        border: `1px solid ${isSelected ? "rgba(0, 255, 65, 0.3)" : "rgba(0, 255, 65, 0.1)"}`,
+        borderRadius: 12, cursor: "pointer", width: "100%", textAlign: "left",
+        backdropFilter: "blur(8px)",
+        transition: "all 0.2s",
+        fontFamily: "'JetBrains Mono', monospace",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: 20 }}>{agent.emoji}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{
+            width: 7, height: 7, borderRadius: "50%", backgroundColor: cfg.bg,
+            boxShadow: cfg.glow ? `0 0 6px ${cfg.bg}, 0 0 12px ${cfg.bg}40` : "none",
+          }} />
+          <span style={{ fontSize: 9, color: cfg.bg, fontWeight: 600, letterSpacing: "0.05em" }}>{cfg.text}</span>
+        </div>
+      </div>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0" }}>{agent.name}</div>
+        <div style={{ fontSize: 10, color: "rgba(0, 255, 65, 0.5)", marginTop: 2 }}>{agent.role}</div>
+      </div>
+      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>{agent.model}</div>
+    </button>
+  );
+}
+
+/* ── Agent Detail Panel ────────────────────────────── */
+function AgentDetailPanel({ agent, onClose }: { agent: RealAgent; onClose: () => void }) {
+  return (
+    <div style={{
+      position: "fixed", top: 0, right: 0, bottom: 0, width: 340, maxWidth: "90vw",
+      background: "rgba(0, 10, 0, 0.95)", borderLeft: "1px solid rgba(0, 255, 65, 0.2)",
+      backdropFilter: "blur(20px)", zIndex: 100, padding: "24px 20px",
+      fontFamily: "'JetBrains Mono', monospace", overflowY: "auto",
+      animation: "slideIn 0.2s ease-out",
+    }}>
+      <style>{`@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }`}</style>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <span style={{ fontSize: 28 }}>{agent.emoji}</span>
+        <button onClick={onClose} style={{
+          background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 6, color: "#fff", padding: "4px 10px", cursor: "pointer", fontSize: 12,
+        }}>✕</button>
+      </div>
+      <h2 style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0", margin: 0 }}>{agent.name}</h2>
+      <div style={{ fontSize: 11, color: "rgba(0, 255, 65, 0.6)", marginTop: 4, marginBottom: 20 }}>{agent.role}</div>
+      {[
+        ["Model", agent.model],
+        ["Status", agent.status.toUpperCase()],
+        ["Zone", agent.zone],
+        ["ID", agent.id],
+      ].map(([label, value]) => (
+        <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(0, 255, 65, 0.06)" }}>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{label}</span>
+          <span style={{ fontSize: 11, color: "#e2e8f0" }}>{value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Cron Status Board ─────────────────────────────── */
+function CronBoard({ crons }: { crons: any[] }) {
+  const sorted = useMemo(() =>
+    [...crons].sort((a, b) => {
+      if ((a.state?.consecutiveErrors || 0) > 0 && (b.state?.consecutiveErrors || 0) === 0) return -1;
+      if ((b.state?.consecutiveErrors || 0) > 0 && (a.state?.consecutiveErrors || 0) === 0) return 1;
+      return (a.state?.nextRunAtMs || 0) - (b.state?.nextRunAtMs || 0);
+    }),
+  [crons]);
+
+  return (
+    <div style={{ overflowX: "auto" }}>
+      {/* Header */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "24px 2fr 1fr 1fr 60px",
+        gap: 8, padding: "6px 0", fontSize: 10, fontWeight: 600,
+        color: "rgba(0, 255, 65, 0.5)", borderBottom: "1px solid rgba(0, 255, 65, 0.15)",
+        fontFamily: "'JetBrains Mono', monospace", minWidth: 500,
+      }}>
+        <span></span><span>Name</span><span>Last Run</span><span>Next</span><span style={{ textAlign: "center" }}>Err</span>
+      </div>
+      {/* Rows */}
+      <div style={{ maxHeight: 300, overflowY: "auto" }}>
+        {sorted.map(cron => (
+          <div key={cron.id} style={{
+            display: "grid", gridTemplateColumns: "24px 2fr 1fr 1fr 60px",
+            gap: 8, padding: "5px 0", fontSize: 11, alignItems: "center",
+            borderBottom: "1px solid rgba(0, 255, 65, 0.04)",
+            opacity: cron.enabled ? 1 : 0.4, color: "rgba(255,255,255,0.65)",
+            fontFamily: "'JetBrains Mono', monospace", minWidth: 500,
+          }}>
+            <span>{statusDot(cron.state?.lastRunStatus, cron.state?.consecutiveErrors || 0)}</span>
+            <span style={{ color: cron.state?.consecutiveErrors > 0 ? "#ff4444" : "#e2e8f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {cron.name}
+            </span>
+            <span style={{ color: "rgba(255,255,255,0.4)" }}>{cron.state?.lastRunAtMs ? timeAgo(cron.state.lastRunAtMs) : "—"}</span>
+            <span style={{ color: "rgba(0, 255, 65, 0.6)" }}>{cron.state?.nextRunAtMs ? nextIn(cron.state.nextRunAtMs) : "—"}</span>
+            <span style={{ textAlign: "center", color: (cron.state?.consecutiveErrors || 0) > 0 ? "#ff4444" : "rgba(255,255,255,0.3)" }}>
+              {cron.state?.consecutiveErrors || 0}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── KPI Card ──────────────────────────────────────── */
+function KpiCard({ label, value, sub, color = "#00ff41", sparkData }: { label: string; value: string; sub?: string; color?: string; sparkData?: number[] }) {
+  return (
+    <div style={{
+      background: "rgba(0, 255, 65, 0.03)", border: "1px solid rgba(0, 255, 65, 0.15)",
+      borderRadius: 12, padding: "12px 16px", backdropFilter: "blur(12px)",
+      fontFamily: "'JetBrains Mono', monospace",
+    }}>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(0, 255, 65, 0.5)", marginBottom: 6 }}>{label}</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <div>
+          <div style={{ fontSize: 24, fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
+          {sub && <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 3 }}>{sub}</div>}
+        </div>
+        {sparkData && sparkData.length > 1 && <Sparkline data={sparkData} color={color} />}
+      </div>
+    </div>
+  );
+}
+
+/* ── Section Header ────────────────────────────────── */
+function SectionHeader({ title, color = "#00ff41" }: { title: string; color?: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+      <h2 style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: `${color}99`, fontFamily: "'JetBrains Mono', monospace", margin: 0 }}>{title}</h2>
+      <div style={{ flex: 1, height: 1, background: `linear-gradient(to right, ${color}40, transparent)` }} />
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   MAIN COMMAND CENTER
+   ══════════════════════════════════════════════════════ */
+export function CommandCenter() {
+  // Gateway WebSocket data (agent activity from live connection)
+  const wsAgents = useOfficeStore((s) => s.agents);
+  const metrics = useOfficeStore((s) => s.globalMetrics);
+  const connectionStatus = useOfficeStore((s) => s.connectionStatus);
+
+  // MC API data (crons, system, real agent roster)
+  const { crons, system, gateway, loading, error, lastRefresh, refresh, agents: realAgents, history } = useLiveData(15000);
+
+  // Agent detail panel
+  const [selectedAgent, setSelectedAgent] = useState<RealAgent | null>(null);
+
+  // Computed stats
+  const wsAgentList = useMemo(
+    () => Array.from(wsAgents.values()).filter((a) => !a.isPlaceholder && !a.isSubAgent),
+    [wsAgents],
+  );
+  const activeWsAgents = wsAgentList.filter((a) => a.status !== "idle" && a.status !== "offline").length;
+
+  const cronStats = useMemo(() => {
+    const total = crons.length;
+    const healthy = crons.filter(c => c.enabled && c.state?.lastRunStatus === "ok" && c.state.consecutiveErrors === 0).length;
+    const errors = crons.filter(c => c.state?.consecutiveErrors > 0).length;
+    return { total, healthy, errors };
+  }, [crons]);
+
+  const disk = system ? parseDisk(system.disk) : null;
+  const activeRealAgents = realAgents.filter(a => a.status === "active").length;
+
+  // History sparkline data
+  const cronHealthyHistory = useMemo(() => history.map(h => h.cronHealthy), [history]);
+  const sessionHistory = useMemo(() => history.map(h => h.sessionCount), [history]);
+
+  return (
+    <div style={{ position: "relative", minHeight: "100vh", background: "#000", overflow: "hidden" }}>
+      {/* Matrix rain background */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+        <MatrixRain />
+      </div>
+
+      {/* Content */}
+      <div style={{ position: "relative", zIndex: 10, padding: "16px 20px", maxWidth: 1400, margin: "0 auto" }}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 8 }}>
+          <div>
+            <h1 style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0", margin: 0, fontFamily: "'JetBrains Mono', monospace" }}>
+              🌀 MORPHEUS <span style={{ color: "#00ff41" }}>COMMAND CENTER</span>
+            </h1>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 4, fontFamily: "'JetBrains Mono', monospace" }}>
+              {gateway?.os?.label || "macOS"} · v{gateway?.gateway?.self?.version || "?"} · {connectionStatus === "connected" ? "🟢 connected" : "🟡 " + connectionStatus}
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {error && <span style={{ color: "#ff4444", fontSize: 10 }}>⚠ {error}</span>}
+            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: "'JetBrains Mono', monospace" }}>
+              {lastRefresh ? timeAgo(lastRefresh) : "loading..."}
+            </span>
+            <button onClick={refresh} style={{
+              background: "rgba(0, 255, 65, 0.1)", border: "1px solid rgba(0, 255, 65, 0.3)",
+              borderRadius: 6, color: "#00ff41", padding: "5px 10px", fontSize: 10, cursor: "pointer",
+              fontFamily: "'JetBrains Mono', monospace",
+            }}>⟳</button>
+          </div>
+        </div>
+
+        {/* KPI Row */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 20 }}>
+          <KpiCard label="Agents" value={`${activeRealAgents}/${realAgents.length}`} sub={`${activeWsAgents} in gateway`} />
+          <KpiCard label="Crons" value={`${cronStats.healthy}/${cronStats.total}`}
+            sub={cronStats.errors > 0 ? `${cronStats.errors} errors` : "all healthy"}
+            color={cronStats.errors > 0 ? "#ff4444" : "#00ff41"}
+            sparkData={cronHealthyHistory} />
+          <KpiCard label="Sessions" value={String(gateway?.sessions?.count || 0)} sub="across all agents" sparkData={sessionHistory} />
+          <KpiCard label="Uptime" value={system ? parseUptime(system.uptime) : "—"} sub={disk ? `${disk.pct} disk (${disk.avail} free)` : ""} />
+          <KpiCard label="Tokens" value={formatTokens(metrics.totalTokens)} sub="session total" color="#a78bfa" />
+        </div>
+
+        {/* Two-column layout: Office + Agent Fleet */}
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.2fr) minmax(0, 1fr)", gap: 16, marginBottom: 20 }}>
+          {/* Left: The Office */}
+          <div>
+            <SectionHeader title="The Construct — Office View" />
+            <div style={{
+              background: "rgba(0, 255, 65, 0.02)", border: "1px solid rgba(0, 255, 65, 0.1)",
+              borderRadius: 12, overflow: "hidden", height: 320,
+            }}>
+              <FloorPlan />
+            </div>
+          </div>
+
+          {/* Right: Agent Fleet */}
+          <div>
+            <SectionHeader title="Agent Fleet" />
+            <div style={{
+              display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+              gap: 8, maxHeight: 320, overflowY: "auto",
+            }}>
+              {realAgents.map(agent => (
+                <AgentCard
+                  key={agent.id}
+                  agent={agent}
+                  isSelected={selectedAgent?.id === agent.id}
+                  onClick={() => setSelectedAgent(agent)}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Gateway Agent Activity */}
+        {wsAgentList.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <SectionHeader title="Live Gateway Activity" />
+            <div style={{
+              display: "flex", gap: 12, overflowX: "auto", padding: "4px 0",
+            }}>
+              {wsAgentList.map(agent => (
+                <div key={agent.id} style={{
+                  flex: "0 0 auto", padding: "10px 14px", minWidth: 160,
+                  background: "rgba(0, 255, 65, 0.03)", border: "1px solid rgba(0, 255, 65, 0.1)",
+                  borderRadius: 10, fontFamily: "'JetBrains Mono', monospace",
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#e2e8f0" }}>{agent.name}</span>
+                    <div style={{
+                      width: 6, height: 6, borderRadius: "50%",
+                      backgroundColor: agent.status === "idle" ? "#4ade80" : agent.status === "error" ? "#ef4444" : "#00ff41",
+                    }} />
+                  </div>
+                  <div style={{ fontSize: 10, color: "rgba(0, 255, 65, 0.4)" }}>{statusLabel(agent.status)}</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", marginTop: 4 }}>{agent.toolCallCount} tool calls</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Cron Status Board */}
+        <div style={{ marginBottom: 20 }}>
+          <SectionHeader title={`Cron Jobs (${crons.length})`} />
+          <div style={{
+            background: "rgba(0, 255, 65, 0.02)", border: "1px solid rgba(0, 255, 65, 0.1)",
+            borderRadius: 12, padding: "12px 16px",
+          }}>
+            {crons.length > 0 ? <CronBoard crons={crons} /> : (
+              <div style={{ textAlign: "center", padding: 20, color: "rgba(255,255,255,0.3)", fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+                {loading ? "Loading crons..." : "No cron data available"}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Agent Detail Panel (slide-in) */}
+      {selectedAgent && (
+        <>
+          <div onClick={() => setSelectedAgent(null)} style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 90,
+          }} />
+          <AgentDetailPanel agent={selectedAgent} onClose={() => setSelectedAgent(null)} />
+        </>
+      )}
+
+      {/* Mobile responsive overrides */}
+      <style>{`
+        @media (max-width: 768px) {
+          div[style*="gridTemplateColumns: minmax(0, 1.2fr)"] {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+    </div>
+  );
 }
