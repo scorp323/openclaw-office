@@ -20,11 +20,15 @@ const halfH = (OFFICE.height - OFFICE.corridorWidth) / 2;
 const rightX = OFFICE.x + halfW + OFFICE.corridorWidth;
 const bottomY = OFFICE.y + halfH + OFFICE.corridorWidth;
 
+const chillW = Math.round(halfW * 0.4);
+const loungeW = halfW - chillW;
+
 export const ZONES = {
   desk: { x: OFFICE.x, y: OFFICE.y, width: halfW, height: halfH, label: "固定工位区" },
   meeting: { x: rightX, y: OFFICE.y, width: halfW, height: halfH, label: "会议区" },
   hotDesk: { x: OFFICE.x, y: bottomY, width: halfW, height: halfH, label: "热工位区" },
-  lounge: { x: rightX, y: bottomY, width: halfW, height: halfH, label: "休息区" },
+  lounge: { x: rightX, y: bottomY, width: loungeW, height: halfH, label: "休息区" },
+  chill: { x: rightX + loungeW, y: bottomY, width: chillW, height: halfH, label: "The Rooftop" },
 } as const;
 
 // Corridor entrance point: bottom center of the building (main entrance door)
@@ -44,6 +48,7 @@ export const ZONE_COLORS = {
   meeting: "#eef3fa",
   hotDesk: "#f1f3f7",
   lounge: "#f3f1f7",
+  chill: "#f0f3f1",
   corridor: "#e8ecf1",
   wall: "#8b9bb0",
 } as const;
@@ -53,6 +58,7 @@ export const ZONE_COLORS_DARK = {
   meeting: "#002200",
   hotDesk: "#001a00",
   lounge: "#0a1a0a",
+  chill: "#050d05",
   corridor: "#000d00",
   wall: "#0a3d0a",
 } as const;

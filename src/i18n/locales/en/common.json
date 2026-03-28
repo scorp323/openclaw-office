@@ -63,7 +63,8 @@
     "desk": "Desk Zone",
     "meeting": "Meeting Zone",
     "hotDesk": "Hot Desk Zone",
-    "lounge": "Lounge Zone"
+    "lounge": "Lounge Zone",
+    "chill": "The Rooftop"
   },
   "errors": {
     "notConnected": "Not connected to Gateway",

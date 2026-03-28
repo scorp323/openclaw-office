@@ -1,7 +1,8 @@
 import { useState, memo, useRef, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import type { VisualAgent, AgentVisualStatus } from "@/gateway/types";
-import { generateSvgAvatar, type SvgAvatarData } from "@/lib/avatar-generator";
+import { getMatrixCharacter, type MatrixCharacterStyle } from "@/lib/avatar-generator";
+import { getCodename, getCharacterKey } from "@/lib/matrix-codenames";
 import { STATUS_COLORS, AVATAR } from "@/lib/constants";
 import { useOfficeStore } from "@/store/office-store";
 
@@ -30,14 +31,16 @@ export const AgentAvatar = memo(function AgentAvatar({ agent }: AgentAvatarProps
   const isWalking = agent.movement !== null;
   const color = isPlaceholder || isUnconfirmed ? "#6b7280" : STATUS_COLORS[agent.status];
   const isDark = theme === "dark";
-  const avatarData = generateSvgAvatar(agent.id);
+  const characterKey = getCharacterKey(agent.id, agent.name);
+  const matrixStyle = getMatrixCharacter(characterKey);
+  const codename = getCodename(agent.id, agent.name);
   const clipId = `avatar-clip-${agent.id}`;
   const groupOpacity = isPlaceholder ? 0.3 : isUnconfirmed ? 0.5 : 1;
 
-  const displayName =
-    agent.name.length > AVATAR.nameLabelMaxChars
-      ? `${agent.name.slice(0, AVATAR.nameLabelMaxChars)}…`
-      : agent.name;
+  const displayCodename =
+    codename.length > AVATAR.nameLabelMaxChars
+      ? `${codename.slice(0, AVATAR.nameLabelMaxChars)}…`
+      : codename;
 
   // Walk animation loop via requestAnimationFrame
   const agentIdRef = useRef(agent.id);
@@ -117,21 +120,21 @@ export const AgentAvatar = memo(function AgentAvatar({ agent }: AgentAvatarProps
       {/* Status ring with animation */}
       <StatusRing status={agent.status} r={r} color={color} isWalking={isWalking} isPlaceholder={isPlaceholder} />
 
-      {/* Avatar face */}
+      {/* Avatar face — Matrix themed */}
       <defs>
         <clipPath id={clipId}>
           <circle r={r - 2} />
         </clipPath>
       </defs>
-      <circle r={r - 2} fill={isDark ? "#1e293b" : "#f8fafc"} />
+      <circle r={r - 2} fill={isDark ? "#0a0f0a" : "#f8fafc"} />
       <g clipPath={`url(#${clipId})`}>
-        <AvatarFace data={avatarData} size={r * 2 - 4} />
+        <MatrixAvatarFace style={matrixStyle} size={r * 2 - 4} />
       </g>
 
       {/* Sub-agent badge */}
       {agent.isSubAgent && (
         <g transform={`translate(${r * 0.6}, ${r * 0.5})`}>
-          <circle r={7} fill={isDark ? "#1e293b" : "#fff"} stroke={color} strokeWidth={1.2} />
+          <circle r={7} fill={isDark ? "#0a0f0a" : "#fff"} stroke={color} strokeWidth={1.2} />
           <text textAnchor="middle" dy="3.5" fontSize="9" fill={color} fontWeight="bold">
             S
           </text>
@@ -151,18 +154,13 @@ export const AgentAvatar = memo(function AgentAvatar({ agent }: AgentAvatarProps
         </g>
       )}
 
-      {/* Speaking indicator — chat bubble icon with pulse (mirrors ThinkingDots placement) */}
+      {/* Speaking indicator */}
       {agent.status === "speaking" && <SpeakingIndicator r={r} />}
 
       {/* Tool name label */}
       {agent.status === "tool_calling" && agent.currentTool && (
         <foreignObject x={-50} y={r + 2} width={100} height={20} style={{ pointerEvents: "none" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-            }}
-          >
+          <div style={{ display: "flex", justifyContent: "center" }}>
             <span
               style={{
                 fontSize: "9px",
@@ -183,36 +181,52 @@ export const AgentAvatar = memo(function AgentAvatar({ agent }: AgentAvatarProps
         </foreignObject>
       )}
 
-      {/* Name label */}
+      {/* Codename + real name label */}
       <foreignObject
         x={-60}
         y={r + (agent.status === "tool_calling" && agent.currentTool ? 18 : 4)}
         width={120}
-        height={22}
+        height={34}
         style={{ pointerEvents: "none" }}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-          }}
-        >
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <span
-            title={agent.name}
+            title={codename}
             style={{
               fontSize: "11px",
-              fontWeight: 500,
-              color: isDark ? "#cbd5e1" : "#475569",
-              backgroundColor: isDark ? "rgba(30,41,59,0.7)" : "rgba(255,255,255,0.75)",
+              fontWeight: 600,
+              color: isDark ? "#00ff41" : "#166534",
+              backgroundColor: isDark ? "rgba(10,15,10,0.8)" : "rgba(255,255,255,0.75)",
               backdropFilter: "blur(6px)",
-              borderRadius: "6px",
-              padding: "1px 8px",
+              borderRadius: "6px 6px 0 0",
+              padding: "1px 8px 0",
               whiteSpace: "nowrap",
-              border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`,
+              border: `1px solid ${isDark ? "rgba(0,255,65,0.15)" : "rgba(0,0,0,0.06)"}`,
+              borderBottom: "none",
+              fontFamily: "'JetBrains Mono', monospace",
             }}
           >
-            {displayName}
+            {displayCodename}
           </span>
+          {codename !== agent.name && (
+            <span
+              style={{
+                fontSize: "8px",
+                fontWeight: 400,
+                color: isDark ? "#4ade80" : "#475569",
+                backgroundColor: isDark ? "rgba(10,15,10,0.8)" : "rgba(255,255,255,0.75)",
+                backdropFilter: "blur(6px)",
+                borderRadius: "0 0 6px 6px",
+                padding: "0 8px 1px",
+                whiteSpace: "nowrap",
+                border: `1px solid ${isDark ? "rgba(0,255,65,0.15)" : "rgba(0,0,0,0.06)"}`,
+                borderTop: "none",
+                opacity: 0.7,
+              }}
+            >
+              {agent.name}
+            </span>
+          )}
         </div>
       </foreignObject>
 
@@ -225,27 +239,23 @@ export const AgentAvatar = memo(function AgentAvatar({ agent }: AgentAvatarProps
           height={32}
           style={{ pointerEvents: "none" }}
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-            }}
-          >
+          <div style={{ display: "flex", justifyContent: "center" }}>
             <span
               style={{
                 fontSize: "11px",
                 fontWeight: 500,
-                color: isDark ? "#e2e8f0" : "#374151",
-                backgroundColor: isDark ? "rgba(30,41,59,0.85)" : "rgba(255,255,255,0.9)",
+                color: isDark ? "#00ff41" : "#374151",
+                backgroundColor: isDark ? "rgba(10,15,10,0.9)" : "rgba(255,255,255,0.9)",
                 backdropFilter: "blur(8px)",
                 borderRadius: "8px",
                 padding: "4px 10px",
                 whiteSpace: "nowrap",
                 boxShadow: isDark ? "0 4px 8px rgba(0,0,0,0.3)" : "0 4px 8px rgba(0,0,0,0.1)",
-                border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}`,
+                border: `1px solid ${isDark ? "rgba(0,255,65,0.2)" : "rgba(0,0,0,0.06)"}`,
+                fontFamily: "'JetBrains Mono', monospace",
               }}
             >
-              {agent.name} · {t(`agent.statusLabels.${agent.status}`)}
+              {codename} · {t(`agent.statusLabels.${agent.status}`)}
             </span>
           </div>
         </foreignObject>
@@ -315,7 +325,7 @@ function ThinkingDots({ r }: { r: number }) {
           cx={i * 5}
           cy={0}
           r={2}
-          fill="#3b82f6"
+          fill="#00ff41"
           style={{
             animation: `thinking-dots 1.2s ease-in-out ${i * 0.15}s infinite`,
           }}
@@ -325,19 +335,18 @@ function ThinkingDots({ r }: { r: number }) {
   );
 }
 
-/* --- Speaking indicator (chat bubble icon at avatar top, same position as ThinkingDots) --- */
+/* --- Speaking indicator --- */
 
 function SpeakingIndicator({ r }: { r: number }) {
   return (
     <g transform={`translate(${r * 0.55}, ${-r * 0.75})`}>
-      <circle r={7} fill="#a855f7" opacity={0.9}>
+      <circle r={7} fill="#00ff41" opacity={0.9}>
         <animate attributeName="r" values="6;8;6" dur="1.5s" repeatCount="indefinite" />
         <animate attributeName="opacity" values="0.9;0.5;0.9" dur="1.5s" repeatCount="indefinite" />
       </circle>
-      {/* Tiny chat-bubble path scaled to fit */}
       <g transform="translate(-4.5,-4.5) scale(0.45)">
         <path
-          fill="#fff"
+          fill="#000"
           fillRule="evenodd"
           d="M3.43 2.524A41.29 41.29 0 0110 2c2.236 0 4.43.18 6.57.524 1.437.231 2.43 1.49 2.43 2.902v5.148c0 1.413-.993 2.67-2.43 2.902a41.102 41.102 0 01-3.55.414c-.28.02-.521.18-.643.413l-1.712 3.293a.75.75 0 01-1.33 0l-1.713-3.293a.783.783 0 00-.642-.413 41.108 41.108 0 01-3.55-.414C1.993 13.245 1 11.986 1 10.574V5.426c0-1.413.993-2.67 2.43-2.902z"
           clipRule="evenodd"
@@ -347,143 +356,156 @@ function SpeakingIndicator({ r }: { r: number }) {
   );
 }
 
-/* --- Avatar face SVG based on SvgAvatarData --- */
+/* --- Matrix-themed Avatar Face --- */
 
-function AvatarFace({ data, size }: { data: SvgAvatarData; size: number }) {
+function MatrixAvatarFace({ style: ms, size }: { style: MatrixCharacterStyle; size: number }) {
   const s = size / 2;
-  const faceRx =
-    data.faceShape === "round" ? s * 0.8 : data.faceShape === "oval" ? s * 0.7 : s * 0.75;
-  const faceRy = data.faceShape === "oval" ? s * 0.9 : faceRx;
+  const faceRx = s * 0.75;
+  const faceRy = s * 0.85;
+  const ey = -s * 0.05; // eye y position
+  const gap = s * 0.28; // eye gap
 
   return (
     <g>
-      {/* Shirt/body (lower half) */}
-      <rect x={-s} y={s * 0.4} width={size} height={s * 1.2} fill={data.shirtColor} />
+      {/* Body / outfit */}
+      {ms.hasCoat ? (
+        <>
+          {/* Long trench coat */}
+          <rect x={-s} y={s * 0.3} width={size} height={s * 1.4} fill={ms.coatColor} />
+          {/* Coat collar / lapels */}
+          <polygon
+            points={`${-s * 0.4},${s * 0.3} 0,${s * 0.55} ${s * 0.4},${s * 0.3}`}
+            fill={ms.innerColor}
+          />
+        </>
+      ) : (
+        <>
+          {/* Simple outfit */}
+          <rect x={-s} y={s * 0.35} width={size} height={s * 1.3} fill={ms.coatColor} />
+          {/* Neckline */}
+          <ellipse cx={0} cy={s * 0.38} rx={s * 0.3} ry={s * 0.12} fill={ms.innerColor} />
+        </>
+      )}
 
       {/* Face */}
-      <ellipse cx={0} cy={-s * 0.05} rx={faceRx} ry={faceRy} fill={data.skinColor} />
+      <ellipse cx={0} cy={-s * 0.05} rx={faceRx} ry={faceRy} fill={ms.skinColor} />
 
       {/* Hair */}
-      <HairSvg style={data.hairStyle} color={data.hairColor} s={s} faceRx={faceRx} />
+      <MatrixHair hairStyle={ms.hairStyle} color={ms.hairColor} s={s} faceRx={faceRx} />
 
-      {/* Eyes */}
-      <EyesSvg style={data.eyeStyle} s={s} />
+      {/* Eyes / Glasses */}
+      {ms.glasses !== "none" ? (
+        <MatrixGlasses type={ms.glasses} color={ms.glassesColor} ey={ey} gap={gap} s={s} />
+      ) : (
+        <g>
+          <circle cx={-gap} cy={ey} r={1.8} fill="#1a1a0a" />
+          <circle cx={gap} cy={ey} r={1.8} fill="#1a1a0a" />
+        </g>
+      )}
     </g>
   );
 }
 
-function HairSvg({
-  style,
+function MatrixHair({
+  hairStyle,
   color,
   s,
   faceRx,
 }: {
-  style: SvgAvatarData["hairStyle"];
+  hairStyle: MatrixCharacterStyle["hairStyle"];
   color: string;
   s: number;
   faceRx: number;
 }) {
-  switch (style) {
+  switch (hairStyle) {
+    case "bald":
+      return <ellipse cx={0} cy={-s * 0.5} rx={faceRx * 0.85} ry={s * 0.3} fill={color} opacity={0.3} />;
     case "short":
       return <ellipse cx={0} cy={-s * 0.55} rx={faceRx * 0.95} ry={s * 0.45} fill={color} />;
-    case "spiky":
+    case "slicked":
+      return (
+        <g>
+          <ellipse cx={0} cy={-s * 0.55} rx={faceRx * 0.95} ry={s * 0.45} fill={color} />
+          {/* Slicked back shine */}
+          <ellipse cx={s * 0.15} cy={-s * 0.65} rx={faceRx * 0.3} ry={s * 0.15} fill={color} opacity={0.6} />
+        </g>
+      );
+    case "braided":
       return (
         <g>
           <ellipse cx={0} cy={-s * 0.55} rx={faceRx * 0.9} ry={s * 0.4} fill={color} />
-          {[-0.4, -0.15, 0.1, 0.35].map((off) => (
-            <polygon
-              key={off}
-              points={`${off * s * 2},-${s * 0.85} ${off * s * 2 - 3},-${s * 0.5} ${off * s * 2 + 3},-${s * 0.5}`}
-              fill={color}
-            />
-          ))}
+          {/* Braids hanging down sides */}
+          <rect x={-faceRx * 0.85} y={-s * 0.3} width={s * 0.15} height={s * 0.7} rx={2} fill={color} />
+          <rect x={faceRx * 0.7} y={-s * 0.3} width={s * 0.15} height={s * 0.7} rx={2} fill={color} />
         </g>
       );
-    case "side-part":
+    case "long":
       return (
         <g>
-          <ellipse cx={-s * 0.1} cy={-s * 0.55} rx={faceRx} ry={s * 0.45} fill={color} />
-          <rect
-            x={faceRx * 0.3}
-            y={-s * 0.9}
-            width={faceRx * 0.5}
-            height={s * 0.3}
-            rx={3}
-            fill={color}
-          />
-        </g>
-      );
-    case "curly":
-      return (
-        <g>
-          {[
-            [-0.35, -0.7],
-            [0, -0.78],
-            [0.35, -0.7],
-            [-0.5, -0.45],
-            [0.5, -0.45],
-          ].map(([ox, oy], i) => (
-            <circle key={i} cx={ox * s} cy={oy * s} r={s * 0.22} fill={color} />
-          ))}
+          <ellipse cx={0} cy={-s * 0.55} rx={faceRx} ry={s * 0.5} fill={color} />
+          <rect x={-faceRx * 0.9} y={-s * 0.3} width={s * 0.2} height={s * 0.8} rx={3} fill={color} />
+          <rect x={faceRx * 0.7} y={-s * 0.3} width={s * 0.2} height={s * 0.8} rx={3} fill={color} />
         </g>
       );
     case "buzz":
-      return (
-        <ellipse
-          cx={0}
-          cy={-s * 0.45}
-          rx={faceRx * 0.85}
-          ry={s * 0.35}
-          fill={color}
-          opacity={0.7}
-        />
-      );
+      return <ellipse cx={0} cy={-s * 0.45} rx={faceRx * 0.85} ry={s * 0.35} fill={color} opacity={0.7} />;
     default:
       return null;
   }
 }
 
-function EyesSvg({ style, s }: { style: SvgAvatarData["eyeStyle"]; s: number }) {
-  const ey = -s * 0.08;
-  const gap = s * 0.28;
-  switch (style) {
-    case "dot":
+function MatrixGlasses({
+  type,
+  color,
+  ey,
+  gap,
+  s,
+}: {
+  type: MatrixCharacterStyle["glasses"];
+  color: string;
+  ey: number;
+  gap: number;
+  s: number;
+}) {
+  switch (type) {
+    case "round":
       return (
         <g>
-          <circle cx={-gap} cy={ey} r={2} fill="#333" />
-          <circle cx={gap} cy={ey} r={2} fill="#333" />
+          <circle cx={-gap} cy={ey} r={s * 0.2} fill={color} stroke="#0a0a0a" strokeWidth={0.5} />
+          <circle cx={gap} cy={ey} r={s * 0.2} fill={color} stroke="#0a0a0a" strokeWidth={0.5} />
+          <line x1={-gap + s * 0.2} y1={ey} x2={gap - s * 0.2} y2={ey} stroke="#0a0a0a" strokeWidth={0.8} />
+          {/* Lens reflection */}
+          <circle cx={-gap + 1} cy={ey - 1} r={s * 0.06} fill="#00ff41" opacity={0.3} />
+          <circle cx={gap + 1} cy={ey - 1} r={s * 0.06} fill="#00ff41" opacity={0.3} />
         </g>
       );
-    case "line":
+    case "narrow":
       return (
         <g>
-          <line
-            x1={-gap - 3}
-            y1={ey}
-            x2={-gap + 3}
-            y2={ey}
-            stroke="#333"
-            strokeWidth={1.5}
-            strokeLinecap="round"
-          />
-          <line
-            x1={gap - 3}
-            y1={ey}
-            x2={gap + 3}
-            y2={ey}
-            stroke="#333"
-            strokeWidth={1.5}
-            strokeLinecap="round"
-          />
+          <rect x={-gap - s * 0.2} y={ey - s * 0.08} width={s * 0.4} height={s * 0.16} rx={2} fill={color} stroke="#0a0a0a" strokeWidth={0.5} />
+          <rect x={gap - s * 0.2} y={ey - s * 0.08} width={s * 0.4} height={s * 0.16} rx={2} fill={color} stroke="#0a0a0a" strokeWidth={0.5} />
+          <line x1={-gap + s * 0.2} y1={ey} x2={gap - s * 0.2} y2={ey} stroke="#0a0a0a" strokeWidth={0.8} />
+          <rect x={-gap - s * 0.15} y={ey - s * 0.04} width={s * 0.1} height={s * 0.04} rx={1} fill="#00ff41" opacity={0.25} />
         </g>
       );
-    case "wide":
+    case "sleek":
       return (
         <g>
-          <ellipse cx={-gap} cy={ey} rx={3} ry={2.5} fill="#fff" stroke="#333" strokeWidth={0.8} />
-          <circle cx={-gap} cy={ey} r={1.2} fill="#333" />
-          <ellipse cx={gap} cy={ey} rx={3} ry={2.5} fill="#fff" stroke="#333" strokeWidth={0.8} />
-          <circle cx={gap} cy={ey} r={1.2} fill="#333" />
+          <ellipse cx={-gap} cy={ey} rx={s * 0.22} ry={s * 0.1} fill={color} stroke="#0a0a0a" strokeWidth={0.5} />
+          <ellipse cx={gap} cy={ey} rx={s * 0.22} ry={s * 0.1} fill={color} stroke="#0a0a0a" strokeWidth={0.5} />
+          <line x1={-gap + s * 0.22} y1={ey} x2={gap - s * 0.22} y2={ey} stroke="#0a0a0a" strokeWidth={0.8} />
+          <ellipse cx={-gap} cy={ey - 1} rx={s * 0.08} ry={s * 0.03} fill="#00ff41" opacity={0.3} />
+        </g>
+      );
+    case "green-tint":
+      return (
+        <g>
+          <rect x={-gap - s * 0.18} y={ey - s * 0.12} width={s * 0.36} height={s * 0.24} rx={3} fill={color} stroke="#0a0a0a" strokeWidth={0.5} opacity={0.8} />
+          <rect x={gap - s * 0.18} y={ey - s * 0.12} width={s * 0.36} height={s * 0.24} rx={3} fill={color} stroke="#0a0a0a" strokeWidth={0.5} opacity={0.8} />
+          <line x1={-gap + s * 0.18} y1={ey} x2={gap - s * 0.18} y2={ey} stroke="#0a0a0a" strokeWidth={0.8} />
+          {/* Green tint glow */}
+          <rect x={-gap - s * 0.12} y={ey - s * 0.06} width={s * 0.24} height={s * 0.12} rx={2} fill="#00ff41" opacity={0.15} />
+          <rect x={gap - s * 0.12} y={ey - s * 0.06} width={s * 0.24} height={s * 0.12} rx={2} fill="#00ff41" opacity={0.15} />
         </g>
       );
     default:

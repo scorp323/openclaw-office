@@ -140,7 +140,7 @@ export interface SpeechBubble {
   timestamp: number;
 }
 
-export type AgentZone = "desk" | "meeting" | "hotDesk" | "lounge" | "corridor";
+export type AgentZone = "desk" | "meeting" | "hotDesk" | "lounge" | "corridor" | "chill";
 
 export interface MovementState {
   path: Array<{ x: number; y: number }>;

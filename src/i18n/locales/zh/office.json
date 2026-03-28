@@ -4,7 +4,8 @@
     "desk": "固定工位区",
     "meeting": "会议区",
     "hotDesk": "热工位区",
-    "lounge": "休息区"
+    "lounge": "休息区",
+    "chill": "天台休息区"
   },
   "livingOffice": {
     "zones": {

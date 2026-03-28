@@ -1,6 +1,9 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useOfficeStore } from "@/store/office-store";
 import { MatrixRain } from "@/components/office-2d/MatrixRain";
+import { FloorPlan } from "@/components/office-2d/FloorPlan";
+import { getCodename } from "@/lib/matrix-codenames";
 import type { AgentVisualStatus } from "@/gateway/types";
 
 // ── Agent Gauge Card ──────────────────────────────────────────
@@ -208,6 +211,35 @@ function ActivityFeed() {
   );
 }
 
+// ── Mini Office (The Construct) ───────────────────────────────
+function MiniOffice() {
+  const navigate = useNavigate();
+  return (
+    <div className="mb-6">
+      <div className="mb-3 flex items-center gap-3">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-[#00ff41]/60">The Construct</h2>
+        <div className="h-px flex-1 bg-gradient-to-r from-[#0a3d0a]/60 to-transparent" />
+      </div>
+      <button
+        onClick={() => navigate("/office")}
+        className="group w-full cursor-pointer overflow-hidden rounded-2xl border border-[#0a3d0a]/50 bg-[#0a0f0a]/60 backdrop-blur-md transition-all duration-200 hover:border-[#00ff41]/25 hover:shadow-[0_0_20px_rgba(0,255,65,0.1)]"
+      >
+        <div className="h-[150px] overflow-hidden sm:h-[200px]">
+          <div className="pointer-events-none h-full w-full scale-100 opacity-90 transition-transform duration-300 group-hover:scale-[1.02]">
+            <FloorPlan />
+          </div>
+        </div>
+        <div className="flex items-center justify-between border-t border-[#0a3d0a]/30 px-4 py-2">
+          <span className="text-[11px] font-medium text-[#4ade80]/50" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+            Click to enter The Construct
+          </span>
+          <span className="text-[11px] text-[#00ff41]/40 transition-colors group-hover:text-[#00ff41]/70">→</span>
+        </div>
+      </button>
+    </div>
+  );
+}
+
 // ── Main Command Center ───────────────────────────────────────
 export function CommandCenter() {
   const agents = useOfficeStore((s) => s.agents);
@@ -280,6 +312,9 @@ export function CommandCenter() {
             />
           </div>
 
+          {/* Mini Office — The Construct */}
+          <MiniOffice />
+
           {/* Section label */}
           <div className="mb-4 flex items-center gap-3">
             <h2 className="text-xs font-semibold uppercase tracking-widest text-[#00ff41]/60">Agent Fleet</h2>
@@ -341,30 +376,6 @@ export function CommandCenter() {
 }
 
 // ── Helpers ────────────────────────────────────────────────────
-
-const CODENAMES: Record<string, string> = {
-  morpheus: "Morpheus",
-  main: "Morpheus",
-  jack: "Neo",
-  scout: "Trinity",
-  sentinel: "Tank",
-  oracle: "The Oracle",
-  link: "Link",
-  kat: "Niobe",
-  fast: "Cypher",
-};
-
-function getCodename(id: string, name: string): string {
-  const lower = id.toLowerCase();
-  for (const [key, codename] of Object.entries(CODENAMES)) {
-    if (lower.includes(key)) return codename;
-  }
-  const nameLower = name.toLowerCase();
-  for (const [key, codename] of Object.entries(CODENAMES)) {
-    if (nameLower.includes(key)) return codename;
-  }
-  return name;
-}
 
 function statusLabel(s: AgentVisualStatus): string {
   const labels: Record<string, string> = {

@@ -86,3 +86,123 @@ export function generateSvgAvatar(agentId: string): SvgAvatarData {
     shirtColor: PALETTE[h % PALETTE.length],
   };
 }
+
+// --- Matrix Character Visual Data ---
+
+export interface MatrixCharacterStyle {
+  /** Coat/outfit color */
+  coatColor: string;
+  /** Inner shirt / outfit accent */
+  innerColor: string;
+  /** Hair color */
+  hairColor: string;
+  /** Hair style key */
+  hairStyle: "bald" | "short" | "slicked" | "braided" | "long" | "buzz";
+  /** Glasses style */
+  glasses: "round" | "narrow" | "sleek" | "none" | "green-tint";
+  /** Glasses color */
+  glassesColor: string;
+  /** Skin tone */
+  skinColor: string;
+  /** Whether they have a long coat (trench) */
+  hasCoat: boolean;
+}
+
+export const MATRIX_CHARACTERS: Record<string, MatrixCharacterStyle> = {
+  morpheus: {
+    coatColor: "#0a1a0a",
+    innerColor: "#1a2a1a",
+    hairColor: "#0a0f0a",
+    hairStyle: "bald",
+    glasses: "round",
+    glassesColor: "#0a3d0a",
+    skinColor: "#8b6914",
+    hasCoat: true,
+  },
+  neo: {
+    coatColor: "#050d05",
+    innerColor: "#0a1a0a",
+    hairColor: "#1a1a0a",
+    hairStyle: "short",
+    glasses: "narrow",
+    glassesColor: "#0a2a0a",
+    skinColor: "#f5c5a0",
+    hasCoat: true,
+  },
+  trinity: {
+    coatColor: "#080808",
+    innerColor: "#0a0f0a",
+    hairColor: "#0a0a0a",
+    hairStyle: "short",
+    glasses: "sleek",
+    glassesColor: "#0a3d0a",
+    skinColor: "#fde2c8",
+    hasCoat: false,
+  },
+  tank: {
+    coatColor: "#1a2a1a",
+    innerColor: "#0a1a0a",
+    hairColor: "#0a0a0a",
+    hairStyle: "buzz",
+    glasses: "none",
+    glassesColor: "#0a3d0a",
+    skinColor: "#6b4226",
+    hasCoat: false,
+  },
+  theoracle: {
+    coatColor: "#2a3a1a",
+    innerColor: "#3a4a2a",
+    hairColor: "#4a3a1a",
+    hairStyle: "short",
+    glasses: "round",
+    glassesColor: "#5a4a2a",
+    skinColor: "#a0714f",
+    hasCoat: false,
+  },
+  link: {
+    coatColor: "#1a2a1a",
+    innerColor: "#0a1a0a",
+    hairColor: "#0a0a0a",
+    hairStyle: "buzz",
+    glasses: "none",
+    glassesColor: "#0a3d0a",
+    skinColor: "#6b4226",
+    hasCoat: false,
+  },
+  niobe: {
+    coatColor: "#0a1a0a",
+    innerColor: "#1a2a1a",
+    hairColor: "#0a0a0a",
+    hairStyle: "braided",
+    glasses: "sleek",
+    glassesColor: "#0a3d0a",
+    skinColor: "#a0714f",
+    hasCoat: false,
+  },
+  cypher: {
+    coatColor: "#1a2a1a",
+    innerColor: "#2a3a1a",
+    hairColor: "#2a2a0a",
+    hairStyle: "slicked",
+    glasses: "green-tint",
+    glassesColor: "#0a3d0a",
+    skinColor: "#f5c5a0",
+    hasCoat: false,
+  },
+};
+
+export const DEFAULT_MATRIX_CHARACTER: MatrixCharacterStyle = {
+  coatColor: "#0a1a0a",
+  innerColor: "#1a2a1a",
+  hairColor: "#1a1a0a",
+  hairStyle: "short",
+  glasses: "green-tint",
+  glassesColor: "#0a3d0a",
+  skinColor: "#d4956b",
+  hasCoat: false,
+};
+
+export function getMatrixCharacter(characterKey: string | null): MatrixCharacterStyle {
+  if (!characterKey) return DEFAULT_MATRIX_CHARACTER;
+  return MATRIX_CHARACTERS[characterKey] ?? DEFAULT_MATRIX_CHARACTER;
+}

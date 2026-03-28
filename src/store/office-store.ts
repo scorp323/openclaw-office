@@ -44,6 +44,9 @@ const MIN_HOTDESK_STAY_MS = 10_000;
 
 const subAgentRetireTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
+const chillTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const CHILL_IDLE_DELAY_MS = 30_000;
+
 const zoneMigrationTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const confirmationTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const removedAgentIds = new Set<string>();
@@ -163,6 +166,26 @@ function allocateNextPosition(
     const free = loungePositions.find((p) => !occupied.has(positionKey(p)));
     if (free) return free;
     return loungePositions[0] ?? { x: ZONES.lounge.x + 60, y: ZONES.lounge.y + 40 };
+  }
+
+  if (toZone === "chill") {
+    const cz = ZONES.chill;
+    // Distribute agents in the chill zone — simple grid
+    const occupied = new Set<string>();
+    for (const a of agents.values()) {
+      if (a.zone === "chill") occupied.add(positionKey(a.position));
+    }
+    const positions: Array<{ x: number; y: number }> = [];
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 2; col++) {
+        positions.push({
+          x: cz.x + 40 + col * 80,
+          y: cz.y + 60 + row * 80,
+        });
+      }
+    }
+    const free = positions.find((p) => !occupied.has(positionKey(p)));
+    return free ?? { x: cz.x + cz.width / 2, y: cz.y + cz.height / 2 };
   }
 
   // hotDesk or desk — use allocatePosition
@@ -910,6 +933,11 @@ export const useOfficeStore = create<OfficeStore>()(
           if (agent.isSubAgent && agent.confirmed && agent.zone !== "meeting") {
             scheduleZoneMigration(agent.id, prevStatus, agent.status);
           }
+
+          // Chill zone migration for main agents: desk ↔ chill
+          if (!agent.isSubAgent && agent.confirmed && agent.zone !== "meeting") {
+            scheduleChillMigration(agent.id, prevStatus, agent.status);
+          }
         }
 
         // Capture sub-agent lifecycle:end for post-set retirement
@@ -985,6 +1013,10 @@ export const useOfficeStore = create<OfficeStore>()(
 
         if (agent.isSubAgent && agent.confirmed && agent.zone !== "meeting") {
           scheduleZoneMigration(agent.id, "thinking", "idle");
+        }
+
+        if (!agent.isSubAgent && agent.confirmed && agent.zone !== "meeting") {
+          scheduleChillMigration(agent.id, "thinking", "idle");
         }
 
         state.globalMetrics = computeMetrics(state.agents, state.globalMetrics);
@@ -1299,6 +1331,61 @@ function migrateAgentToLounge(agentId: string): void {
   if (agent.pendingRetire) return;
 
   useOfficeStore.getState().startMovement(agentId, "lounge");
+}
+
+// --- Chill zone logic for main agents (idle >30s → chill, active → back to desk) ---
+
+function scheduleChillMigration(
+  agentId: string,
+  prevStatus: AgentVisualStatus,
+  newStatus: AgentVisualStatus,
+): void {
+  const existingTimer = chillTimers.get(agentId);
+  if (existingTimer) {
+    clearTimeout(existingTimer);
+    chillTimers.delete(agentId);
+  }
+
+  const wasActive = isActiveStatus(prevStatus);
+  const nowActive = isActiveStatus(newStatus);
+
+  if (wasActive && !nowActive && newStatus === "idle") {
+    // Became idle — schedule move to chill after 30s
+    const timer = setTimeout(() => {
+      chillTimers.delete(agentId);
+      migrateAgentToChill(agentId);
+    }, CHILL_IDLE_DELAY_MS);
+    chillTimers.set(agentId, timer);
+  } else if (nowActive) {
+    // Became active — move back from chill to desk
+    migrateAgentFromChill(agentId);
+  }
+}
+
+function migrateAgentToChill(agentId: string): void {
+  const state = useOfficeStore.getState();
+  const agent = state.agents.get(agentId);
+  if (!agent || agent.isSubAgent || agent.isPlaceholder) return;
+  if (agent.zone !== "desk" && agent.zone !== "corridor") return;
+  if (agent.status !== "idle") return;
+  if (agent.movement) return;
+
+  // Save original position so we can return later
+  useOfficeStore.getState().updateAgent(agentId, {
+    originalPosition: agent.originalPosition ?? { ...agent.position },
+  });
+  useOfficeStore.getState().startMovement(agentId, "chill");
+}
+
+function migrateAgentFromChill(agentId: string): void {
+  const state = useOfficeStore.getState();
+  const agent = state.agents.get(agentId);
+  if (!agent || agent.zone !== "chill") return;
+  if (agent.movement?.toZone === "desk") return;
+
+  const returnPos = agent.originalPosition ?? undefined;
+  useOfficeStore.getState().updateAgent(agentId, { originalPosition: null });
+  useOfficeStore.getState().startMovement(agentId, "desk", returnPos);
 }
 
 function cancelRetireTimer(agentId: string): void {

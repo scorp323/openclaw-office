@@ -33,6 +33,10 @@ const DOOR_POINTS: Record<AgentZone, { x: number; y: number }> = {
     x: OFFICE.x + halfW + corridorW + halfW / 2,
     y: OFFICE.y + halfH + corridorW / 2,
   },
+  chill: {
+    x: ZONES.chill.x + ZONES.chill.width / 2,
+    y: OFFICE.y + halfH + corridorW / 2,
+  },
   corridor: { ...CORRIDOR_ENTRANCE },
 };
 

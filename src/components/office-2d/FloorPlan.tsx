@@ -17,6 +17,8 @@ import { MeetingTable, Sofa, Plant, CoffeeCup, Chair } from "./furniture";
 import { MatrixRain } from "./MatrixRain";
 import { ZoneLabel } from "./ZoneLabel";
 
+type ZoneKey = keyof typeof ZONES;
+
 export function FloorPlan() {
   const agents = useOfficeStore((s) => s.agents);
   const links = useOfficeStore((s) => s.links);
@@ -44,6 +46,10 @@ export function FloorPlan() {
   );
   const walkingAgents = useMemo(
     () => agentList.filter((a) => a.movement !== null && !a.isPlaceholder),
+    [agentList],
+  );
+  const chillAgents = useMemo(
+    () => agentList.filter((a) => a.zone === "chill" && !a.movement && !a.isPlaceholder),
     [agentList],
   );
   const corridorAgents = useMemo(
@@ -154,7 +160,7 @@ export function FloorPlan() {
 
         {/* Zone labels */}
         {Object.entries(ZONES).map(([key, zone]) => (
-          <ZoneLabel key={`label-${key}`} zone={zone} zoneKey={key as keyof typeof ZONES} />
+          <ZoneLabel key={`label-${key}`} zone={zone} zoneKey={key as ZoneKey} />
         ))}
 
         {/* ── Layer 5: Furniture – Desk zone ── */}
@@ -182,6 +188,14 @@ export function FloorPlan() {
         {/* ── Layer 5a: Lounge idle agents ── */}
         {loungeAgents.map((agent) => (
           <AgentAvatar key={`lounge-${agent.id}`} agent={agent} />
+        ))}
+
+        {/* ── Layer 5: Furniture – Chill zone (The Rooftop) ── */}
+        <ChillZoneDecor isDark={isDark} />
+
+        {/* ── Layer 5a: Chill zone agents ── */}
+        {chillAgents.map((agent) => (
+          <AgentAvatar key={`chill-${agent.id}`} agent={agent} />
         ))}
 
         {/* ── Layer 5b: Main entrance door on outer wall ── */}
@@ -564,6 +578,43 @@ function LoungeDecor({ isDark }: { isDark: boolean }) {
       {/* Side plants near entrance */}
       <Plant x={lz.x + 40} y={lz.y + lz.height - 50} />
       <Plant x={lz.x + lz.width - 40} y={lz.y + lz.height - 50} />
+    </g>
+  );
+}
+
+/** Chill zone — "The Rooftop" — bench, coffee machine, plant, ashtray */
+function ChillZoneDecor({ isDark }: { isDark: boolean }) {
+  const cz = ZONES.chill;
+  const cx = cz.x + cz.width / 2;
+  const cy = cz.y + cz.height / 2;
+
+  const benchColor = isDark ? "#0a3d0a" : "#8494a7";
+  const benchSeat = isDark ? "#0d5a0d" : "#a5b4c8";
+  const machineColor = isDark ? "#062806" : "#5a6878";
+  const machineAccent = isDark ? "#00ff41" : "#4ade80";
+
+  return (
+    <g>
+      {/* Bench / sofa */}
+      <Sofa x={cx - 20} y={cz.y + 50} rotation={0} isDark={isDark} />
+
+      {/* Coffee machine (small rectangle with accent light) */}
+      <rect x={cz.x + 20} y={cz.y + 30} width={24} height={32} rx={4} fill={machineColor} />
+      <rect x={cz.x + 23} y={cz.y + 34} width={18} height={8} rx={2} fill={machineAccent} opacity={0.6} />
+      <circle cx={cz.x + 32} cy={cz.y + 52} r={3} fill={benchSeat} />
+
+      {/* Ashtray (small circle on a table) */}
+      <rect x={cx + 30} y={cy + 10} width={30} height={20} rx={4} fill={benchColor} />
+      <rect x={cx + 33} y={cy + 13} width={24} height={14} rx={3} fill={benchSeat} opacity={0.5} />
+      <circle cx={cx + 45} cy={cy + 20} r={5} fill={isDark ? "#1a2a1a" : "#c8d0dc"} />
+      <circle cx={cx + 45} cy={cy + 20} r={3} fill={isDark ? "#2a3a2a" : "#b0b8c0"} />
+
+      {/* Plants */}
+      <Plant x={cz.x + cz.width - 30} y={cz.y + 30} />
+      <Plant x={cx - 10} y={cz.y + cz.height - 40} />
+
+      {/* Second bench for more seating */}
+      <Sofa x={cx - 20} y={cy + 50} rotation={180} isDark={isDark} />
     </g>
   );
 }
