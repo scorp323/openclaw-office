@@ -10,6 +10,7 @@ import { SystemHealthBar } from "@/components/layout/SystemHealthBar";
 import { CommandCenter } from "@/components/pages/CommandCenter";
 import { ChatWorkspaceBootstrap } from "@/components/chat/ChatWorkspaceBootstrap";
 import { ToastContainer } from "@/components/shared/ToastContainer";
+import FloatingActionButton from "@/components/FloatingActionButton";
 
 // Lazy-load heavy pages — keeps initial bundle small
 const FloorPlan = lazy(() => import("@/components/office-2d/FloorPlan").then(m => ({ default: m.FloorPlan })));
@@ -162,6 +163,7 @@ export function App() {
       <ChatWorkspaceBootstrap wsClient={wsClient} />
       <SearchSpotlight />
       <SystemHealthBar />
+      {isMobile && <FloatingActionButton />}
       <KeyboardShortcutsModal open={helpOpen} onClose={closeHelp} />
       <ErrorBoundary>
         <Suspense fallback={<LoadingScreen />}>
