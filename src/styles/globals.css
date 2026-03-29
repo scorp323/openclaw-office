@@ -127,7 +127,7 @@ body {
     box-shadow: 0 0 4px currentColor;
   }
   50% {
-    box-shadow: 0 0 14px currentColor;
+    box-shadow: 0 0 10px currentColor; /* Reduced glow for subtlety */
   }
 }
 
@@ -279,4 +279,9 @@ body {
 }
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #0d5a0d;
+}
+
+/* Agent pulse animation */
+.agent-active-pulse {
+  animation: agent-breathe 2.5s infinite ease-in-out, agent-glow 2.5s infinite ease-in-out;
 }

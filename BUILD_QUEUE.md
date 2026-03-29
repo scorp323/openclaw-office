@@ -9,8 +9,10 @@
 - [x] **gzip-compression** — Add gzip/brotli to openclaw-office.js server. Target: 481KB → ~144KB transfer. (2026-03-29 15:01 CST)
 - [x] **mobile-pinch-zoom** — Add pinch-to-zoom + tap-to-inspect on FloorPlan SVG for mobile. Touch-friendly agent interaction. (2026-03-29 15:17 CST)
 
+## COMPLETED
+- [x] **agent-pulse-animation** — Breathing glow on active agents, dim on standby. CSS keyframes, no JS overhead. (2026-03-29 15:33 CST)
+
 ## QUEUED (in priority order)
-3. **agent-pulse-animation** — Breathing glow on active agents, dim on standby. CSS keyframes, no JS overhead.
 4. **live-status-badges** — Show cron health/last run/error count on dashboard cards without clicking into /cron.
 5. **chat-mobile-polish** — Polish /chat page for mobile: input sizing, scroll behavior, send button UX.
 6. **push-notifications** — Service worker + notification API for cron failures and agent errors.
