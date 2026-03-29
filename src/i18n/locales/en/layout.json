@@ -66,6 +66,7 @@
     "logs": "Logs",
     "costs": "Costs",
     "memory": "Memory",
-    "actions": "Actions"
+    "actions": "Actions",
+    "notifications": "Notifications"
   }
 }

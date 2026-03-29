@@ -66,6 +66,7 @@
     "logs": "日志",
     "costs": "成本",
     "memory": "记忆",
-    "actions": "操作"
+    "actions": "操作",
+    "notifications": "通知"
   }
 }

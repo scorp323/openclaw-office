@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { CronPayload, CronTask, CronSchedule, CronTaskInput } from "@/gateway/adapter-types";
-import { CRON_PRESETS, cronScheduleToExpr } from "@/lib/cron-presets";
+import { cronScheduleToExpr } from "@/lib/cron-presets";
+import { CronScheduleEditor } from "./CronScheduleEditor";
 
 interface CronTaskDialogProps {
   open: boolean;
@@ -49,7 +50,6 @@ export function CronTaskDialog({
   const [schedule, setSchedule] = useState<CronSchedule>({ kind: "cron", expr: "0 18 * * *" });
   const [cronExpr, setCronExpr] = useState("0 18 * * *");
   const [message, setMessage] = useState("");
-  const [selectedPreset, setSelectedPreset] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -68,14 +68,12 @@ export function CronTaskDialog({
               ? editingTask.payload.text
               : "",
         );
-        setSelectedPreset(null);
       } else {
         setName("");
         setDescription("");
         setSchedule({ kind: "cron", expr: "0 18 * * *" });
         setCronExpr("0 18 * * *");
         setMessage("");
-        setSelectedPreset(null);
       }
       setErrors({});
       dialog.showModal();
@@ -84,16 +82,8 @@ export function CronTaskDialog({
     }
   }, [open, editingTask]);
 
-  const handlePresetSelect = (index: number) => {
-    const preset = CRON_PRESETS[index];
-    setSelectedPreset(index);
-    setSchedule(preset.schedule);
-    setCronExpr(cronScheduleToExpr(preset.schedule));
-  };
-
   const handleCronExprChange = (expr: string) => {
     setCronExpr(expr);
-    setSelectedPreset(null);
     setSchedule({ kind: "cron", expr });
   };
 
@@ -166,26 +156,13 @@ export function CronTaskDialog({
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               {t("cron.dialog.schedule")}
             </label>
-            <div className="mb-3 flex flex-wrap gap-2">
-              {CRON_PRESETS.map((preset, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => handlePresetSelect(i)}
-                  className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${selectedPreset === i ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/20 dark:text-blue-400" : "border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"}`}
-                >
-                  {t(preset.labelKey)}
-                </button>
-              ))}
-            </div>
-            <input
-              type="text"
+            <CronScheduleEditor
               value={cronExpr}
-              onChange={(e) => handleCronExprChange(e.target.value)}
-              placeholder="0 * * * *"
-              className={`w-full rounded-md border bg-white px-3 py-2 text-sm font-mono dark:bg-gray-700 dark:text-gray-100 ${errors.cronExpr ? "border-red-500" : "border-gray-300 dark:border-gray-600"}`}
+              onChange={handleCronExprChange}
             />
-            <p className="mt-1 text-xs text-gray-400">{t("cron.dialog.cronHelp")}</p>
+            {errors.cronExpr && (
+              <p className="mt-1 text-xs text-red-500">{t("cron.dialog.required")}</p>
+            )}
           </div>
 
           <div>

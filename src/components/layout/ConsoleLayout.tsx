@@ -1,9 +1,10 @@
-import { Home, Bot, Radio, Puzzle, Clock, Settings, WifiOff, Terminal, DollarSign, Brain, Zap } from "lucide-react";
+import { Home, Bot, Radio, Puzzle, Clock, Settings, WifiOff, Terminal, DollarSign, Brain, Zap, Bell } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { RestartBanner } from "@/components/shared/RestartBanner";
 import { useIsStale } from "@/hooks/useLiveData";
+import { useNotificationBadge } from "@/hooks/useNotificationBadge";
 import { useResponsive } from "@/hooks/useResponsive";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { TopBar } from "./TopBar";
@@ -43,6 +44,7 @@ export function ConsoleLayout() {
   const isChatRoute = location.pathname === "/chat";
   const isStale = useIsStale();
   const { isMobile } = useResponsive();
+  const notifBadge = useNotificationBadge();
 
   const sidebarNavItems = [
     { path: "/dashboard", labelKey: "consoleNav.dashboard", icon: Home },
@@ -55,6 +57,7 @@ export function ConsoleLayout() {
     { path: "/costs", labelKey: "consoleNav.costs", icon: DollarSign },
     { path: "/memory", labelKey: "consoleNav.memory", icon: Brain },
     { path: "/actions", labelKey: "consoleNav.actions", icon: Zap },
+    { path: "/notifications", labelKey: "consoleNav.notifications", icon: Bell },
   ] as const;
 
   return (
@@ -90,6 +93,7 @@ export function ConsoleLayout() {
                       "/costs": () => import("@/components/pages/CostsPage"),
                       "/memory": () => import("@/components/pages/MemoryPage"),
                       "/actions": () => import("@/components/pages/ActionsPage"),
+                      "/notifications": () => import("@/components/pages/NotificationsPage"),
                     };
                     pageMap[item.path]?.();
                   }}
@@ -101,6 +105,11 @@ export function ConsoleLayout() {
                 >
                   <Icon className="h-4 w-4" />
                   <span>{t(item.labelKey)}</span>
+                  {item.path === "/notifications" && notifBadge > 0 && (
+                    <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                      {notifBadge > 99 ? "99+" : notifBadge}
+                    </span>
+                  )}
                 </button>
               );
             })}

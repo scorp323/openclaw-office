@@ -1,6 +1,7 @@
-import { Brain, Search, FileText, ChevronRight, ChevronDown, RefreshCw, Tag, X, HardDrive, Calendar, Code, Eye } from "lucide-react";
+import { Brain, Search, FileText, ChevronRight, ChevronDown, RefreshCw, Tag, X, HardDrive, Calendar, Code, Eye, Pencil } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MarkdownContent } from "@/components/chat/MarkdownContent";
+import { FileEditor } from "@/components/console/memory/FileEditor";
 
 interface MemoryFileMeta {
   name?: string;
@@ -58,6 +59,7 @@ export function MemoryPage() {
   const [search, setSearch] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"rendered" | "raw">("rendered");
+  const [editMode, setEditMode] = useState(false);
 
   const toggleGroup = useCallback((type: string) => {
     setCollapsedGroups((prev) => {
@@ -88,6 +90,7 @@ export function MemoryPage() {
 
   const loadFile = useCallback(async (fileName: string) => {
     setSelectedFile(fileName);
+    setEditMode(false);
     setContentLoading(true);
     setFileContent(null);
     try {
@@ -332,35 +335,49 @@ export function MemoryPage() {
                     </span>
                   );
                 })()}
-                {/* View mode toggle */}
-                <div className="ml-2 flex items-center gap-0.5 rounded-md border border-gray-200 p-0.5 dark:border-gray-700">
+                {/* Edit button */}
+                {!editMode && (
                   <button
                     type="button"
-                    onClick={() => setViewMode("rendered")}
-                    className={`flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
-                      viewMode === "rendered"
-                        ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                        : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                    }`}
-                    title="Rendered markdown"
+                    onClick={() => setEditMode(true)}
+                    className="ml-2 flex items-center gap-1 rounded-md border border-gray-200 px-2 py-0.5 text-[10px] font-medium text-gray-500 transition-colors hover:border-blue-400 hover:text-blue-600 dark:border-gray-700 dark:text-gray-400 dark:hover:border-blue-500 dark:hover:text-blue-400"
+                    title="Edit file"
                   >
-                    <Eye className="h-3 w-3" />
-                    Rendered
+                    <Pencil className="h-3 w-3" />
+                    Edit
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("raw")}
-                    className={`flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
-                      viewMode === "raw"
-                        ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                        : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                    }`}
-                    title="Raw source"
-                  >
-                    <Code className="h-3 w-3" />
-                    Raw
-                  </button>
-                </div>
+                )}
+                {/* View mode toggle (only when not editing) */}
+                {!editMode && (
+                  <div className="ml-1 flex items-center gap-0.5 rounded-md border border-gray-200 p-0.5 dark:border-gray-700">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("rendered")}
+                      className={`flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                        viewMode === "rendered"
+                          ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+                          : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      }`}
+                      title="Rendered markdown"
+                    >
+                      <Eye className="h-3 w-3" />
+                      Rendered
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("raw")}
+                      className={`flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                        viewMode === "raw"
+                          ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+                          : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      }`}
+                      title="Raw source"
+                    >
+                      <Code className="h-3 w-3" />
+                      Raw
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Frontmatter metadata badges */}
@@ -377,7 +394,18 @@ export function MemoryPage() {
                 </div>
               )}
 
-              {viewMode === "rendered" ? (
+              {editMode ? (
+                <FileEditor
+                  fileName={selectedFile}
+                  initialContent={fileContent ?? ""}
+                  sizeBytes={files.find((f) => f.name === selectedFile)?.sizeBytes ?? 0}
+                  onSave={(newContent) => {
+                    setFileContent(newContent);
+                    setEditMode(false);
+                  }}
+                  onCancel={() => setEditMode(false)}
+                />
+              ) : viewMode === "rendered" ? (
                 <MarkdownContent content={displayContent} />
               ) : (
                 <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg bg-gray-950 p-4 text-xs leading-6 text-gray-300">

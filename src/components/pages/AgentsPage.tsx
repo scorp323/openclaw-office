@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiPost } from "@/lib/api-actions";
 import { toastSuccess, toastError } from "@/store/toast-store";
 import { useTranslation } from "react-i18next";
+import { AgentControls } from "@/components/console/agents/AgentControls";
 import { AgentDetailHeader } from "@/components/console/agents/AgentDetailHeader";
 import { AgentDetailTabs } from "@/components/console/agents/AgentDetailTabs";
 import { AgentUptimeBars } from "@/components/console/agents/AgentUptimeBars";
@@ -344,6 +345,7 @@ export function AgentsPage() {
           <div className="mt-4">
             <AgentDetailTabs agent={selectedAgent} />
           </div>
+          <AgentControls agentId={selectedAgent.id} agentName={selectedAgent.name} />
         </div>
       )}
 

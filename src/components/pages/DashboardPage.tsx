@@ -2,6 +2,7 @@ import { Radio, Wrench, Zap, Clock, RefreshCw, WifiOff, Loader2, GripVertical } 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityFeed } from "@/components/console/dashboard/ActivityFeed";
+import { ActivityFeedWidget } from "@/components/console/dashboard/ActivityFeedWidget";
 import { AlertBanner } from "@/components/console/dashboard/AlertBanner";
 import { ChannelOverview } from "@/components/console/dashboard/ChannelOverview";
 import { QuickNavGrid } from "@/components/console/dashboard/QuickNavGrid";
@@ -15,7 +16,7 @@ import { isHttpAdapter } from "@/gateway/adapter-provider";
 import { useOfficeStore } from "@/store/office-store";
 
 const CARD_ORDER_KEY = "openclaw-dashboard-card-order";
-const DEFAULT_ORDER = ["systemhealth", "stats", "quicknav", "channels", "skills", "activity"];
+const DEFAULT_ORDER = ["systemhealth", "stats", "quicknav", "channels", "skills", "activity", "liveactivity"];
 
 function loadCardOrder(): string[] {
   try {
@@ -210,6 +211,8 @@ export function DashboardPage() {
         <SkillOverview skills={skillsSummary} />
 
         <ActivityFeed />
+
+        <ActivityFeedWidget />
       </DraggableGrid>
     </div>
   );
