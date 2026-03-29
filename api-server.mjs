@@ -1,6 +1,6 @@
 import { createServer } from "http";
 import { execSync } from "child_process";
-import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from "fs";
 import { homedir } from "os";
 import { join, basename } from "path";
 
@@ -430,6 +430,15 @@ const routes = {
     return { dailySpend, byModel, byAgent, totalCost, updatedAt: Date.now() };
   }),
 
+  "/api/settings": () => {
+    try {
+      if (existsSync(SETTINGS_FILE)) {
+        return JSON.parse(readFileSync(SETTINGS_FILE, "utf8"));
+      }
+    } catch {}
+    return {};
+  },
+
   "/api/health": () => cached("health", 10_000, () => {
     let ramPercent = 0;
     try {
@@ -649,6 +658,29 @@ const server = createServer((req, res) => {
   if (!checkAuth(req)) {
     res.writeHead(401);
     res.end(JSON.stringify({ error: "Unauthorized" }));
+    return;
+  }
+
+  // POST /api/settings — save user settings
+  if (url.pathname === "/api/settings" && req.method === "POST") {
+    let body = "";
+    req.on("data", (chunk) => { body += chunk; });
+    req.on("end", () => {
+      try {
+        const settings = JSON.parse(body);
+        // Ensure parent directory exists
+        const dir = join(homedir(), ".openclaw", "workspace", "projects", "mission-control", "morpheus-office");
+        if (!existsSync(dir)) {
+          mkdirSync(dir, { recursive: true });
+        }
+        writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+        res.writeHead(200);
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: String(e) }));
+      }
+    });
     return;
   }
 

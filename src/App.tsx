@@ -30,6 +30,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useOfficeStore } from "@/store/office-store";
+import { useConsoleSettingsStore } from "@/store/console-stores/settings-store";
 
 function LoadingScreen() {
   return (
@@ -118,6 +119,9 @@ function PageTracker() {
 }
 
 export function App() {
+  const loadSettingsFromServer = useConsoleSettingsStore((s) => s.loadFromServer);
+  useEffect(() => { void loadSettingsFromServer(); }, [loadSettingsFromServer]);
+
   const injected = (window as unknown as Record<string, unknown>).__OPENCLAW_CONFIG__ as
     | { gatewayUrl?: string; gatewayToken?: string; gatewayWsPath?: string }
     | undefined;

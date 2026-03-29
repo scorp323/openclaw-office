@@ -19,10 +19,14 @@ export function SettingsPage() {
   const fetchStatus = useConfigStore((s) => s.fetchStatus);
   const devMode = useConsoleSettingsStore((s) => s.devModeUnlocked);
 
+  const loadFromServer = useConsoleSettingsStore((s) => s.loadFromServer);
+  const settingsLoaded = useConsoleSettingsStore((s) => s.settingsLoaded);
+
   useEffect(() => {
     void fetchConfig();
     void fetchStatus();
-  }, [fetchConfig, fetchStatus]);
+    void loadFromServer();
+  }, [fetchConfig, fetchStatus, loadFromServer]);
 
   return (
     <div className="space-y-6">
