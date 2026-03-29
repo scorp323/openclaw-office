@@ -30,7 +30,11 @@ export function SystemHealthBar() {
 
   const fetchHealth = useCallback(async () => {
     try {
-      const res = await fetch("/mc-api/health");
+      const token = (() => { try { return localStorage.getItem("openclaw-mc-auth-token"); } catch { return null; } })();
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const res = await fetch("/mc-api/health", { headers });
+      if (res.status === 401) return;
       const data = await res.json();
       setHealth(data);
     } catch {

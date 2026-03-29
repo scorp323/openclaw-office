@@ -7,6 +7,7 @@ import { join, basename } from "path";
 const PORT = 3335;
 const HISTORY_FILE = "/tmp/mc-history.json";
 const MAX_HISTORY_POINTS = 288;
+const MC_AUTH_PIN = process.env.MC_AUTH_PIN || "1337";
 
 // ── Cache layer ──────────────────────────────────────
 const cache = new Map();
@@ -617,16 +618,39 @@ function getCronLogs(cronId) {
   return { logs: entries.slice(0, 100), cronId };
 }
 
+// ── Auth helpers ─────────────────────────────────────
+function checkAuth(req) {
+  const authHeader = req.headers["authorization"] || "";
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  return token === MC_AUTH_PIN;
+}
+
 // ── Server ───────────────────────────────────────────
 const server = createServer((req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Content-Type", "application/json");
 
   if (req.method === "OPTIONS") { res.writeHead(200); res.end(); return; }
 
   const url = new URL(req.url, `http://localhost:${PORT}`);
+
+  // Auth verify endpoint — does not require auth itself
+  if (url.pathname === "/api/auth/verify" && req.method === "POST") {
+    const ok = checkAuth(req);
+    res.writeHead(ok ? 200 : 401);
+    res.end(JSON.stringify({ ok }));
+    return;
+  }
+
+  // All other /api/* endpoints require auth
+  if (!checkAuth(req)) {
+    res.writeHead(401);
+    res.end(JSON.stringify({ error: "Unauthorized" }));
+    return;
+  }
+
   const handler = routes[url.pathname];
 
   if (handler) {

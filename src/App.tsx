@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { isAuthenticated } from "@/lib/auth";
 import { AppShell } from "@/components/layout/AppShell";
 import { ConsoleLayout } from "@/components/layout/ConsoleLayout";
 import { KeyboardShortcutsModal } from "@/components/layout/KeyboardShortcutsModal";
@@ -22,6 +23,7 @@ const SkillsPage = lazy(() => import("@/components/pages/SkillsPage").then(m => 
 const LogsPage = lazy(() => import("@/components/pages/LogsPage").then(m => ({ default: m.LogsPage })));
 const CostsPage = lazy(() => import("@/components/pages/CostsPage").then(m => ({ default: m.CostsPage })));
 const MemoryPage = lazy(() => import("@/components/pages/MemoryPage").then(m => ({ default: m.MemoryPage })));
+const LoginPage = lazy(() => import("@/components/pages/LoginPage").then(m => ({ default: m.LoginPage })));
 import type { PageId } from "@/gateway/types";
 import { useGatewayConnection } from "@/hooks/useGatewayConnection";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -96,6 +98,13 @@ function resolveGatewayWsUrl(pathOrUrl: string, fallbackUrl: string): string {
   return fallbackUrl;
 }
 
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  if (location.pathname === "/login") return <>{children}</>;
+  if (!isAuthenticated()) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
 function PageTracker() {
   const location = useLocation();
   const setCurrentPage = useOfficeStore((s) => s.setCurrentPage);
@@ -134,23 +143,26 @@ export function App() {
       <KeyboardShortcutsModal open={helpOpen} onClose={closeHelp} />
       <ErrorBoundary>
         <Suspense fallback={<LoadingScreen />}>
-          <Routes>
-            <Route path="/" element={<ErrorBoundary><CommandCenter /></ErrorBoundary>} />
-            <Route path="/office" element={<ErrorBoundary><AppShell isMobile={isMobile}><FloorPlan /></AppShell></ErrorBoundary>} />
-            <Route element={<ConsoleLayout />}>
-              <Route path="/chat" element={<ChatPage />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/agents" element={<AgentsPage />} />
-              <Route path="/channels" element={<ChannelsPage />} />
-              <Route path="/skills" element={<SkillsPage />} />
-              <Route path="/cron" element={<CronPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/logs" element={<LogsPage />} />
-              <Route path="/costs" element={<CostsPage />} />
-              <Route path="/memory" element={<MemoryPage />} />
-            </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <AuthGate>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/" element={<ErrorBoundary><CommandCenter /></ErrorBoundary>} />
+              <Route path="/office" element={<ErrorBoundary><AppShell isMobile={isMobile}><FloorPlan /></AppShell></ErrorBoundary>} />
+              <Route element={<ConsoleLayout />}>
+                <Route path="/chat" element={<ChatPage />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/agents" element={<AgentsPage />} />
+                <Route path="/channels" element={<ChannelsPage />} />
+                <Route path="/skills" element={<SkillsPage />} />
+                <Route path="/cron" element={<CronPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/logs" element={<LogsPage />} />
+                <Route path="/costs" element={<CostsPage />} />
+                <Route path="/memory" element={<MemoryPage />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </AuthGate>
         </Suspense>
       </ErrorBoundary>
     </>

@@ -16,7 +16,10 @@ export const useCostStore = create<CostState>((set) => ({
 
   fetchCosts: async () => {
     try {
-      const res = await fetch(`${API_BASE}/costs`);
+      const token = (() => { try { return localStorage.getItem("openclaw-mc-auth-token"); } catch { return null; } })();
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const res = await fetch(`${API_BASE}/costs`, { headers });
       if (!res.ok) return;
       const data = await res.json();
       set({

@@ -140,7 +140,17 @@ export function useIsStale(): boolean {
 const API_BASE = '/mc-api';
 
 async function fetchJson<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`);
+  const token = (() => { try { return localStorage.getItem("openclaw-mc-auth-token"); } catch { return null; } })();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE}${path}`, { headers });
+  if (res.status === 401) {
+    // Redirect to login on auth failure
+    if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+      window.location.href = "/login";
+    }
+    throw new Error("Unauthorized");
+  }
   if (!res.ok) throw new Error(`API ${path}: ${res.status}`);
   return res.json();
 }
