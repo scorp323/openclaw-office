@@ -57,6 +57,7 @@ interface ChatDockState {
   attachments: ChatAttachment[];
   queue: ChatQueueItem[];
   focusMode: boolean;
+  terminalMode: boolean;
   searchQuery: string;
   pinnedMessageIds: string[];
   thinkingLevel: string | null;
@@ -85,6 +86,7 @@ interface ChatDockState {
   clearAttachments: () => void;
   clearMessages: () => Promise<void>;
   setFocusMode: (focusMode: boolean) => void;
+  setTerminalMode: (terminalMode: boolean) => void;
   setSearchQuery: (query: string) => void;
   togglePinMessage: (messageId: string) => void;
   exportCurrentSession: () => boolean;
@@ -586,6 +588,7 @@ export const useChatDockStore = create<ChatDockState>((set, get) => ({
   attachments: [],
   queue: [],
   focusMode: false,
+  terminalMode: typeof localStorage !== "undefined" && localStorage.getItem("openclaw-terminal-mode") === "true",
   searchQuery: "",
   pinnedMessageIds: [],
   thinkingLevel: null,
@@ -1149,6 +1152,11 @@ export const useChatDockStore = create<ChatDockState>((set, get) => ({
   },
 
   setFocusMode: (focusMode) => set({ focusMode }),
+
+  setTerminalMode: (terminalMode) => {
+    localStorage.setItem("openclaw-terminal-mode", String(terminalMode));
+    set({ terminalMode });
+  },
 
   setSearchQuery: (searchQuery) => set({ searchQuery }),
 

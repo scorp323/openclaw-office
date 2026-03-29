@@ -11,6 +11,7 @@ import {
   Paperclip,
   Send,
   Square,
+  Terminal,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -82,6 +83,38 @@ function formatRelativeTime(ts: number, t: (key: string, options?: Record<string
   return t("sessionSwitcher.relativeDays", { count: days });
 }
 
+function TypewriterText({ text }: { text: string }) {
+  const [displayedLen, setDisplayedLen] = useState(0);
+  const prevLenRef = useRef(0);
+
+  useEffect(() => {
+    if (text.length <= prevLenRef.current) {
+      prevLenRef.current = text.length;
+      setDisplayedLen(text.length);
+      return;
+    }
+    const start = prevLenRef.current;
+    let i = start;
+    const id = setInterval(() => {
+      i++;
+      if (i >= text.length) {
+        clearInterval(id);
+        i = text.length;
+      }
+      setDisplayedLen(i);
+    }, 15);
+    prevLenRef.current = text.length;
+    return () => clearInterval(id);
+  }, [text]);
+
+  return (
+    <>
+      {text.slice(0, displayedLen)}
+      <span className="inline-block h-4 w-1.5 animate-pulse bg-[#00ff41]" />
+    </>
+  );
+}
+
 export function ChatPage() {
   const { t } = useTranslation(["chat", "common"]);
   const slashCommands = useMemo(() => getSlashCommands(), []);
@@ -110,6 +143,8 @@ export function ChatPage() {
   const togglePinMessage = useChatDockStore((s) => s.togglePinMessage);
   const exportCurrentSession = useChatDockStore((s) => s.exportCurrentSession);
   const targetAgentId = useChatDockStore((s) => s.targetAgentId);
+  const terminalMode = useChatDockStore((s) => s.terminalMode);
+  const setTerminalMode = useChatDockStore((s) => s.setTerminalMode);
 
   const agents = useOfficeStore((s) => s.agents);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -325,6 +360,18 @@ export function ChatPage() {
               </button>
               <button
                 type="button"
+                onClick={() => setTerminalMode(!terminalMode)}
+                className={`rounded-lg p-2 transition-colors ${
+                  terminalMode
+                    ? "bg-[rgba(0,255,65,0.15)] text-[#00ff41]"
+                    : "text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+                }`}
+                title={terminalMode ? "Disable terminal mode" : "Enable terminal mode"}
+              >
+                <Terminal className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
                 onClick={() => setFocusMode(!focusMode)}
                 className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
                 title={focusMode ? t("page.focusOff") : t("page.focusOn")}
@@ -334,7 +381,7 @@ export function ChatPage() {
             </div>
           </div>
 
-          <div className="relative min-h-0 flex-1 bg-gray-50 dark:bg-gray-900/40">
+          <div className={`relative min-h-0 flex-1 ${terminalMode ? "bg-black" : "bg-gray-50 dark:bg-gray-900/40"}`}>
             {isHistoryLoading && (
               <div className="px-6 py-3 text-sm text-gray-400 dark:text-gray-500">
                 <div className="mx-auto flex max-w-[52rem] items-center gap-2">
@@ -344,7 +391,10 @@ export function ChatPage() {
               </div>
             )}
 
-            <div ref={scrollRef} onScroll={handleScroll} className="h-full overflow-y-auto">
+            {terminalMode && (
+              <div className="pointer-events-none absolute inset-0 z-10 bg-[repeating-linear-gradient(0deg,rgba(0,255,65,0.03)_0px,rgba(0,255,65,0.03)_1px,transparent_1px,transparent_2px)]" />
+            )}
+            <div ref={scrollRef} onScroll={handleScroll} className={`h-full overflow-y-auto ${terminalMode ? "font-mono text-[#00ff41]" : ""}`}>
               <div className="mx-auto flex min-h-full w-full max-w-[52rem] flex-col px-6 py-6">
                 {messages.length === 0 && !isStreaming && !isHistoryLoading ? (
                   <div className="flex flex-1 items-center justify-center">
@@ -377,16 +427,23 @@ export function ChatPage() {
                       </div>
                     ))}
                     {isStreaming && streamingText && (
-                      <MessageBubble
-                        message={{
-                          id: "__streaming__",
-                          role: "assistant",
-                          content: streamingText,
-                          timestamp: Date.now(),
-                          isStreaming: true,
-                          authorAgentId: targetAgentId,
-                        }}
-                      />
+                      terminalMode ? (
+                        <div className="mb-5 whitespace-pre-wrap text-sm">
+                          <span className="mr-2 text-green-700">&gt;</span>
+                          <TypewriterText text={streamingText} />
+                        </div>
+                      ) : (
+                        <MessageBubble
+                          message={{
+                            id: "__streaming__",
+                            role: "assistant",
+                            content: streamingText,
+                            timestamp: Date.now(),
+                            isStreaming: true,
+                            authorAgentId: targetAgentId,
+                          }}
+                        />
+                      )
                     )}
                     {isStreaming && !streamingText && (
                       <div className="mb-5 flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500">
