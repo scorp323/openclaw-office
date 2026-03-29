@@ -107,8 +107,44 @@ const routes = {
   "/api/crons": () => getCrons(),
 
   "/api/sessions": () => cached("sessions", 15_000, () => {
+    // Try JSON output first
+    const jsonOut = jsonExec("openclaw session list --json 2>/dev/null", 15000);
+    if (jsonOut && !jsonOut.error && (Array.isArray(jsonOut) || jsonOut.sessions)) {
+      const sessions = Array.isArray(jsonOut) ? jsonOut : (jsonOut.sessions || []);
+      return {
+        sessions: sessions.map(s => ({
+          key: s.key || s.sessionKey || `agent:${s.agentId || "unknown"}:${s.id || "main"}`,
+          agentId: s.agentId || s.agent || null,
+          label: s.label || s.name || null,
+          model: s.model || null,
+          kind: s.kind || "chat",
+          messageCount: s.messageCount ?? s.messages ?? 0,
+          lastActiveAt: s.lastActiveAt || s.updatedAt || s.ts || Date.now(),
+          percentUsed: s.percentUsed ?? s.contextUsed ?? 0,
+        })),
+      };
+    }
+    // Fallback: parse text output
     const text = textExec("openclaw session list 2>/dev/null | head -50");
-    return { raw: text };
+    const lines = text.split("\n").filter(l => l.trim() && !l.startsWith("ERROR"));
+    const sessions = [];
+    for (const line of lines) {
+      // Try to extract session info from tabular output
+      const parts = line.split(/\s{2,}/).map(p => p.trim()).filter(Boolean);
+      if (parts.length >= 2) {
+        sessions.push({
+          key: parts[0],
+          agentId: parts[1] || null,
+          label: parts[0],
+          model: parts[2] || null,
+          kind: "chat",
+          messageCount: parseInt(parts[3]) || 0,
+          lastActiveAt: Date.now(),
+          percentUsed: 0,
+        });
+      }
+    }
+    return { sessions, raw: text };
   }),
 
   "/api/system": () => cached("system", 15_000, () => {
