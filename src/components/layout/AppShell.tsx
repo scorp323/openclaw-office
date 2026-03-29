@@ -1,10 +1,11 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { ChatDialog } from "@/components/chat/ChatDialog";
 import { ChatDockBar } from "@/components/chat/ChatDockBar";
 import { RestartBanner } from "@/components/shared/RestartBanner";
 import { ToastContainer } from "@/components/shared/ToastContainer";
+import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
 import { useOfficeStore } from "@/store/office-store";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
@@ -22,6 +23,8 @@ export function AppShell({ children, isMobile = false }: AppShellProps) {
 
   const initEventHistory = useOfficeStore((s) => s.initEventHistory);
   const hideSidebar = currentPage === "chat";
+  const shellRef = useRef<HTMLDivElement>(null);
+  useSwipeNavigation(shellRef);
 
   useEffect(() => {
     if (isMobile) {
@@ -37,7 +40,7 @@ export function AppShell({ children, isMobile = false }: AppShellProps) {
   const content = children ?? <Outlet />;
 
   return (
-    <div className="flex h-screen w-screen flex-col bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+    <div ref={shellRef} className="flex h-screen w-screen flex-col bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <RestartBanner />
       <TopBar isMobile={isMobile} />
       <ToastContainer />
