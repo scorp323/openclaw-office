@@ -34,5 +34,5 @@
 14. **mobile-nav-gestures** — COMPLETED (2026-03-29 20:03 CST)
 15. **notification-bell** — COMPLETED (2026-03-29 21:04 CST) — Bell icon in header with badge count. Shows recent events: cron failures, agent errors, completed tasks. Replaces checking Discord.
 16. **quick-actions-fab** — COMPLETED (2026-03-29 21:20 CST) — Floating action button on mobile: restart all crons, check costs, trigger heartbeat, toggle work mode.
-17. **search-everything** — Global search across agents, crons, logs, chat history. Spotlight-style overlay.
-18. **offline-dashboard** — Cache last-known agent/cron state in localStorage so the dashboard shows something even when tunnel is down.
+17. **search-everything** — IN PROGRESS: Global search across agents, crons, logs, chat history. Spotlight-style overlay.
+18. **offline-dashboard** — COMPLETED (2026-03-29 21:34 CST): Cache last-known agent/cron state in localStorage so the dashboard shows something even when tunnel is down.

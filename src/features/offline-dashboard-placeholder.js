@@ -1,0 +1,1 @@
+// Placeholder for offline-dashboard feature. This file would contain logic to cache agent/cron state locally.
