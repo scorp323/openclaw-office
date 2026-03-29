@@ -1,5 +1,5 @@
-import { Radio, Wrench, Zap, Clock, RefreshCw, WifiOff, Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { Radio, Wrench, Zap, Clock, RefreshCw, WifiOff, Loader2, GripVertical } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertBanner } from "@/components/console/dashboard/AlertBanner";
 import { ChannelOverview } from "@/components/console/dashboard/ChannelOverview";
@@ -10,6 +10,73 @@ import { ErrorState } from "@/components/console/shared/ErrorState";
 import { LoadingState } from "@/components/console/shared/LoadingState";
 import { useDashboardStore } from "@/store/console-stores/dashboard-store";
 import { useOfficeStore } from "@/store/office-store";
+
+const CARD_ORDER_KEY = "openclaw-dashboard-card-order";
+const DEFAULT_ORDER = ["stats", "quicknav", "channels", "skills"];
+
+function loadCardOrder(): string[] {
+  try {
+    const stored = localStorage.getItem(CARD_ORDER_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored) as string[];
+      if (Array.isArray(parsed) && parsed.length === DEFAULT_ORDER.length) return parsed;
+    }
+  } catch { /* use default */ }
+  return DEFAULT_ORDER;
+}
+
+function DraggableGrid({ children, cardIds }: { children: React.ReactNode[]; cardIds: string[] }) {
+  const [order, setOrder] = useState(loadCardOrder);
+  const dragItem = useRef<number | null>(null);
+  const dragOver = useRef<number | null>(null);
+
+  const handleDragStart = useCallback((idx: number) => {
+    dragItem.current = idx;
+  }, []);
+
+  const handleDragEnter = useCallback((idx: number) => {
+    dragOver.current = idx;
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    if (dragItem.current === null || dragOver.current === null) return;
+    const newOrder = [...order];
+    const [removed] = newOrder.splice(dragItem.current, 1);
+    newOrder.splice(dragOver.current, 0, removed);
+    setOrder(newOrder);
+    localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder));
+    dragItem.current = null;
+    dragOver.current = null;
+  }, [order]);
+
+  const cardMap = new Map<string, React.ReactNode>();
+  cardIds.forEach((id, i) => cardMap.set(id, children[i]));
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {order.map((id, idx) => {
+        const child = cardMap.get(id);
+        if (!child) return null;
+        return (
+          <div
+            key={id}
+            draggable
+            onDragStart={() => handleDragStart(idx)}
+            onDragEnter={() => handleDragEnter(idx)}
+            onDragEnd={handleDragEnd}
+            onDragOver={(e) => e.preventDefault()}
+            className="cursor-grab rounded-lg border border-gray-200 bg-white p-4 transition-shadow hover:shadow-md active:cursor-grabbing dark:border-[rgba(0,255,65,0.15)] dark:bg-[rgba(0,10,0,0.6)]"
+          >
+            <div className="mb-2 flex items-center justify-end">
+              <GripVertical className="h-4 w-4 text-gray-300 dark:text-gray-600" />
+            </div>
+            {child}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export function DashboardPage() {
   const { t } = useTranslation("console");
@@ -85,45 +152,49 @@ export function DashboardPage() {
         />
       )}
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <StatCard
-          icon={Radio}
-          title={t("dashboard.stats.channels")}
-          value={`${connectedCount} / ${channelsSummary.length}`}
-          color="text-green-500"
-        />
-        <StatCard
-          icon={Wrench}
-          title={t("dashboard.stats.skills")}
-          value={`${enabledSkillCount} / ${skillsSummary.length}`}
-          color="text-purple-500"
-        />
-        <StatCard
-          icon={Zap}
-          title={t("dashboard.stats.usage")}
-          value={usageDisplay}
-          progress={primaryWindow?.usedPercent}
-          color="text-blue-500"
-        />
-        <StatCard
-          icon={Clock}
-          title={t("dashboard.stats.uptime")}
-          value={wsStatus === "connected" ? t("dashboard.stats.uptimeOnline") : "—"}
-          color="text-amber-500"
-        />
-      </div>
+      <DraggableGrid cardIds={DEFAULT_ORDER}>
+        <div>
+          <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Stats</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard
+              icon={Radio}
+              title={t("dashboard.stats.channels")}
+              value={`${connectedCount} / ${channelsSummary.length}`}
+              color="text-green-500"
+            />
+            <StatCard
+              icon={Wrench}
+              title={t("dashboard.stats.skills")}
+              value={`${enabledSkillCount} / ${skillsSummary.length}`}
+              color="text-purple-500"
+            />
+            <StatCard
+              icon={Zap}
+              title={t("dashboard.stats.usage")}
+              value={usageDisplay}
+              progress={primaryWindow?.usedPercent}
+              color="text-blue-500"
+            />
+            <StatCard
+              icon={Clock}
+              title={t("dashboard.stats.uptime")}
+              value={wsStatus === "connected" ? t("dashboard.stats.uptimeOnline") : "—"}
+              color="text-amber-500"
+            />
+          </div>
+        </div>
 
-      <div>
-        <h2 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-          {t("dashboard.quickNav.title")}
-        </h2>
-        <QuickNavGrid />
-      </div>
+        <div>
+          <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+            {t("dashboard.quickNav.title")}
+          </h3>
+          <QuickNavGrid />
+        </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
         <ChannelOverview channels={channelsSummary} />
+
         <SkillOverview skills={skillsSummary} />
-      </div>
+      </DraggableGrid>
     </div>
   );
 }
