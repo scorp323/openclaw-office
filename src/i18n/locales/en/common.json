@@ -84,5 +84,13 @@
     "errorPrefix": "Error: {{message}}",
     "unknownStream": "unknown stream: {{stream}}",
     "lifecycleUnknown": "lifecycle: {{phase}}"
+  },
+  "notifications": {
+    "connectionLost": "Gateway Disconnected",
+    "connectionLostBody": "Lost connection to the OpenClaw Gateway. Attempting to reconnect...",
+    "agentError": "Agent Error — {{agent}}",
+    "agentStarted": "{{agent}} started running",
+    "agentEnded": "{{agent}} finished running",
+    "chatMessage": "Message from {{agent}}"
   }
 }

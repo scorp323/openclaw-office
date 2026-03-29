@@ -17,6 +17,7 @@ const SettingsPage = lazy(() => import("@/components/pages/SettingsPage").then(m
 const SkillsPage = lazy(() => import("@/components/pages/SkillsPage").then(m => ({ default: m.SkillsPage })));
 import type { PageId } from "@/gateway/types";
 import { useGatewayConnection } from "@/hooks/useGatewayConnection";
+import { useNotifications } from "@/hooks/useNotifications";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useOfficeStore } from "@/store/office-store";
 
@@ -103,6 +104,7 @@ export function App() {
   const gatewayToken = injected?.gatewayToken || import.meta.env.VITE_GATEWAY_TOKEN || "";
   const { isMobile } = useResponsive();
   const { wsClient } = useGatewayConnection({ url: gatewayUrl, token: gatewayToken });
+  useNotifications();
 
   return (
     <>

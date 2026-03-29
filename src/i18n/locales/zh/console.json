@@ -400,6 +400,21 @@
       "resultNoop": "已是最新版本",
       "resultError": "更新失败：{{reason}}"
     },
+    "notifications": {
+      "title": "通知",
+      "enable": "推送通知",
+      "enableHint": "接收重要智能体事件的浏览器通知",
+      "notSupported": "当前浏览器不支持推送通知。",
+      "denied": "通知权限已被拒绝。请在浏览器设置中允许通知。",
+      "swNotReady": "Service Worker 正在初始化...",
+      "categories": "通知类别",
+      "cat_agentError": "智能体错误",
+      "cat_chatMessage": "聊天消息",
+      "cat_connectionLost": "连接断开",
+      "cat_agentLifecycle": "智能体启动 / 结束",
+      "onlyWhenHidden": "仅后台时通知",
+      "onlyWhenHiddenHint": "仅在页面不可见时发送通知"
+    },
     "advanced": {
       "title": "高级",
       "devMode": "开发者模式",

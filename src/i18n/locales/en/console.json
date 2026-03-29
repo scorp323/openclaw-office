@@ -400,6 +400,21 @@
       "resultNoop": "Already up to date",
       "resultError": "Update failed: {{reason}}"
     },
+    "notifications": {
+      "title": "Notifications",
+      "enable": "Push Notifications",
+      "enableHint": "Receive browser notifications for important agent events",
+      "notSupported": "Push notifications are not supported in this browser.",
+      "denied": "Notification permission was denied. Please allow notifications in your browser settings.",
+      "swNotReady": "Service worker is still initializing...",
+      "categories": "Notification Categories",
+      "cat_agentError": "Agent Errors",
+      "cat_chatMessage": "Chat Messages",
+      "cat_connectionLost": "Connection Lost",
+      "cat_agentLifecycle": "Agent Start / End",
+      "onlyWhenHidden": "Only when in background",
+      "onlyWhenHiddenHint": "Only notify when the page is not visible"
+    },
     "advanced": {
       "title": "Advanced",
       "devMode": "Developer Mode",
