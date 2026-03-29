@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 
 interface CronJob {
   id: string;
@@ -73,8 +73,63 @@ interface LiveData {
   memoryFiles: Array<{ name: string; lines: number }>;
   loading: boolean;
   error: string | null;
+  stale: boolean;
   lastRefresh: number;
   refresh: () => void;
+}
+
+const CACHE_KEY = 'openclaw-live-data-cache';
+
+interface CachedLiveData {
+  crons: CronJob[];
+  system: SystemInfo | null;
+  gateway: GatewayStatus | null;
+  agents: RealAgent[];
+  history: HistoryPoint[];
+  activity: ActivityEvent[];
+  ollama: OllamaInfo | null;
+  channels: string[];
+  memoryFiles: Array<{ name: string; lines: number }>;
+  cachedAt: number;
+}
+
+function saveCache(data: CachedLiveData): void {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+  } catch {
+    // localStorage full or unavailable — ignore
+  }
+}
+
+function loadCache(): CachedLiveData | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as CachedLiveData;
+  } catch {
+    return null;
+  }
+}
+
+// Module-level stale signal for components that need stale status without polling
+let _isStale = false;
+const _staleListeners = new Set<() => void>();
+
+function setStaleFlag(value: boolean) {
+  if (_isStale !== value) {
+    _isStale = value;
+    _staleListeners.forEach((l) => l());
+  }
+}
+
+export function useIsStale(): boolean {
+  return useSyncExternalStore(
+    (cb) => {
+      _staleListeners.add(cb);
+      return () => { _staleListeners.delete(cb); };
+    },
+    () => _isStale,
+  );
 }
 
 const API_BASE = '/mc-api';
@@ -86,18 +141,20 @@ async function fetchJson<T>(path: string): Promise<T> {
 }
 
 export function useLiveData(pollIntervalMs = 30000): LiveData {
-  const [crons, setCrons] = useState<CronJob[]>([]);
-  const [system, setSystem] = useState<SystemInfo | null>(null);
-  const [gateway, setGateway] = useState<GatewayStatus | null>(null);
-  const [agents, setAgents] = useState<RealAgent[]>([]);
-  const [history, setHistory] = useState<HistoryPoint[]>([]);
-  const [activity, setActivity] = useState<ActivityEvent[]>([]);
-  const [ollama, setOllama] = useState<OllamaInfo | null>(null);
-  const [channels, setChannels] = useState<string[]>([]);
-  const [memoryFiles, setMemoryFiles] = useState<Array<{ name: string; lines: number }>>([]);
+  const cached = loadCache();
+  const [crons, setCrons] = useState<CronJob[]>(cached?.crons ?? []);
+  const [system, setSystem] = useState<SystemInfo | null>(cached?.system ?? null);
+  const [gateway, setGateway] = useState<GatewayStatus | null>(cached?.gateway ?? null);
+  const [agents, setAgents] = useState<RealAgent[]>(cached?.agents ?? []);
+  const [history, setHistory] = useState<HistoryPoint[]>(cached?.history ?? []);
+  const [activity, setActivity] = useState<ActivityEvent[]>(cached?.activity ?? []);
+  const [ollama, setOllama] = useState<OllamaInfo | null>(cached?.ollama ?? null);
+  const [channels, setChannels] = useState<string[]>(cached?.channels ?? []);
+  const [memoryFiles, setMemoryFiles] = useState<Array<{ name: string; lines: number }>>(cached?.memoryFiles ?? []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lastRefresh, setLastRefresh] = useState(0);
+  const [stale, setStale] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState(cached?.cachedAt ?? 0);
 
   const refresh = useCallback(async () => {
     try {
@@ -112,19 +169,59 @@ export function useLiveData(pollIntervalMs = 30000): LiveData {
         fetchJson<{ channels: string[] }>('/channels').catch(() => ({ channels: [] })),
         fetchJson<{ files: Array<{ name: string; lines: number }> }>('/memory').catch(() => ({ files: [] })),
       ]);
-      setCrons(cronData.jobs || []);
+      const resolvedCrons = cronData.jobs || [];
+      const resolvedAgents = agentData.agents || [];
+      const resolvedHistory = historyData.history || [];
+      const resolvedActivity = activityData.events || [];
+      const resolvedChannels = channelData.channels || [];
+      const resolvedMemory = memData.files || [];
+
+      setCrons(resolvedCrons);
       setSystem(sysData);
       setGateway(statusData);
-      setAgents(agentData.agents || []);
-      setHistory(historyData.history || []);
-      setActivity(activityData.events || []);
+      setAgents(resolvedAgents);
+      setHistory(resolvedHistory);
+      setActivity(resolvedActivity);
       if (ollamaData) setOllama(ollamaData);
-      setChannels(channelData.channels || []);
-      setMemoryFiles(memData.files || []);
+      setChannels(resolvedChannels);
+      setMemoryFiles(resolvedMemory);
       setError(null);
-      setLastRefresh(Date.now());
-    } catch (e: any) {
-      setError(e.message);
+      setStale(false);
+      setStaleFlag(false);
+      const now = Date.now();
+      setLastRefresh(now);
+
+      saveCache({
+        crons: resolvedCrons,
+        system: sysData,
+        gateway: statusData,
+        agents: resolvedAgents,
+        history: resolvedHistory,
+        activity: resolvedActivity,
+        ollama: ollamaData,
+        channels: resolvedChannels,
+        memoryFiles: resolvedMemory,
+        cachedAt: now,
+      });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg);
+      // If we have cached data loaded, mark as stale
+      const fallback = loadCache();
+      if (fallback) {
+        setCrons(fallback.crons);
+        setSystem(fallback.system);
+        setGateway(fallback.gateway);
+        setAgents(fallback.agents);
+        setHistory(fallback.history);
+        setActivity(fallback.activity);
+        setOllama(fallback.ollama);
+        setChannels(fallback.channels);
+        setMemoryFiles(fallback.memoryFiles);
+        setLastRefresh(fallback.cachedAt);
+        setStale(true);
+        setStaleFlag(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -136,5 +233,5 @@ export function useLiveData(pollIntervalMs = 30000): LiveData {
     return () => clearInterval(interval);
   }, [refresh, pollIntervalMs]);
 
-  return { crons, system, gateway, agents, history, activity, ollama, channels, memoryFiles, loading, error, lastRefresh, refresh };
+  return { crons, system, gateway, agents, history, activity, ollama, channels, memoryFiles, loading, error, stale, lastRefresh, refresh };
 }

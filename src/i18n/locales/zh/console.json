@@ -14,6 +14,9 @@
       "gatewayDisconnected": "Gateway 未连接，数据可能不是最新",
       "channelErrors": "{{count}} 个渠道连接异常"
     },
+    "offline": {
+      "banner": "离线模式 — 正在显示缓存数据"
+    },
     "connectionGuide": {
       "title": "无法连接 Gateway",
       "subtitle": "请检查以下配置",

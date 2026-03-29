@@ -1,14 +1,16 @@
-import { Home, Bot, Radio, Puzzle, Clock, Settings } from "lucide-react";
+import { Home, Bot, Radio, Puzzle, Clock, Settings, WifiOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { RestartBanner } from "@/components/shared/RestartBanner";
+import { useIsStale } from "@/hooks/useLiveData";
 import { TopBar } from "./TopBar";
 
 export function ConsoleLayout() {
-  const { t } = useTranslation("layout");
+  const { t } = useTranslation(["layout", "console"]);
   const location = useLocation();
   const navigate = useNavigate();
   const isChatRoute = location.pathname === "/chat";
+  const isStale = useIsStale();
 
   const sidebarNavItems = [
     { path: "/dashboard", labelKey: "consoleNav.dashboard", icon: Home },
@@ -22,6 +24,12 @@ export function ConsoleLayout() {
   return (
     <div className="flex h-screen w-screen flex-col bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <RestartBanner />
+      {isStale && (
+        <div className="flex items-center gap-2 border-b border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+          <WifiOff className="h-4 w-4 flex-shrink-0" />
+          <span>{t("console:dashboard.offline.banner")}</span>
+        </div>
+      )}
       <TopBar />
       <div className="flex flex-1 overflow-hidden">
         {!isChatRoute && (

@@ -14,6 +14,9 @@
       "gatewayDisconnected": "Gateway disconnected, data may not be up to date",
       "channelErrors": "{{count}} channel(s) with errors"
     },
+    "offline": {
+      "banner": "Offline — showing cached data"
+    },
     "connectionGuide": {
       "title": "Cannot connect to Gateway",
       "subtitle": "Please check the following",
