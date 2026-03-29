@@ -252,7 +252,8 @@ export type PageId =
   | "cron"
   | "settings"
   | "logs"
-  | "costs";
+  | "costs"
+  | "memory";
 
 export interface TokenSnapshot {
   timestamp: number;

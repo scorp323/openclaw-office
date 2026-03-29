@@ -55,6 +55,7 @@
     "cron": "Cron Tasks",
     "settings": "Settings",
     "logs": "Logs",
-    "costs": "Costs"
+    "costs": "Costs",
+    "memory": "Memory"
   }
 }

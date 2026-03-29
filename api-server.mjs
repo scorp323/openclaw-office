@@ -204,18 +204,52 @@ const routes = {
     return { todayCostUsd: todayCost, todayTokens, updatedAt: Date.now() };
   }),
 
-  "/api/memory": () => cached("memory", 30_000, () => {
+  "/api/memory": () => cached("memory", 10_000, () => {
     try {
-      const out = textExec("ls -t /Users/morpheusqilee/.openclaw/workspace/memory/*.md 2>/dev/null | head -5");
-      const files = out.split("\n").filter(f => f.trim());
-      const entries = files.map(f => {
-        const name = f.split("/").pop();
-        const lines = textExec(`wc -l < "${f}"`).trim();
-        return { name, lines: parseInt(lines) || 0 };
+      const memDir = join(homedir(), ".openclaw", "workspace", "memory");
+      if (!existsSync(memDir)) return { files: [] };
+      const allFiles = readdirSync(memDir).filter(f => f.endsWith(".md")).sort();
+      const entries = allFiles.map(f => {
+        const fullPath = join(memDir, f);
+        try {
+          const content = readFileSync(fullPath, "utf8");
+          const lines = content.split("\n").length;
+          const sizeBytes = Buffer.byteLength(content, "utf8");
+          // Parse frontmatter
+          let meta = {};
+          const fmMatch = /^---\n([\s\S]*?)\n---/u.exec(content);
+          if (fmMatch) {
+            for (const line of fmMatch[1].split("\n")) {
+              const colonIdx = line.indexOf(":");
+              if (colonIdx > 0) {
+                const key = line.slice(0, colonIdx).trim();
+                const val = line.slice(colonIdx + 1).trim();
+                meta[key] = val;
+              }
+            }
+          }
+          return { name: f, lines, sizeBytes, meta };
+        } catch { return { name: f, lines: 0, sizeBytes: 0, meta: {} }; }
       });
       return { files: entries };
     } catch { return { files: [] }; }
   }),
+
+  "/api/memory/read": (url) => {
+    const fileName = url.searchParams.get("file");
+    if (!fileName || fileName.includes("..") || fileName.includes("/")) {
+      return { error: "Invalid file name" };
+    }
+    const memDir = join(homedir(), ".openclaw", "workspace", "memory");
+    const fullPath = join(memDir, fileName);
+    try {
+      if (!existsSync(fullPath)) return { error: "File not found" };
+      const content = readFileSync(fullPath, "utf8");
+      return { file: fileName, content };
+    } catch (e) {
+      return { error: String(e) };
+    }
+  },
 
   "/api/logs": () => cached("logs", 5_000, () => {
     const entries = [];
@@ -493,7 +527,7 @@ const server = createServer((req, res) => {
 
   if (handler) {
     try {
-      const data = handler();
+      const data = handler(url);
       res.writeHead(200);
       res.end(JSON.stringify(data));
     } catch (e) {

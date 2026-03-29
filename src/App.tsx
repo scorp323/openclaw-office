@@ -20,6 +20,7 @@ const SettingsPage = lazy(() => import("@/components/pages/SettingsPage").then(m
 const SkillsPage = lazy(() => import("@/components/pages/SkillsPage").then(m => ({ default: m.SkillsPage })));
 const LogsPage = lazy(() => import("@/components/pages/LogsPage").then(m => ({ default: m.LogsPage })));
 const CostsPage = lazy(() => import("@/components/pages/CostsPage").then(m => ({ default: m.CostsPage })));
+const MemoryPage = lazy(() => import("@/components/pages/MemoryPage").then(m => ({ default: m.MemoryPage })));
 import type { PageId } from "@/gateway/types";
 import { useGatewayConnection } from "@/hooks/useGatewayConnection";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -69,6 +70,7 @@ const PAGE_MAP: Record<string, PageId> = {
   "/settings": "settings",
   "/logs": "logs",
   "/costs": "costs",
+  "/memory": "memory",
 };
 
 function resolveGatewayWsUrl(pathOrUrl: string, fallbackUrl: string): string {
@@ -138,6 +140,7 @@ export function App() {
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/logs" element={<LogsPage />} />
               <Route path="/costs" element={<CostsPage />} />
+              <Route path="/memory" element={<MemoryPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

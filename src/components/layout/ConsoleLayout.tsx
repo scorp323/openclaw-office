@@ -1,4 +1,4 @@
-import { Home, Bot, Radio, Puzzle, Clock, Settings, WifiOff, Terminal, DollarSign } from "lucide-react";
+import { Home, Bot, Radio, Puzzle, Clock, Settings, WifiOff, Terminal, DollarSign, Brain } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -50,6 +50,7 @@ export function ConsoleLayout() {
     { path: "/settings", labelKey: "consoleNav.settings", icon: Settings },
     { path: "/logs", labelKey: "consoleNav.logs", icon: Terminal },
     { path: "/costs", labelKey: "consoleNav.costs", icon: DollarSign },
+    { path: "/memory", labelKey: "consoleNav.memory", icon: Brain },
   ] as const;
 
   return (
