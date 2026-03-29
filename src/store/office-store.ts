@@ -1318,7 +1318,7 @@ function migrateAgentToLounge(agentId: string): void {
   useOfficeStore.getState().startMovement(agentId, "lounge");
 }
 
-// --- Chill zone logic for main agents (idle >30s → chill, active → back to desk) ---
+// --- Chill zone logic for main agents (idle >30s → chill, active → back to lounge) ---
 
 function scheduleChillMigration(
   agentId: string,
@@ -1342,7 +1342,7 @@ function scheduleChillMigration(
     }, CHILL_IDLE_DELAY_MS);
     chillTimers.set(agentId, timer);
   } else if (nowActive) {
-    // Became active — move back from chill to desk
+    // Became active — move back from chill to lounge
     migrateAgentFromChill(agentId);
   }
 }
@@ -1351,7 +1351,7 @@ function migrateAgentToChill(agentId: string): void {
   const state = useOfficeStore.getState();
   const agent = state.agents.get(agentId);
   if (!agent || agent.isSubAgent || agent.isPlaceholder) return;
-  if (agent.zone !== "desk" && agent.zone !== "corridor") return;
+  if (agent.zone !== "lounge" && agent.zone !== "corridor") return;
   if (agent.status !== "idle") return;
   if (agent.movement) return;
 
@@ -1366,11 +1366,11 @@ function migrateAgentFromChill(agentId: string): void {
   const state = useOfficeStore.getState();
   const agent = state.agents.get(agentId);
   if (!agent || agent.zone !== "chill") return;
-  if (agent.movement?.toZone === "desk") return;
+  if (agent.movement?.toZone === "lounge") return;
 
   const returnPos = agent.originalPosition ?? undefined;
   useOfficeStore.getState().updateAgent(agentId, { originalPosition: null });
-  useOfficeStore.getState().startMovement(agentId, "desk", returnPos);
+  useOfficeStore.getState().startMovement(agentId, "lounge", returnPos);
 }
 
 function cancelRetireTimer(agentId: string): void {
