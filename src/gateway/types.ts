@@ -242,6 +242,7 @@ export interface AgentToAgentConfig {
 // --- Store ---
 
 export type ThemeMode = "light" | "dark";
+export type ColorTheme = "matrix" | "cyberpunk" | "midnight";
 export type PageId =
   | "office"
   | "chat"
@@ -272,6 +273,7 @@ export interface OfficeStore {
   sidebarCollapsed: boolean;
   lastSessionsSnapshot: SessionSnapshot | null;
   theme: ThemeMode;
+  colorTheme: ColorTheme;
   operatorScopes: string[];
   tokenHistory: TokenSnapshot[];
   agentCosts: Record<string, number>;
@@ -327,6 +329,7 @@ export interface OfficeStore {
   setConnectionStatus: (status: ConnectionStatus, error?: string) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   setTheme: (theme: ThemeMode) => void;
+  setColorTheme: (colorTheme: ColorTheme) => void;
 
   // 配置感知
   setMaxSubAgents: (n: number) => void;

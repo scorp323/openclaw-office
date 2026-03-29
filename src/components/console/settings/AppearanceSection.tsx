@@ -1,5 +1,6 @@
 import { Sun, Moon, Monitor } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import type { ColorTheme } from "@/gateway/types";
 import { useConsoleSettingsStore } from "@/store/console-stores/settings-store";
 import { useOfficeStore } from "@/store/office-store";
 
@@ -9,6 +10,12 @@ const THEME_OPTIONS: Array<{ value: ThemePreference; icon: typeof Sun; labelKey:
   { value: "light", icon: Sun, labelKey: "settings.appearance.themeLight" },
   { value: "dark", icon: Moon, labelKey: "settings.appearance.themeDark" },
   { value: "system", icon: Monitor, labelKey: "settings.appearance.themeSystem" },
+];
+
+const COLOR_THEME_OPTIONS: Array<{ value: ColorTheme; labelKey: string; color: string }> = [
+  { value: "matrix", labelKey: "settings.appearance.colorMatrix", color: "#00ff41" },
+  { value: "cyberpunk", labelKey: "settings.appearance.colorCyberpunk", color: "#ff00ff" },
+  { value: "midnight", labelKey: "settings.appearance.colorMidnight", color: "#e0e0ff" },
 ];
 
 const LANG_OPTIONS = [
@@ -26,6 +33,8 @@ export function AppearanceSection() {
   const theme = useConsoleSettingsStore((s) => s.theme);
   const setThemePref = useConsoleSettingsStore((s) => s.setTheme);
   const setOfficeTheme = useOfficeStore((s) => s.setTheme);
+  const colorTheme = useOfficeStore((s) => s.colorTheme);
+  const setColorTheme = useOfficeStore((s) => s.setColorTheme);
 
   const handleThemeChange = (pref: ThemePreference) => {
     setThemePref(pref);
@@ -79,6 +88,32 @@ export function AppearanceSection() {
                     : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
                 }`}
               >
+                {t(labelKey)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-700 dark:text-gray-300">
+            {t("settings.appearance.colorTheme")}
+          </span>
+          <div className="flex gap-1 rounded-lg border border-gray-200 p-1 dark:border-gray-600">
+            {COLOR_THEME_OPTIONS.map(({ value, labelKey, color }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setColorTheme(value)}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  colorTheme === value
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
+                    : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                }`}
+              >
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}` }}
+                />
                 {t(labelKey)}
               </button>
             ))}

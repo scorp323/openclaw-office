@@ -18,7 +18,9 @@
   --morpheus-gold: #0a3d0a;
 }
 
-.dark {
+/* Matrix theme (default green) */
+.dark,
+.dark[data-color-theme="matrix"] {
   --zone-desk: #001a00;
   --zone-meeting: #002200;
   --zone-hotDesk: #001a00;
@@ -34,27 +36,61 @@
   --morpheus-gold: #0a3d0a;
 }
 
+/* Cyberpunk theme (neon pink + cyan) */
+.dark[data-color-theme="cyberpunk"] {
+  --zone-desk: #1a001a;
+  --zone-meeting: #0a1a2a;
+  --zone-hotDesk: #1a0a1a;
+  --zone-lounge: #0a0a1a;
+  --zone-stroke: #3d0a3d;
+  --zone-label: #ff00ff;
+  --dot-tooltip-bg: #0a000a;
+  --dot-tooltip-stroke: #3d0a3d;
+  --dot-tooltip-text: #ff00ff;
+  --svg-link-color: #00ffff;
+  --morpheus-bg: #0a0010;
+  --morpheus-accent: #ff00ff;
+  --morpheus-gold: #3d0a3d;
+}
+
+/* Midnight theme (deep blue + silver) */
+.dark[data-color-theme="midnight"] {
+  --zone-desk: #0d0d1f;
+  --zone-meeting: #10102a;
+  --zone-hotDesk: #0d0d1f;
+  --zone-lounge: #0f0f25;
+  --zone-stroke: #2a2a5a;
+  --zone-label: #e0e0ff;
+  --dot-tooltip-bg: #080818;
+  --dot-tooltip-stroke: #2a2a5a;
+  --dot-tooltip-text: #e0e0ff;
+  --svg-link-color: #8080ff;
+  --morpheus-bg: #0a0a1e;
+  --morpheus-accent: #e0e0ff;
+  --morpheus-gold: #1a1a3e;
+}
+
 /* ── Matrix Glow Utilities ── */
 
 .glow-green {
   text-shadow:
-    0 0 7px rgba(0, 255, 65, 0.5),
-    0 0 15px rgba(0, 255, 65, 0.25);
+    0 0 7px color-mix(in srgb, var(--morpheus-accent) 50%, transparent),
+    0 0 15px color-mix(in srgb, var(--morpheus-accent) 25%, transparent);
 }
 
 .glow-border {
   box-shadow:
-    0 0 8px rgba(0, 255, 65, 0.19),
-    inset 0 0 8px rgba(0, 255, 65, 0.06);
+    0 0 8px color-mix(in srgb, var(--morpheus-accent) 19%, transparent),
+    inset 0 0 8px color-mix(in srgb, var(--morpheus-accent) 6%, transparent);
 }
 
 .glass-panel {
-  background: linear-gradient(135deg, rgba(0, 255, 65, 0.05) 0%, rgba(0, 0, 0, 0.8) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--morpheus-accent) 5%, transparent) 0%, rgba(0, 0, 0, 0.8) 100%);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 255, 65, 0.15);
+  border: 1px solid color-mix(in srgb, var(--morpheus-accent) 15%, transparent);
   box-shadow:
-    0 0 15px rgba(0, 255, 65, 0.1),
-    inset 0 1px 0 rgba(0, 255, 65, 0.1);
+    0 0 15px color-mix(in srgb, var(--morpheus-accent) 10%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--morpheus-accent) 10%, transparent);
 }
 
 /* ── Global Button/Tab Interactions ── */

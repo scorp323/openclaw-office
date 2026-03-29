@@ -19,6 +19,7 @@ import type {
   SessionSnapshot,
   SubAgentInfo,
   ThemeMode,
+  ColorTheme,
   TokenSnapshot,
   VisualAgent,
 } from "@/gateway/types";
@@ -36,6 +37,7 @@ import { computeMetrics } from "./metrics-reducer";
 const EVENT_HISTORY_LIMIT = 200;
 const LINK_TIMEOUT_MS = 60_000;
 const THEME_STORAGE_KEY = "openclaw-theme";
+const COLOR_THEME_STORAGE_KEY = "openclaw-color-theme";
 const CHAT_DOCK_HEIGHT_KEY = "openclaw-chat-dock-height";
 const DEFAULT_CHAT_DOCK_HEIGHT = 300;
 const LOUNGE_TO_HOTDESK_DEBOUNCE_MS = 300;
@@ -79,6 +81,13 @@ function getInitialTheme(): ThemeMode {
     return stored;
   }
   return "dark";
+}
+
+function getInitialColorTheme(): ColorTheme {
+  if (typeof window === "undefined") return "matrix";
+  const stored = localStorage.getItem(COLOR_THEME_STORAGE_KEY);
+  if (stored === "matrix" || stored === "cyberpunk" || stored === "midnight") return stored;
+  return "matrix";
 }
 
 function createVisualAgent(
@@ -246,6 +255,7 @@ export const useOfficeStore = create<OfficeStore>()(
     sidebarCollapsed: true,
     lastSessionsSnapshot: null,
     theme: getInitialTheme(),
+    colorTheme: getInitialColorTheme(),
     operatorScopes: [] as string[],
     tokenHistory: [] as TokenSnapshot[],
     agentCosts: {} as Record<string, number>,
@@ -1048,6 +1058,17 @@ export const useOfficeStore = create<OfficeStore>()(
       });
       try {
         localStorage.setItem(THEME_STORAGE_KEY, theme);
+      } catch {
+        // localStorage unavailable
+      }
+    },
+
+    setColorTheme: (colorTheme: ColorTheme) => {
+      set((state) => {
+        state.colorTheme = colorTheme;
+      });
+      try {
+        localStorage.setItem(COLOR_THEME_STORAGE_KEY, colorTheme);
       } catch {
         // localStorage unavailable
       }

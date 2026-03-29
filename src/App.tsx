@@ -45,6 +45,7 @@ function LoadingScreen() {
 
 function ThemeSync() {
   const theme = useOfficeStore((s) => s.theme);
+  const colorTheme = useOfficeStore((s) => s.colorTheme);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -54,6 +55,10 @@ function ThemeSync() {
       document.documentElement.classList.remove("dark");
     }
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-color-theme", colorTheme);
+  }, [colorTheme]);
 
   return null;
 }

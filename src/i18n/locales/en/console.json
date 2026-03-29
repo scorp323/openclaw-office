@@ -309,7 +309,11 @@
       "themeSystem": "System",
       "language": "Language",
       "langZh": "中文",
-      "langEn": "English"
+      "langEn": "English",
+      "colorTheme": "Color Theme",
+      "colorMatrix": "Matrix",
+      "colorCyberpunk": "Cyberpunk",
+      "colorMidnight": "Midnight"
     },
     "providers": {
       "title": "AI Providers",
