@@ -39,6 +39,7 @@ import { useOfficeStore } from "@/store/office-store";
 import { useConsoleSettingsStore } from "@/store/console-stores/settings-store";
 import { useRestoreLastPage, useTrackCurrentPage } from "@/hooks/useSessionState";
 import { useNotificationSounds } from "@/hooks/useNotificationSounds";
+import { useEventStream } from "@/hooks/useEventStream";
 import { PwaInstallPrompt } from "@/components/shared/PwaInstallPrompt";
 import { OnboardingTour } from "@/components/console/shared/OnboardingTour";
 
@@ -73,6 +74,16 @@ function ThemeSync() {
   useEffect(() => {
     document.documentElement.setAttribute("data-color-theme", colorTheme);
   }, [colorTheme]);
+
+  // Restore saved accent color on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("mc_accent_color");
+      if (saved) {
+        document.documentElement.style.setProperty("--accent", saved);
+      }
+    } catch { /* empty */ }
+  }, []);
 
   return null;
 }
@@ -172,6 +183,7 @@ export function App() {
   const { wsClient } = useGatewayConnection({ url: gatewayUrl, token: gatewayToken });
   useNotifications();
   useNotificationSounds();
+  useEventStream();
   const { helpOpen, closeHelp } = useKeyboardShortcuts();
 
   return (

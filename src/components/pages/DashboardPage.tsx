@@ -1,4 +1,4 @@
-import { Radio, Wrench, Zap, Clock, RefreshCw, WifiOff, Loader2, GripVertical } from "lucide-react";
+import { Radio, Wrench, Zap, Clock, RefreshCw, WifiOff, Loader2, GripVertical, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityFeed } from "@/components/console/dashboard/ActivityFeed";
@@ -17,7 +17,7 @@ import { useDashboardStore } from "@/store/console-stores/dashboard-store";
 import { isHttpAdapter } from "@/gateway/adapter-provider";
 import { useOfficeStore } from "@/store/office-store";
 
-const CARD_ORDER_KEY = "openclaw-dashboard-card-order";
+const CARD_ORDER_KEY = "mc_dashboard_layout";
 const DEFAULT_ORDER = ["quickactions", "katstatus", "systemhealth", "stats", "quicknav", "channels", "skills", "activity", "liveactivity"];
 
 function loadCardOrder(): string[] {
@@ -26,7 +26,6 @@ function loadCardOrder(): string[] {
     if (stored) {
       const parsed = JSON.parse(stored) as string[];
       if (Array.isArray(parsed)) {
-        // Ensure all default cards are present (handles migration)
         const merged = [...parsed.filter((id) => DEFAULT_ORDER.includes(id))];
         for (const id of DEFAULT_ORDER) {
           if (!merged.includes(id)) merged.push(id);
@@ -35,59 +34,120 @@ function loadCardOrder(): string[] {
       }
     }
   } catch { /* use default */ }
-  return DEFAULT_ORDER;
+  return [...DEFAULT_ORDER];
 }
 
-function DraggableGrid({ children, cardIds }: { children: React.ReactNode[]; cardIds: string[] }) {
+function DraggableGrid({
+  children,
+  cardIds,
+  onReset,
+}: {
+  children: React.ReactNode[];
+  cardIds: string[];
+  onReset: () => void;
+}) {
   const [order, setOrder] = useState(loadCardOrder);
+  const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
   const dragItem = useRef<number | null>(null);
   const dragOver = useRef<number | null>(null);
 
+  // Expose reset to parent via callback
+  useEffect(() => {
+    // Mount: load saved order
+  }, []);
+
   const handleDragStart = useCallback((idx: number) => {
     dragItem.current = idx;
+    setDraggingIdx(idx);
   }, []);
 
   const handleDragEnter = useCallback((idx: number) => {
     dragOver.current = idx;
+    setOverIdx(idx);
   }, []);
 
   const handleDragEnd = useCallback(() => {
-    if (dragItem.current === null || dragOver.current === null) return;
-    const newOrder = [...order];
-    const [removed] = newOrder.splice(dragItem.current, 1);
-    newOrder.splice(dragOver.current, 0, removed);
-    setOrder(newOrder);
-    localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder));
+    if (dragItem.current !== null && dragOver.current !== null && dragItem.current !== dragOver.current) {
+      const newOrder = [...order];
+      const [removed] = newOrder.splice(dragItem.current, 1);
+      newOrder.splice(dragOver.current, 0, removed);
+      setOrder(newOrder);
+      localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder));
+    }
     dragItem.current = null;
     dragOver.current = null;
+    setDraggingIdx(null);
+    setOverIdx(null);
   }, [order]);
+
+  const handleReset = useCallback(() => {
+    setOrder([...DEFAULT_ORDER]);
+    localStorage.removeItem(CARD_ORDER_KEY);
+    setDraggingIdx(null);
+    setOverIdx(null);
+    onReset();
+  }, [onReset]);
 
   const cardMap = new Map<string, React.ReactNode>();
   cardIds.forEach((id, i) => cardMap.set(id, children[i]));
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {order.map((id, idx) => {
-        const child = cardMap.get(id);
-        if (!child) return null;
-        return (
-          <div
-            key={id}
-            draggable
-            onDragStart={() => handleDragStart(idx)}
-            onDragEnter={() => handleDragEnter(idx)}
-            onDragEnd={handleDragEnd}
-            onDragOver={(e) => e.preventDefault()}
-            className="cursor-grab rounded-lg border border-gray-200 bg-white p-4 transition-shadow hover:shadow-md active:cursor-grabbing dark:border-[rgba(0,255,65,0.15)] dark:bg-[rgba(0,10,0,0.6)]"
+    <>
+      {/* Reset button - shown when order is customised */}
+      {JSON.stringify(order) !== JSON.stringify(DEFAULT_ORDER) && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={handleReset}
+            className="flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
           >
-            <div className="mb-2 flex items-center justify-end">
-              <GripVertical className="h-4 w-4 text-gray-300 dark:text-gray-600" />
+            <RotateCcw className="h-3 w-3" />
+            Reset Layout
+          </button>
+        </div>
+      )}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {order.map((id, idx) => {
+          const child = cardMap.get(id);
+          if (!child) return null;
+          const isDragging = draggingIdx === idx;
+          const isOver = overIdx === idx && draggingIdx !== null && draggingIdx !== idx;
+          return (
+            <div
+              key={id}
+              draggable
+              onDragStart={() => handleDragStart(idx)}
+              onDragEnter={() => handleDragEnter(idx)}
+              onDragEnd={handleDragEnd}
+              onDragOver={(e) => e.preventDefault()}
+              className={`group relative rounded-lg border bg-white p-4 transition-all duration-200 dark:bg-[rgba(0,10,0,0.6)] ${
+                isDragging
+                  ? "scale-[1.03] cursor-grabbing border-blue-400 opacity-70 shadow-2xl ring-2 ring-blue-400/30 dark:border-[rgba(0,255,65,0.5)] dark:ring-[rgba(0,255,65,0.2)]"
+                  : isOver
+                    ? "border-blue-300 bg-blue-50/30 shadow-lg dark:border-[rgba(0,255,65,0.35)] dark:bg-[rgba(0,255,65,0.04)]"
+                    : "border-gray-200 cursor-grab hover:shadow-md dark:border-[rgba(0,255,65,0.15)]"
+              }`}
+              style={{
+                transition: isDragging ? "none" : "all 0.2s ease",
+              }}
+            >
+              {/* Drag handle — top-left */}
+              <div className="absolute left-2 top-2 opacity-0 transition-opacity group-hover:opacity-100">
+                <GripVertical className="h-4 w-4 text-gray-300 dark:text-gray-600" />
+              </div>
+              {/* Drop zone indicator */}
+              {isOver && (
+                <div className="pointer-events-none absolute inset-0 rounded-lg border-2 border-dashed border-blue-400/50 dark:border-[rgba(0,255,65,0.4)]" />
+              )}
+              <div className="pl-4">
+                {child}
+              </div>
             </div>
-            {child}
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -95,6 +155,7 @@ export function DashboardPage() {
   const { t } = useTranslation("console");
   const { channelsSummary, skillsSummary, usage, isLoading, error, refresh } = useDashboardStore();
   const wsStatus = useOfficeStore((s) => s.connectionStatus);
+  const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
     refresh();
@@ -149,7 +210,7 @@ export function DashboardPage() {
     : "—";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title={t("dashboard.title")}
         description={t("dashboard.description")}
@@ -167,7 +228,11 @@ export function DashboardPage() {
         />
       )}
 
-      <DraggableGrid cardIds={DEFAULT_ORDER}>
+      <DraggableGrid
+        key={resetKey}
+        cardIds={DEFAULT_ORDER}
+        onReset={() => setResetKey((k) => k + 1)}
+      >
         <QuickActionsPanel />
 
         <KatStatusCard />

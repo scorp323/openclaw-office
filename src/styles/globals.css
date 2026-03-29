@@ -16,6 +16,8 @@
   --morpheus-bg: #000000;
   --morpheus-accent: #00ff41;
   --morpheus-gold: #0a3d0a;
+  /* Accent color — override via JS: document.documentElement.style.setProperty('--accent', hex) */
+  --accent: #3b82f6;
 }
 
 /* Matrix theme (default green) */

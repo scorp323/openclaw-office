@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useResponsive } from "@/hooks/useResponsive";
+import { useEventStream } from "@/hooks/useEventStream";
 
 interface SummaryData {
   activeAgents: number;
@@ -77,10 +78,31 @@ const LEVEL_BAR = {
   red: "border-red-200 bg-red-50/80 dark:border-red-900/30 dark:bg-red-900/10",
 };
 
+function WsIndicator({ connected }: { connected: boolean }) {
+  return (
+    <span
+      className="flex items-center gap-1"
+      title={connected ? "Gateway connected" : "Gateway disconnected"}
+    >
+      <span
+        className={`h-2 w-2 rounded-full transition-colors ${
+          connected
+            ? "bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.8)]"
+            : "bg-gray-400"
+        } ${connected ? "animate-pulse" : ""}`}
+      />
+      <span className={`text-[10px] ${connected ? "text-green-600 dark:text-green-400" : "text-gray-400"}`}>
+        WS
+      </span>
+    </span>
+  );
+}
+
 export function StatusSummaryBar() {
   const [data, setData] = useState<SummaryData | null>(null);
   const { isMobile } = useResponsive();
   const navigate = useNavigate();
+  const { wsConnected } = useEventStream();
 
   const refresh = useCallback(async () => {
     try {
@@ -106,6 +128,7 @@ export function StatusSummaryBar() {
       <div
         className={`flex items-center justify-center gap-3 border-b px-4 py-1.5 ${LEVEL_BAR[level]}`}
       >
+        <WsIndicator connected={wsConnected} />
         <span
           title={`${data.activeAgents} active agents`}
           className={`h-2 w-2 rounded-full ${data.activeAgents > 0 ? "bg-green-500" : "bg-gray-400"}`}
@@ -130,6 +153,8 @@ export function StatusSummaryBar() {
     <div
       className={`flex items-center gap-1 border-b px-6 py-1 text-xs ${LEVEL_BAR[level]}`}
     >
+      <WsIndicator connected={wsConnected} />
+      <span className="mx-1.5 text-gray-400">•</span>
       <span className={`mr-1 h-2 w-2 rounded-full ${LEVEL_DOT[level]}`} />
       <button
         type="button"
