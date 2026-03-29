@@ -1,14 +1,18 @@
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import Markdown from "react-markdown";
 import { SvgAvatar } from "@/components/shared/SvgAvatar";
 import { STATUS_COLORS } from "@/lib/constants";
+import { useChatDockStore } from "@/store/console-stores/chat-dock-store";
 import { useOfficeStore } from "@/store/office-store";
 
 export function AgentDetailPanel() {
   const { t } = useTranslation("panels");
+  const navigate = useNavigate();
   const selectedId = useOfficeStore((s) => s.selectedAgentId);
   const agents = useOfficeStore((s) => s.agents);
   const selectAgent = useOfficeStore((s) => s.selectAgent);
+  const setTargetAgent = useChatDockStore((s) => s.setTargetAgent);
 
   if (!selectedId) {
     return null;
@@ -36,13 +40,25 @@ export function AgentDetailPanel() {
             </span>
           </div>
         </div>
-        <button
-          onClick={() => selectAgent(null)}
-          className="shrink-0 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-          title={t("agentDetail.deselect")}
-        >
-          ✕
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => {
+              setTargetAgent(agent.id);
+              navigate("/chat");
+            }}
+            className="shrink-0 rounded bg-blue-600 px-2 py-0.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
+            title={t("agentDetail.chat", { defaultValue: "Chat" })}
+          >
+            {t("agentDetail.chat", { defaultValue: "Chat" })}
+          </button>
+          <button
+            onClick={() => selectAgent(null)}
+            className="shrink-0 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            title={t("agentDetail.deselect")}
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       {agent.currentTool && (
