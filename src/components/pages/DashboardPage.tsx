@@ -1,6 +1,7 @@
 import { Radio, Wrench, Zap, Clock, RefreshCw, WifiOff, Loader2, GripVertical } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ActivityFeed } from "@/components/console/dashboard/ActivityFeed";
 import { AlertBanner } from "@/components/console/dashboard/AlertBanner";
 import { ChannelOverview } from "@/components/console/dashboard/ChannelOverview";
 import { QuickNavGrid } from "@/components/console/dashboard/QuickNavGrid";
@@ -12,14 +13,21 @@ import { useDashboardStore } from "@/store/console-stores/dashboard-store";
 import { useOfficeStore } from "@/store/office-store";
 
 const CARD_ORDER_KEY = "openclaw-dashboard-card-order";
-const DEFAULT_ORDER = ["stats", "quicknav", "channels", "skills"];
+const DEFAULT_ORDER = ["stats", "quicknav", "channels", "skills", "activity"];
 
 function loadCardOrder(): string[] {
   try {
     const stored = localStorage.getItem(CARD_ORDER_KEY);
     if (stored) {
       const parsed = JSON.parse(stored) as string[];
-      if (Array.isArray(parsed) && parsed.length === DEFAULT_ORDER.length) return parsed;
+      if (Array.isArray(parsed)) {
+        // Ensure all default cards are present (handles migration)
+        const merged = [...parsed.filter((id) => DEFAULT_ORDER.includes(id))];
+        for (const id of DEFAULT_ORDER) {
+          if (!merged.includes(id)) merged.push(id);
+        }
+        if (merged.length === DEFAULT_ORDER.length) return merged;
+      }
     }
   } catch { /* use default */ }
   return DEFAULT_ORDER;
@@ -194,6 +202,8 @@ export function DashboardPage() {
         <ChannelOverview channels={channelsSummary} />
 
         <SkillOverview skills={skillsSummary} />
+
+        <ActivityFeed />
       </DraggableGrid>
     </div>
   );

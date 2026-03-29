@@ -128,6 +128,32 @@ const routes = {
 
   "/api/activity": () => cached("activity", 15_000, () => {
     const events = [];
+    // Read from journal JSONL files
+    try {
+      const journalDir = join(homedir(), ".openclaw", "workspace", "journal", "raw");
+      if (existsSync(journalDir)) {
+        const files = readdirSync(journalDir).filter(f => f.endsWith(".jsonl")).sort().slice(-5);
+        for (const file of files) {
+          try {
+            const content = readFileSync(join(journalDir, file), "utf8");
+            const lines = content.split("\n").filter(l => l.trim()).slice(-30);
+            for (const line of lines) {
+              try {
+                const entry = JSON.parse(line);
+                const type = entry.type || entry.event || (entry.error ? "error" : "system");
+                events.push({
+                  type,
+                  agent: entry.agentId || entry.agent || entry.source || "system",
+                  message: entry.message || entry.text || entry.event || JSON.stringify(entry).slice(0, 120),
+                  ts: entry.ts || entry.timestamp || Date.now(),
+                });
+              } catch {}
+            }
+          } catch {}
+        }
+      }
+    } catch {}
+    // Cron run results
     try {
       const crons = getCrons();
       for (const job of (crons.jobs || []).slice(0, 50)) {
@@ -142,6 +168,7 @@ const routes = {
         }
       }
     } catch {}
+    // Recent sessions
     try {
       const status = getStatus();
       for (const s of (status?.sessions?.recent || []).slice(0, 10)) {
@@ -153,8 +180,34 @@ const routes = {
         });
       }
     } catch {}
+    // Log file entries
+    try {
+      const wsLogs = join(homedir(), ".openclaw", "workspace", "logs");
+      if (existsSync(wsLogs)) {
+        const files = readdirSync(wsLogs).filter(f => f.endsWith(".jsonl")).slice(-3);
+        for (const file of files) {
+          try {
+            const content = readFileSync(join(wsLogs, file), "utf8");
+            const lines = content.split("\n").filter(l => l.trim()).slice(-20);
+            for (const line of lines) {
+              try {
+                const entry = JSON.parse(line);
+                if (entry.ts || entry.timestamp) {
+                  events.push({
+                    type: entry.error ? "error" : (entry.type || "log"),
+                    agent: entry.agentId || entry.agent || basename(file).replace(/\.jsonl$/, ""),
+                    message: entry.message || entry.text || entry.event || "",
+                    ts: entry.ts || entry.timestamp,
+                  });
+                }
+              } catch {}
+            }
+          } catch {}
+        }
+      }
+    } catch {}
     events.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-    return { events: events.slice(0, 30) };
+    return { events: events.slice(0, 50) };
   }),
 
   "/api/ollama": () => cached("ollama", 10_000, () => {
