@@ -16,7 +16,7 @@ interface MatrixRainProps {
   opacity?: number;
 }
 
-export function MatrixRain({ opacity = 0.2 }: MatrixRainProps) {
+export function MatrixRain({ opacity = 0.08 }: MatrixRainProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const columnsRef = useRef<Column[]>([]);
   const rafRef = useRef<number>(0);
@@ -41,14 +41,17 @@ export function MatrixRain({ opacity = 0.2 }: MatrixRainProps) {
     }
 
     function initColumns(w: number, h: number) {
-      const colCount = Math.floor(w / fontSize);
+      // Sparse columns — only ~25% of possible positions for subtle background texture
+      const maxCols = Math.floor(w / fontSize);
+      const colCount = Math.max(3, Math.floor(maxCols * 0.25));
       const cols: Column[] = [];
       for (let i = 0; i < colCount; i++) {
-        const len = 8 + Math.floor(Math.random() * 20);
+        const len = 5 + Math.floor(Math.random() * 12);
         cols.push({
-          x: i * fontSize,
+          // Random x positions instead of every column
+          x: Math.floor(Math.random() * maxCols) * fontSize,
           y: -Math.random() * h * 2,
-          speed: 1 + Math.random() * 3,
+          speed: 0.5 + Math.random() * 1.5,
           length: len,
           chars: Array.from({ length: len }, () => CHARS[Math.floor(Math.random() * CHARS.length)]),
         });
@@ -61,8 +64,8 @@ export function MatrixRain({ opacity = 0.2 }: MatrixRainProps) {
       const w = rect.width;
       const h = rect.height;
 
-      // Fade trail — semi-transparent black overlay
-      ctx!.fillStyle = "rgba(0, 0, 0, 0.06)";
+      // Fast fade — characters disappear quickly so they don't pile up
+      ctx!.fillStyle = "rgba(0, 0, 0, 0.15)";
       ctx!.fillRect(0, 0, w, h);
 
       ctx!.font = `${fontSize}px monospace`;
@@ -72,24 +75,22 @@ export function MatrixRain({ opacity = 0.2 }: MatrixRainProps) {
           const charY = col.y + j * charHeight;
           if (charY < -charHeight || charY > h + charHeight) continue;
 
-          // Head character is brightest
           const distFromHead = col.length - 1 - j;
           let alpha: number;
           if (distFromHead === 0) {
-            alpha = 0.9;
+            alpha = 0.5;
           } else if (distFromHead < 3) {
-            alpha = 0.5 - distFromHead * 0.1;
+            alpha = 0.25 - distFromHead * 0.06;
           } else {
-            alpha = Math.max(0.05, 0.3 - (distFromHead / col.length) * 0.3);
+            alpha = Math.max(0.02, 0.12 - (distFromHead / col.length) * 0.12);
           }
 
-          // Head char: white-green, rest: matrix green fading to dark forest
           if (distFromHead === 0) {
             ctx!.fillStyle = `rgba(180, 255, 180, ${alpha})`;
             ctx!.shadowColor = "#00ff41";
-            ctx!.shadowBlur = 8;
+            ctx!.shadowBlur = 4;
           } else {
-            const g = Math.max(51, 255 - distFromHead * 15);
+            const g = Math.max(51, 255 - distFromHead * 20);
             ctx!.fillStyle = `rgba(0, ${g}, ${Math.floor(g * 0.25)}, ${alpha})`;
             ctx!.shadowColor = "transparent";
             ctx!.shadowBlur = 0;
@@ -97,21 +98,17 @@ export function MatrixRain({ opacity = 0.2 }: MatrixRainProps) {
 
           ctx!.fillText(col.chars[j], col.x, charY);
 
-          // Randomly mutate characters
           if (Math.random() < 0.02) {
             col.chars[j] = CHARS[Math.floor(Math.random() * CHARS.length)];
           }
         }
 
-        // Reset shadow after drawing
         ctx!.shadowBlur = 0;
-
         col.y += col.speed;
 
-        // Reset column when it's fully off screen
         if (col.y > h + col.length * charHeight) {
           col.y = -col.length * charHeight - Math.random() * h * 0.5;
-          col.speed = 1 + Math.random() * 3;
+          col.speed = 0.5 + Math.random() * 1.5;
         }
       }
 

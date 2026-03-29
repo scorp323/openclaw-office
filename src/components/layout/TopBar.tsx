@@ -38,17 +38,17 @@ export function TopBar({ isMobile = false }: TopBarProps) {
   const isOfficePage = currentPage === "office";
 
   return (
-    <header className="grid h-12 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 border-b border-gray-200/80 bg-white px-5 dark:border-[rgba(0,255,65,0.2)] dark:bg-[rgba(0,0,0,0.85)] dark:shadow-[0_0_15px_rgba(0,255,65,0.08)] dark:backdrop-blur-xl">
+    <header className="grid h-12 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border-b border-gray-200/80 bg-white px-3 sm:gap-4 sm:px-5 dark:border-[rgba(0,255,65,0.2)] dark:bg-[rgba(0,0,0,0.85)] dark:shadow-[0_0_15px_rgba(0,255,65,0.08)] dark:backdrop-blur-xl">
       <div className="min-w-0">
         <BrandSection metrics={metrics} isOfficePage={isOfficePage} isMobile={isMobile} />
       </div>
       <TopNav currentPage={currentPage} />
-      <div className="ml-auto flex items-center gap-3 justify-self-end">
-        <CostCounter />
+      <div className="ml-auto flex items-center gap-1.5 justify-self-end sm:gap-3">
+        <span className="hidden sm:inline-flex"><CostCounter /></span>
         <NotificationBell />
-        <MuteToggle />
+        <span className="hidden sm:inline-flex"><MuteToggle /></span>
         <ThemeToggle theme={theme} setTheme={setTheme} />
-        <LanguageSwitcher />
+        <span className="hidden sm:inline-flex"><LanguageSwitcher /></span>
         <ConnectionIndicator
           statusCfg={statusCfg}
           connectionError={connectionError}
@@ -72,10 +72,11 @@ function BrandSection({
 
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <h1 className="glow-green truncate text-sm font-semibold tracking-tight text-gray-800 dark:text-[#00ff41]">
-        Morpheus Command Center
+      <h1 className="glow-green truncate text-xs font-semibold tracking-tight text-gray-800 sm:text-sm dark:text-[#00ff41]">
+        <span className="sm:hidden">MC</span>
+        <span className="hidden sm:inline">Morpheus Command Center</span>
       </h1>
-      <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] tabular-nums text-gray-400 dark:bg-[rgba(0,255,65,0.1)] dark:text-[#00ff41]">
+      <span className="hidden rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] tabular-nums text-gray-400 sm:inline dark:bg-[rgba(0,255,65,0.1)] dark:text-[#00ff41]">
         v{APP_VERSION}
       </span>
       {isOfficePage && !isMobile && (
@@ -155,7 +156,7 @@ function ConnectionIndicator({
               : "none",
         }}
       />
-      <span className="text-sm text-gray-500 dark:text-[#0a5d0a]">
+      <span className="hidden text-sm text-gray-500 sm:inline dark:text-[#0a5d0a]">
         {connectionError && connectionStatus === "error" ? connectionError : statusCfg.label}
       </span>
     </div>

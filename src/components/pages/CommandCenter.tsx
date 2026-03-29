@@ -204,7 +204,7 @@ function JarvisAgentCard({ agent, onClick, isSelected, recentCronCount }: { agen
   return (
     <button onClick={onClick} style={{
       ...glassStyle({
-        padding: "16px",
+        padding: "10px 12px",
         cursor: "pointer",
         width: "100%",
         textAlign: "left",
@@ -221,8 +221,8 @@ function JarvisAgentCard({ agent, onClick, isSelected, recentCronCount }: { agen
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(to right, transparent, ${accentColor}60, transparent)` }} />
 
       {/* Top row: emoji + status */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-        <span style={{ fontSize: 28, filter: isActive ? "none" : "grayscale(0.5)" }}>{agent.emoji}</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+        <span style={{ fontSize: 22, filter: isActive ? "none" : "grayscale(0.5)" }}>{agent.emoji}</span>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div style={{
             width: 8, height: 8, borderRadius: "50%", backgroundColor: accentColor,
@@ -236,9 +236,9 @@ function JarvisAgentCard({ agent, onClick, isSelected, recentCronCount }: { agen
       </div>
 
       {/* Name + codename */}
-      <div style={{ marginBottom: 8 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "#e2e8f0", lineHeight: 1.2 }}>{codename}</div>
-        <div style={{ fontSize: 10, color: "rgba(0, 255, 65, 0.45)", marginTop: 3 }}>{title}</div>
+      <div style={{ marginBottom: 4 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0", lineHeight: 1.2 }}>{codename}</div>
+        <div style={{ fontSize: 9, color: "rgba(0, 255, 65, 0.45)", marginTop: 2 }}>{title}</div>
       </div>
 
       {/* Role + model */}
@@ -249,9 +249,15 @@ function JarvisAgentCard({ agent, onClick, isSelected, recentCronCount }: { agen
         {agent.model}
       </div>
 
-      {/* Arc gauge */}
-      <div style={{ display: "flex", justifyContent: "center", marginTop: 10 }}>
-        <ArcGauge value={loadPct} max={100} color={accentColor} label={`${loadPct}%`} />
+      {/* Load bar — compact alternative to arc gauge */}
+      <div style={{ marginTop: 8 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, color: "rgba(255,255,255,0.3)", marginBottom: 3, fontFamily: "'JetBrains Mono', monospace" }}>
+          <span>LOAD</span>
+          <span>{loadPct}%</span>
+        </div>
+        <div style={{ height: 3, borderRadius: 2, background: "rgba(255,255,255,0.06)" }}>
+          <div style={{ height: 3, borderRadius: 2, background: accentColor, width: `${loadPct}%`, transition: "width 0.5s ease", boxShadow: `0 0 4px ${accentColor}40` }} />
+        </div>
       </div>
     </button>
   );
@@ -282,16 +288,16 @@ function OperatorCard({ name, role, status, emoji }: { name: string; role: strin
 function KpiCard({ label, value, sub, color = "#00ff41", sparkData }: { label: string; value: string; sub?: string; color?: string; sparkData?: number[] }) {
   return (
     <div style={{
-      ...glassStyle({ padding: "14px 18px" }),
+      ...glassStyle({ padding: "10px 12px" }),
       fontFamily: "'JetBrains Mono', monospace",
     }}>
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(0, 255, 65, 0.45)", marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(0, 255, 65, 0.45)", marginBottom: 6 }}>{label}</div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
         <div>
-          <div style={{ fontSize: 26, fontWeight: 800, color, lineHeight: 1, textShadow: `0 0 20px ${color}30` }}>{value}</div>
-          {sub && <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>{sub}</div>}
+          <div style={{ fontSize: 20, fontWeight: 800, color, lineHeight: 1, textShadow: `0 0 20px ${color}30` }}>{value}</div>
+          {sub && <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginTop: 3 }}>{sub}</div>}
         </div>
-        {sparkData && sparkData.length > 1 && <Sparkline data={sparkData} color={color} />}
+        {sparkData && sparkData.length > 1 && <Sparkline data={sparkData} color={color} height={22} width={60} />}
       </div>
     </div>
   );
@@ -718,7 +724,7 @@ export function CommandCenter() {
         </aside>
 
         {/* ── Main Content Area ─────────────────────── */}
-        <main style={{ flex: 1, padding: "20px 24px", overflowY: "auto" }}>
+        <main style={{ flex: 1, padding: "12px 10px", overflowY: "auto" }} className="sm:!p-[20px_24px]">
           {/* Header bar */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 8 }}>
             <h1 style={{
@@ -749,7 +755,7 @@ export function CommandCenter() {
           {activeView === "dashboard" && (
             <>
               {/* KPI Row */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(145px, 1fr))", gap: 12, marginBottom: 24 }}>
+              <div style={{ display: "grid", gap: 10, marginBottom: 20 }} className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-6" >
                 <KpiCard label="Agents" value={`${activeRealAgents}/${realAgents.length}`} sub="fleet capacity" />
                 <KpiCard label="Crons" value={`${cronStats.healthy}/${cronStats.total}`}
                   sub={cronStats.errors > 0 ? `${cronStats.errors} failing` : "all green"}
@@ -762,10 +768,7 @@ export function CommandCenter() {
 
               {/* Agent Fleet Grid */}
               <SectionHeader title="Agent Fleet" count={realAgents.length} />
-              <div style={{
-                display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(175px, 1fr))",
-                gap: 12, marginBottom: 24,
-              }}>
+              <div style={{ display: "grid", gap: 10, marginBottom: 20 }} className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
                 {realAgents.map(agent => (
                   <JarvisAgentCard
                     key={agent.id}

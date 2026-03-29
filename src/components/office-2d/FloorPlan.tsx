@@ -139,10 +139,11 @@ export function FloorPlan() {
 
   const activeCount = agentList.filter((a) => a.status !== "idle" && a.status !== "offline" && !a.isPlaceholder).length;
   const totalCount = agentList.filter((a) => !a.isPlaceholder).length;
-  // MatrixRain density scales with active agent ratio (0.2 base → up to 0.6)
+  // MatrixRain: very subtle background texture — NOT a visibility blocker
+  // Keep max at 0.08 so the floor plan and agents are always clearly readable
   const rainOpacity = totalCount > 0
-    ? Math.min(0.6, 0.2 + (activeCount / totalCount) * 0.4)
-    : 0.2;
+    ? Math.min(0.08, 0.03 + (activeCount / totalCount) * 0.05)
+    : 0.03;
 
   // ── Mobile portrait view: scrollable card list ──
   if (isMobile) {
