@@ -92,5 +92,11 @@
     "agentStarted": "{{agent}} 开始运行",
     "agentEnded": "{{agent}} 运行结束",
     "chatMessage": "来自 {{agent}} 的消息"
+  },
+  "pwa": {
+    "installTitle": "安装 Mission Control",
+    "installHint": "从主屏幕快速访问",
+    "install": "安装",
+    "dismiss": "暂不"
   }
 }

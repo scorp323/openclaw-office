@@ -275,6 +275,12 @@ body {
   animation: chat-slide-down 150ms ease-in forwards;
 }
 
+/* PWA install prompt slide */
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
 /* Brain rain fall animation */
 @keyframes brain-fall {
   0% {

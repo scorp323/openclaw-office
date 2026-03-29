@@ -92,5 +92,11 @@
     "agentStarted": "{{agent}} started running",
     "agentEnded": "{{agent}} finished running",
     "chatMessage": "Message from {{agent}}"
+  },
+  "pwa": {
+    "installTitle": "Install Mission Control",
+    "installHint": "Quick access from your home screen",
+    "install": "Install",
+    "dismiss": "Not now"
   }
 }

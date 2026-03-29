@@ -33,6 +33,9 @@ import { useResponsive } from "@/hooks/useResponsive";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useOfficeStore } from "@/store/office-store";
 import { useConsoleSettingsStore } from "@/store/console-stores/settings-store";
+import { useRestoreLastPage, useTrackCurrentPage } from "@/hooks/useSessionState";
+import { useNotificationSounds } from "@/hooks/useNotificationSounds";
+import { PwaInstallPrompt } from "@/components/shared/PwaInstallPrompt";
 
 function LoadingScreen() {
   return (
@@ -112,12 +115,18 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 function PageTracker() {
   const location = useLocation();
   const setCurrentPage = useOfficeStore((s) => s.setCurrentPage);
+  useTrackCurrentPage();
 
   useEffect(() => {
     const page = PAGE_MAP[location.pathname] ?? "office";
     setCurrentPage(page);
   }, [location.pathname, setCurrentPage]);
 
+  return null;
+}
+
+function SessionRestorer() {
+  useRestoreLastPage();
   return null;
 }
 
@@ -153,6 +162,7 @@ export function App() {
   const { isMobile } = useResponsive();
   const { wsClient } = useGatewayConnection({ url: gatewayUrl, token: gatewayToken });
   useNotifications();
+  useNotificationSounds();
   const { helpOpen, closeHelp } = useKeyboardShortcuts();
 
   return (
@@ -160,6 +170,8 @@ export function App() {
       <a href="#main-content" className="skip-to-content">Skip to main content</a>
       <ThemeSync />
       <PageTracker />
+      <SessionRestorer />
+      <PwaInstallPrompt />
       <RouteAnnouncer />
       <ToastContainer />
       <ChatWorkspaceBootstrap wsClient={wsClient} />

@@ -318,6 +318,12 @@
       "ambientSound": "Ambient Office Sounds",
       "ambientSoundHint": "Keyboard clicks, chimes, and alerts from agent activity"
     },
+    "sound": {
+      "title": "Notification Sounds",
+      "enable": "Sound Alerts",
+      "enableHint": "Chimes on completion, alerts on errors, activity clicks",
+      "volume": "Volume"
+    },
     "providers": {
       "title": "AI Providers",
       "description": "Manage AI model provider configurations",

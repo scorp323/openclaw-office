@@ -5,6 +5,7 @@ import { NotificationBell } from "@/components/layout/NotificationBell";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 import type { ConnectionStatus, ThemeMode, PageId } from "@/gateway/types";
 import { useOfficeStore } from "@/store/office-store";
+import { useSoundState } from "@/hooks/useNotificationSounds";
 
 const APP_VERSION = typeof __APP_VERSION__ === "string" ? __APP_VERSION__ : "dev";
 
@@ -45,6 +46,7 @@ export function TopBar({ isMobile = false }: TopBarProps) {
       <div className="ml-auto flex items-center gap-3 justify-self-end">
         <CostCounter />
         <NotificationBell />
+        <MuteToggle />
         <ThemeToggle theme={theme} setTheme={setTheme} />
         <LanguageSwitcher />
         <ConnectionIndicator
@@ -157,6 +159,33 @@ function ConnectionIndicator({
         {connectionError && connectionStatus === "error" ? connectionError : statusCfg.label}
       </span>
     </div>
+  );
+}
+
+function MuteToggle() {
+  const { t } = useTranslation("layout");
+  const { muted, toggleMute } = useSoundState();
+
+  return (
+    <button
+      onClick={toggleMute}
+      aria-label={muted ? t("topbar.sound.unmute", { defaultValue: "Unmute sounds" }) : t("topbar.sound.mute", { defaultValue: "Mute sounds" })}
+      className="flex h-7 w-7 items-center justify-center rounded-md text-sm transition-colors hover:bg-gray-200 dark:hover:bg-[rgba(0,255,65,0.1)]"
+    >
+      {muted ? (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 dark:text-[#0a5d0a]">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+          <line x1="23" y1="9" x2="17" y2="15" />
+          <line x1="17" y1="9" x2="23" y2="15" />
+        </svg>
+      ) : (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500 dark:text-[#00ff41]">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+        </svg>
+      )}
+    </button>
   );
 }
 

@@ -318,6 +318,12 @@
       "ambientSound": "办公室环境音效",
       "ambientSoundHint": "键盘声、提示音和来自智能体活动的警报音"
     },
+    "sound": {
+      "title": "通知音效",
+      "enable": "声音提醒",
+      "enableHint": "完成时提示音、错误时警报、活动时点击声",
+      "volume": "音量"
+    },
     "providers": {
       "title": "AI 提供方",
       "description": "管理 AI 模型供应商配置",
