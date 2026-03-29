@@ -6,26 +6,62 @@ export interface ShortcutEntry {
   label: string;
 }
 
-export const SHORTCUT_LIST: ShortcutEntry[] = [
-  { keys: "⌘ 1", label: "Command Center" },
-  { keys: "⌘ 2", label: "Office" },
-  { keys: "⌘ 3", label: "Dashboard" },
-  { keys: "⌘ 4", label: "Chat" },
-  { keys: "⌘ 5", label: "Agents" },
-  { keys: "⌘ 6", label: "Cron" },
-  { keys: "⌘ 7", label: "Channels" },
-  { keys: "⌘ 8", label: "Settings" },
-  { keys: "⌘ 9", label: "Logs" },
-  { keys: "⌘ K", label: "Search" },
-  { keys: "/", label: "Focus search" },
-  { keys: "g d", label: "Go to Dashboard" },
-  { keys: "g o", label: "Go to Office" },
-  { keys: "g a", label: "Go to Agents" },
-  { keys: "g c", label: "Go to Cron" },
-  { keys: "g s", label: "Go to Settings" },
-  { keys: "?", label: "Keyboard shortcuts" },
-  { keys: "Esc", label: "Close overlay / modal" },
+export interface ShortcutCategory {
+  name: string;
+  shortcuts: ShortcutEntry[];
+}
+
+export const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
+  {
+    name: "Navigation",
+    shortcuts: [
+      { keys: "g d", label: "Go to Dashboard" },
+      { keys: "g o", label: "Go to Office" },
+      { keys: "g b", label: "Go to Briefing" },
+      { keys: "g n", label: "Go to Notifications" },
+      { keys: "g a", label: "Go to Agents" },
+      { keys: "g c", label: "Go to Cron" },
+      { keys: "g s", label: "Go to Settings" },
+    ],
+  },
+  {
+    name: "Actions",
+    shortcuts: [
+      { keys: "⌘ K", label: "Command Palette" },
+      { keys: "/", label: "Focus Search" },
+      { keys: "?", label: "Keyboard Shortcuts" },
+      { keys: "Esc", label: "Close Modal / Overlay" },
+    ],
+  },
+  {
+    name: "Quick Nav",
+    shortcuts: [
+      { keys: "⌘ 1", label: "Command Center" },
+      { keys: "⌘ 2", label: "Office" },
+      { keys: "⌘ 3", label: "Dashboard" },
+      { keys: "⌘ 4", label: "Chat" },
+      { keys: "⌘ 5", label: "Agents" },
+      { keys: "⌘ 6", label: "Cron" },
+      { keys: "⌘ 7", label: "Channels" },
+      { keys: "⌘ 8", label: "Settings" },
+      { keys: "⌘ 9", label: "Logs" },
+    ],
+  },
+  {
+    name: "Quick Actions",
+    shortcuts: [
+      { keys: "1", label: "Restart Gateway" },
+      { keys: "2", label: "Check Email Now" },
+      { keys: "3", label: "Morning Brief" },
+      { keys: "4", label: "Toggle Work Mode" },
+      { keys: "5", label: "Run Cost Check" },
+      { keys: "6", label: "Clean Inbox" },
+    ],
+  },
 ];
+
+/** Flat list for backward compatibility */
+export const SHORTCUT_LIST: ShortcutEntry[] = SHORTCUT_CATEGORIES.flatMap((c) => c.shortcuts);
 
 const NAV_MAP: Record<string, string> = {
   "1": "/",
@@ -46,13 +82,22 @@ const G_NAV_MAP: Record<string, string> = {
   a: "/agents",
   c: "/cron",
   s: "/settings",
+  b: "/briefing",
+  n: "/notifications",
 };
 
 const G_SEQUENCE_TIMEOUT_MS = 800;
+const STARTUP_KEY = "mc_shortcuts_startup";
 
 export function useKeyboardShortcuts() {
   const navigate = useNavigate();
-  const [helpOpen, setHelpOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(() => {
+    try {
+      return localStorage.getItem(STARTUP_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
   const gPendingRef = useRef(false);
   const gTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -70,7 +115,6 @@ export function useKeyboardShortcuts() {
 
       // Escape: close any open dialog / overlay
       if (e.key === "Escape") {
-        // Reset g-sequence
         gPendingRef.current = false;
         if (gTimerRef.current) { clearTimeout(gTimerRef.current); gTimerRef.current = null; }
 
@@ -79,7 +123,6 @@ export function useKeyboardShortcuts() {
           e.preventDefault();
           return;
         }
-        // Close any open <dialog> elements
         const openDialog = document.querySelector("dialog[open]") as HTMLDialogElement | null;
         if (openDialog) {
           openDialog.close();
@@ -89,7 +132,6 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      // Skip non-escape shortcuts when typing in inputs
       if (isInput) return;
 
       // Handle second key of "g then X" sequence
@@ -102,13 +144,11 @@ export function useKeyboardShortcuts() {
           navigate(route);
           return;
         }
-        // Not a valid g-sequence follow-up — fall through to normal handling
       }
 
       // "/" to focus search (triggers Cmd+K spotlight)
       if (e.key === "/" && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
-        // Dispatch Ctrl+K to open SearchSpotlight
         document.dispatchEvent(
           new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }),
         );

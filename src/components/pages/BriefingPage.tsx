@@ -4,12 +4,12 @@ import {
   CheckCircle,
   Clock,
   DollarSign,
-  Loader2,
   RefreshCw,
   TrendingDown,
   TrendingUp,
   XCircle,
 } from "lucide-react";
+import { BriefingSkeleton } from "@/components/console/shared/Skeleton";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // --- Types ---
@@ -460,11 +460,7 @@ export function BriefingPage() {
         </button>
       </div>
 
-      {loading && !data && (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-        </div>
-      )}
+      {loading && !data && <BriefingSkeleton />}
 
       {error && !data && (
         <div className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-600 dark:border-red-700/40 dark:bg-red-900/20 dark:text-red-400">

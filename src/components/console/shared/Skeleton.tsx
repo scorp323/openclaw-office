@@ -6,10 +6,11 @@ interface SkeletonProps {
   height?: number;
 }
 
-export function Skeleton({ className = "" }: SkeletonProps) {
+export function Skeleton({ className = "", style }: SkeletonProps) {
   return (
     <div
-      className={`animate-pulse rounded bg-gray-200 dark:bg-gray-700/50 ${className}`}
+      className={`skeleton-shimmer ${className}`}
+      style={style}
     />
   );
 }
@@ -144,6 +145,100 @@ export function CostsSkeleton() {
         <SkeletonChart height={250} />
       </div>
       <SkeletonChart height={200} />
+    </div>
+  );
+}
+
+export function BriefingSkeleton() {
+  return (
+    <div className="space-y-4">
+      {/* System status card */}
+      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700/50 dark:bg-gray-900/60">
+        <div className="mb-4 flex items-center gap-2">
+          <Skeleton className="h-5 w-5 rounded" />
+          <Skeleton className="h-5 w-32" />
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800/60">
+              <Skeleton className="mb-2 h-3 w-16" />
+              <Skeleton className="h-6 w-12" />
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Alert card */}
+      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700/50 dark:bg-gray-900/60">
+        <div className="mb-4 flex items-center gap-2">
+          <Skeleton className="h-5 w-5 rounded" />
+          <Skeleton className="h-5 w-28" />
+        </div>
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-start gap-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-800/40">
+              <Skeleton className="h-3 w-3 rounded-full" />
+              <Skeleton className="h-3 flex-1" />
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Cost + cron row */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {[1, 2].map((i) => (
+          <div key={i} className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700/50 dark:bg-gray-900/60">
+            <div className="mb-4 flex items-center gap-2">
+              <Skeleton className="h-5 w-5 rounded" />
+              <Skeleton className="h-5 w-24" />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {[1, 2, 3].map((j) => (
+                <div key={j} className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800/60">
+                  <Skeleton className="mb-2 h-3 w-14" />
+                  <Skeleton className="h-5 w-10" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Email summary card */}
+      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700/50 dark:bg-gray-900/60">
+        <div className="mb-4 flex items-center gap-2">
+          <Skeleton className="h-5 w-5 rounded" />
+          <Skeleton className="h-5 w-36" />
+        </div>
+        <div className="space-y-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-3 w-full" style={{ width: `${60 + Math.random() * 40}%` }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function NotificationsSkeleton() {
+  return (
+    <div className="space-y-2">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div
+          key={i}
+          className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+        >
+          <div className="flex items-start gap-3">
+            <Skeleton className="mt-0.5 h-4 w-4 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-4 w-12 rounded" />
+                <Skeleton className="h-4 w-20 rounded" />
+                <Skeleton className="ml-auto h-3 w-24" />
+              </div>
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-3/4" />
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

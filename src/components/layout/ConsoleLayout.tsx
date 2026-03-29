@@ -99,7 +99,7 @@ export function ConsoleLayout() {
             })}
           </nav>
         )}
-        <main id="main-content" className="flex-1 overflow-auto">
+        <main id="main-content" role="main" className="flex-1 overflow-auto">
           <div className={`${isChatRoute ? "h-full p-6" : "mx-auto max-w-6xl p-6"} ${isMobile ? "pb-20" : ""}`}>
             <PageTransition locationKey={location.key} />
           </div>

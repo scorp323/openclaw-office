@@ -354,3 +354,31 @@ body {
 .agent-active-pulse {
   animation: agent-breathe 2.5s infinite ease-in-out, agent-glow 2.5s infinite ease-in-out;
 }
+
+/* Skeleton shimmer animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgb(229 231 235) 0%,
+    rgb(243 244 246) 45%,
+    rgb(229 231 235) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: 0.375rem;
+}
+
+.dark .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(31, 41, 55, 0.5) 0%,
+    rgba(55, 65, 81, 0.6) 45%,
+    rgba(31, 41, 55, 0.5) 100%
+  );
+  background-size: 200% 100%;
+}
