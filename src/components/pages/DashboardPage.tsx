@@ -10,6 +10,7 @@ import { StatCard } from "@/components/console/dashboard/StatCard";
 import { ErrorState } from "@/components/console/shared/ErrorState";
 import { DashboardSkeleton } from "@/components/console/shared/Skeleton";
 import { useDashboardStore } from "@/store/console-stores/dashboard-store";
+import { isHttpAdapter } from "@/gateway/adapter-provider";
 import { useOfficeStore } from "@/store/office-store";
 
 const CARD_ORDER_KEY = "openclaw-dashboard-card-order";
@@ -95,8 +96,10 @@ export function DashboardPage() {
     refresh();
   }, [refresh]);
 
+  const usingHttpAdapter = isHttpAdapter();
+
   if (isLoading && channelsSummary.length === 0) {
-    const isDisconnected = wsStatus !== "connected" && wsStatus !== "connecting";
+    const isDisconnected = wsStatus !== "connected" && wsStatus !== "connecting" && !usingHttpAdapter;
     return (
       <div className="space-y-6">
         <PageHeader
@@ -114,7 +117,7 @@ export function DashboardPage() {
   }
 
   if (error && channelsSummary.length === 0 && skillsSummary.length === 0) {
-    const isConnectionError = wsStatus !== "connected";
+    const isConnectionError = wsStatus !== "connected" && !usingHttpAdapter;
     return (
       <div className="space-y-6">
         <PageHeader
@@ -150,7 +153,7 @@ export function DashboardPage() {
         loading={isLoading}
       />
 
-      {wsStatus !== "connected" && (
+      {wsStatus !== "connected" && !usingHttpAdapter && (
         <AlertBanner variant="warning" message={t("dashboard.alerts.gatewayDisconnected")} />
       )}
       {errorChannelCount > 0 && (
@@ -186,7 +189,7 @@ export function DashboardPage() {
             <StatCard
               icon={Clock}
               title={t("dashboard.stats.uptime")}
-              value={wsStatus === "connected" ? t("dashboard.stats.uptimeOnline") : "—"}
+              value={wsStatus === "connected" || usingHttpAdapter ? t("dashboard.stats.uptimeOnline") : "—"}
               color="text-amber-500"
             />
           </div>

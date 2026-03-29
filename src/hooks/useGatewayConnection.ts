@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { initAdapter, isMockMode } from "@/gateway/adapter-provider";
+import { initAdapter, initHttpAdapter, isMockMode } from "@/gateway/adapter-provider";
 import { GatewayRpcClient } from "@/gateway/rpc-client";
 import type {
   AgentEventPayload,
@@ -94,10 +94,41 @@ export function useGatewayConnection({ url, token }: UseGatewayConnectionOptions
       processAgentEvent(event);
     });
 
+    let httpFallbackAttempted = false;
+
     ws.onStatusChange((status, error) => {
+      // If WS fails and we haven't tried HTTP fallback yet, try it
+      if (
+        !httpFallbackAttempted &&
+        (status === "disconnected" || status === "error")
+      ) {
+        httpFallbackAttempted = true;
+        void initHttpAdapter()
+          .then(async (adapter) => {
+            setConnectionStatus("connected");
+            // Fetch agent names from MC API
+            try {
+              const agentList = await adapter.agentsList() as AgentsListResponse;
+              if (agentList.agents?.length) {
+                cacheAgentNames(agentList.agents);
+                initAgents(agentList.agents);
+              }
+            } catch {
+              // agents list may not match gateway format; that's ok
+            }
+            setOperatorScopes(["operator.read"]);
+          })
+          .catch(() => {
+            // HTTP fallback also failed; keep the WS error state
+            setConnectionStatus(status, error);
+          });
+        return;
+      }
+
       setConnectionStatus(status, error);
 
       if (status === "connected") {
+        httpFallbackAttempted = false; // Reset if WS reconnects
         initAgentsFromSnapshot(ws, initAgents);
         const authScopes = ws.getAuthInfo()?.scopes;
         setOperatorScopes(Array.isArray(authScopes) ? authScopes : ["operator.admin", "operator.read"]);

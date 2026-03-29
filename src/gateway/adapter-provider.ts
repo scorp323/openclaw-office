@@ -1,4 +1,5 @@
 import type { GatewayAdapter } from "./adapter";
+import { HttpAdapter } from "./http-adapter";
 import { MockAdapter } from "./mock-adapter";
 import { GatewayRpcClient } from "./rpc-client";
 import { WsAdapter } from "./ws-adapter";
@@ -11,6 +12,7 @@ let adapterReadyWaiters: Array<{
   resolve: (adapter: GatewayAdapter) => void;
   reject: (error: Error) => void;
 }> = [];
+let httpFallbackInstance: HttpAdapter | null = null;
 
 export function getAdapter(): GatewayAdapter {
   if (adapterInstance) return adapterInstance;
@@ -120,10 +122,38 @@ function toError(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error));
 }
 
+/**
+ * Initialize the HTTP adapter as a fallback when WebSocket is unavailable.
+ * This is used when accessing through Cloudflare tunnels where the gateway
+ * WS port is not exposed.
+ */
+export async function initHttpAdapter(): Promise<GatewayAdapter> {
+  if (adapterInstance) return adapterInstance;
+
+  const httpAdapter = new HttpAdapter();
+  try {
+    await httpAdapter.connect();
+    httpFallbackInstance = httpAdapter;
+    adapterInstance = httpAdapter;
+    resolveWaiters(httpAdapter);
+    return httpAdapter;
+  } catch (error) {
+    throw toError(error);
+  }
+}
+
+/**
+ * Returns true if the current adapter is an HTTP fallback adapter.
+ */
+export function isHttpAdapter(): boolean {
+  return adapterInstance instanceof HttpAdapter;
+}
+
 export function __resetAdapterForTests(): void {
   adapterInstance?.disconnect();
   adapterInstance = null;
   adapterInitPromise = null;
   adapterInitError = null;
   adapterReadyWaiters = [];
+  httpFallbackInstance = null;
 }
