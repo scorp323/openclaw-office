@@ -63,6 +63,7 @@ export function Sidebar() {
         <button
           onClick={() => setSidebarCollapsed(false)}
           className="text-gray-400 hover:text-gray-700 dark:text-[#0a3d0a] dark:hover:text-[#00ff41]"
+          aria-label={t("sidebar.expand")}
           title={t("sidebar.expand")}
         >
           ◀
@@ -78,7 +79,7 @@ export function Sidebar() {
   const timelineSection = getSection("timeline");
 
   return (
-    <aside className="flex w-80 flex-col border-l border-gray-200 bg-white dark:border-[rgba(0,255,65,0.15)] dark:bg-black">
+    <aside role="complementary" aria-label="Agent sidebar" className="flex w-80 flex-col border-l border-gray-200 bg-white dark:border-[rgba(0,255,65,0.15)] dark:bg-black">
       {/* Sidebar header */}
       <div className="flex h-8 shrink-0 items-center justify-between border-b border-gray-200 px-3 dark:border-[rgba(0,255,65,0.1)]">
         <span className="glow-green text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-[#00ff41]">
@@ -87,6 +88,7 @@ export function Sidebar() {
         <button
           onClick={() => setSidebarCollapsed(true)}
           className="text-gray-400 hover:text-gray-600 dark:text-[#0a3d0a] dark:hover:text-[#00ff41]"
+          aria-label={t("sidebar.collapse")}
           title={t("sidebar.collapse")}
         >
           ▶

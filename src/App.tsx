@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { isAuthenticated } from "@/lib/auth";
 import { AppShell } from "@/components/layout/AppShell";
@@ -118,6 +118,22 @@ function PageTracker() {
   return null;
 }
 
+function RouteAnnouncer() {
+  const location = useLocation();
+  const [announcement, setAnnouncement] = useState("");
+
+  useEffect(() => {
+    const page = PAGE_MAP[location.pathname] ?? "page";
+    setAnnouncement(`Navigated to ${page}`);
+  }, [location.pathname]);
+
+  return (
+    <div aria-live="polite" aria-atomic="true" className="sr-only">
+      {announcement}
+    </div>
+  );
+}
+
 export function App() {
   const loadSettingsFromServer = useConsoleSettingsStore((s) => s.loadFromServer);
   useEffect(() => { void loadSettingsFromServer(); }, [loadSettingsFromServer]);
@@ -138,8 +154,10 @@ export function App() {
 
   return (
     <>
+      <a href="#main-content" className="skip-to-content">Skip to main content</a>
       <ThemeSync />
       <PageTracker />
+      <RouteAnnouncer />
       <ToastContainer />
       <ChatWorkspaceBootstrap wsClient={wsClient} />
       <SearchSpotlight />

@@ -76,7 +76,7 @@ export function NotificationBell() {
           if (!isOpen) markAllRead();
         }}
         className="relative flex h-7 w-7 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-200 dark:text-[#0a5d0a] dark:hover:bg-[rgba(0,255,65,0.1)]"
-        title="Notifications"
+        aria-label="Notifications"
       >
         <BellSvg />
         {unreadCount > 0 && (

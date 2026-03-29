@@ -166,7 +166,7 @@ function ThemeToggle({ theme, setTheme }: { theme: ThemeMode; setTheme: (t: Them
   return (
     <button
       onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      title={theme === "light" ? t("topbar.theme.switchToDark") : t("topbar.theme.switchToLight")}
+      aria-label={theme === "light" ? t("topbar.theme.switchToDark") : t("topbar.theme.switchToLight")}
       className="ml-2 flex h-7 w-7 items-center justify-center rounded-md text-base transition-colors hover:bg-gray-200 dark:hover:bg-[rgba(0,255,65,0.1)]"
     >
       {theme === "light" ? "🌙" : "☀️"}

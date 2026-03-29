@@ -108,6 +108,7 @@ export function QuickActionsFab() {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-label={isOpen ? "Close quick actions" : "Quick actions"}
         className={`flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform ${
           isOpen
             ? "rotate-45 bg-red-500 text-white"

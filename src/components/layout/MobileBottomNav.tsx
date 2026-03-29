@@ -77,6 +77,7 @@ function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close menu"
             className="rounded-full p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             <X className="h-5 w-5" />
@@ -162,7 +163,7 @@ export function MobileBottomNav() {
               : "text-gray-400 dark:text-gray-500"
           }`}
         >
-          <MoreHorizontal className={`h-5 w-5 ${isMoreActive ? "drop-shadow-[0_0_6px_rgba(16,185,129,0.5)]" : ""}`} />
+          <MoreHorizontal aria-hidden="true" className={`h-5 w-5 ${isMoreActive ? "drop-shadow-[0_0_6px_rgba(16,185,129,0.5)]" : ""}`} />
           <span>More</span>
         </button>
       </nav>

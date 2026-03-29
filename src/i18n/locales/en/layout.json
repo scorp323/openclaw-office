@@ -47,6 +47,15 @@
       "error": "Error"
     }
   },
+  "a11y": {
+    "skipToContent": "Skip to main content",
+    "routeChanged": "Navigated to {{page}}",
+    "notifications": "Notifications",
+    "quickActions": "Quick actions",
+    "closeQuickActions": "Close quick actions",
+    "moreMenu": "More navigation options",
+    "closeMenu": "Close menu"
+  },
   "consoleNav": {
     "dashboard": "Dashboard",
     "agents": "Agents",

@@ -68,7 +68,7 @@ export function ConsoleLayout() {
       <TopBar />
       <div className="flex flex-1 overflow-hidden">
         {!isChatRoute && !isMobile && (
-          <nav className="flex w-52 shrink-0 flex-col border-r border-gray-200 bg-white py-3 dark:border-gray-700 dark:bg-gray-900">
+          <nav aria-label="Console navigation" className="flex w-52 shrink-0 flex-col border-r border-gray-200 bg-white py-3 dark:border-gray-700 dark:bg-gray-900">
             {sidebarNavItems.map((item) => {
               const isActive = location.pathname === item.path;
               const Icon = item.icon;
@@ -104,7 +104,7 @@ export function ConsoleLayout() {
             })}
           </nav>
         )}
-        <main className="flex-1 overflow-auto">
+        <main id="main-content" className="flex-1 overflow-auto">
           <div className={`${isChatRoute ? "h-full p-6" : "mx-auto max-w-6xl p-6"} ${isMobile ? "pb-20" : ""}`}>
             <PageTransition locationKey={location.key} />
           </div>

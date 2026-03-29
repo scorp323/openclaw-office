@@ -47,6 +47,15 @@
       "error": "错误"
     }
   },
+  "a11y": {
+    "skipToContent": "跳转到主要内容",
+    "routeChanged": "已导航到 {{page}}",
+    "notifications": "通知",
+    "quickActions": "快捷操作",
+    "closeQuickActions": "关闭快捷操作",
+    "moreMenu": "更多导航选项",
+    "closeMenu": "关闭菜单"
+  },
   "consoleNav": {
     "dashboard": "仪表盘",
     "agents": "智能体",
