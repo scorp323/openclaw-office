@@ -229,10 +229,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          "react-dom": ["react-dom", "react-dom/client"],
-          recharts: ["recharts"],
+          vendor: ["react", "react-dom", "react-dom/client", "react-router", "react-router-dom"],
+          charts: ["recharts"],
+          ui: ["lucide-react"],
           i18next: ["i18next", "react-i18next"],
-          zustand: ["zustand"],
+          state: ["zustand", "immer"],
+          markdown: ["react-markdown", "remark-gfm"],
         },
       },
     },
