@@ -31,12 +31,15 @@ function getZoneIntensities(agents: VisualAgent[]): Record<ZoneKey, number> {
 
 /** Interpolate between cool blue and warm orange-red based on intensity */
 function getHeatColor(intensity: number): string {
-  if (intensity <= 0.01) return "rgba(59, 130, 246, 0.04)"; // dim blue
+  if (intensity <= 0.01) {
+    // Empty zones: faint cool blue glow so user sees something
+    return "rgba(59, 130, 246, 0.05)";
+  }
   // Lerp from blue to orange-red
   const r = Math.round(59 + (249 - 59) * intensity);
   const g = Math.round(130 + (115 - 130) * intensity);
   const b = Math.round(246 + (22 - 246) * intensity);
-  const alpha = 0.04 + intensity * 0.12;
+  const alpha = 0.12 + intensity * 0.25;
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
@@ -48,7 +51,7 @@ export function HeatmapFloor({ agents }: HeatmapFloorProps) {
       {(Object.keys(ZONES) as ZoneKey[]).map((key) => {
         const zone = ZONES[key];
         const intensity = intensities[key];
-        const isActive = intensity > 0.3;
+        const isActive = intensity > 0.01;
 
         return (
           <rect
@@ -59,7 +62,7 @@ export function HeatmapFloor({ agents }: HeatmapFloorProps) {
             height={zone.height - 4}
             rx={4}
             fill={getHeatColor(intensity)}
-            className={isActive ? "heatmap-zone-active" : undefined}
+            className={isActive ? "heatmap-zone-active" : "heatmap-zone-empty"}
           />
         );
       })}

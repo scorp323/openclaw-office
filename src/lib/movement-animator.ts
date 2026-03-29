@@ -5,80 +5,46 @@ export const WALK_SPEED_SVG = 120;
 export const MIN_WALK_DURATION = 1.5;
 
 const corridorW = OFFICE.corridorWidth;
-const halfW = (OFFICE.width - corridorW) / 2;
-const halfH = (OFFICE.height - corridorW) / 2;
+// Horizontal corridor sits between meeting (top) and lounge/chill (bottom)
+const corridorY = ZONES.meeting.y + ZONES.meeting.height + corridorW / 2;
 
 const corridorCenter = {
-  x: OFFICE.x + halfW + corridorW / 2,
-  y: OFFICE.y + halfH + corridorW / 2,
+  x: OFFICE.x + OFFICE.width / 2,
+  y: corridorY,
 };
 
 /**
- * Door points: where each zone connects to the corridor (center of zone's corridor edge).
+ * Door points: where each zone connects to the corridor.
+ * Meeting zone: bottom edge center
+ * Lounge zone: top edge center
+ * Chill zone: top edge center
  */
 const DOOR_POINTS: Record<AgentZone, { x: number; y: number }> = {
-  desk: {
-    x: OFFICE.x + halfW / 2,
-    y: OFFICE.y + halfH + corridorW / 2,
-  },
   meeting: {
-    x: OFFICE.x + halfW + corridorW + halfW / 2,
-    y: OFFICE.y + halfH + corridorW / 2,
-  },
-  hotDesk: {
-    x: OFFICE.x + halfW / 2,
-    y: OFFICE.y + halfH + corridorW / 2,
+    x: ZONES.meeting.x + ZONES.meeting.width / 2,
+    y: corridorY,
   },
   lounge: {
-    x: OFFICE.x + halfW + corridorW + halfW / 2,
-    y: OFFICE.y + halfH + corridorW / 2,
+    x: ZONES.lounge.x + ZONES.lounge.width / 2,
+    y: corridorY,
   },
   chill: {
     x: ZONES.chill.x + ZONES.chill.width / 2,
-    y: OFFICE.y + halfH + corridorW / 2,
+    y: corridorY,
   },
   corridor: { ...CORRIDOR_ENTRANCE },
 };
 
-/**
- * Each zone connects to the corridor at specific edges.
- * desk (top-left) → bottom edge & right edge
- * meeting (top-right) → bottom edge & left edge
- * hotDesk (bottom-left) → top edge & right edge
- * lounge (bottom-right) → top edge & left edge
- */
 function getZoneDoorPoint(zone: AgentZone): { x: number; y: number } {
-  if (zone === "corridor") {
-    return { ...CORRIDOR_ENTRANCE };
-  }
-  const z = ZONES[zone as keyof typeof ZONES];
-  switch (zone) {
-    case "desk":
-      return { x: z.x + z.width / 2, y: z.y + z.height + corridorW / 2 };
-    case "meeting":
-      return { x: z.x + z.width / 2, y: z.y + z.height + corridorW / 2 };
-    case "hotDesk":
-      return { x: z.x + z.width / 2, y: z.y - corridorW / 2 };
-    case "lounge":
-      return { x: z.x + z.width / 2, y: z.y - corridorW / 2 };
-    default:
-      return { ...CORRIDOR_ENTRANCE };
-  }
+  return { ...DOOR_POINTS[zone] };
 }
 
 function sameCorridorArm(a: AgentZone, b: AgentZone): boolean {
-  // corridor is at the bottom-right entrance, so treat it like a separate arm
   if (a === "corridor" || b === "corridor") return false;
-
-  const verticalLeft: AgentZone[] = ["desk", "hotDesk"];
-  const verticalRight: AgentZone[] = ["meeting", "lounge"];
-  const horizontalTop: AgentZone[] = ["desk", "meeting"];
-  const horizontalBottom: AgentZone[] = ["hotDesk", "lounge"];
-
-  if (verticalLeft.includes(a) && verticalLeft.includes(b)) return true;
-  if (verticalRight.includes(a) && verticalRight.includes(b)) return true;
-  if (horizontalTop.includes(a) && horizontalTop.includes(b)) return true;
-  if (horizontalBottom.includes(a) && horizontalBottom.includes(b)) return true;
+  // meeting is top, lounge+chill are bottom — meeting↔lounge and meeting↔chill go through corridor
+  // lounge↔chill are adjacent on the same horizontal corridor
+  const bottom: AgentZone[] = ["lounge", "chill"];
+  if (bottom.includes(a) && bottom.includes(b)) return true;
   return false;
 }
 
@@ -103,7 +69,7 @@ export function planWalkPath(
     return [{ ...from }, fromDoor, toDoor, { ...to }];
   }
 
-  // Different corridor arms → must go through the center
+  // Different arms → go through corridor center
   return [{ ...from }, fromDoor, { ...corridorCenter }, toDoor, { ...to }];
 }
 

@@ -15,50 +15,43 @@ export const OFFICE = {
   corridorWidth: 28,
 } as const;
 
-const halfW = (OFFICE.width - OFFICE.corridorWidth) / 2;
-const halfH = (OFFICE.height - OFFICE.corridorWidth) / 2;
-const rightX = OFFICE.x + halfW + OFFICE.corridorWidth;
-const bottomY = OFFICE.y + halfH + OFFICE.corridorWidth;
-
-const chillW = Math.round(halfW * 0.4);
-const loungeW = halfW - chillW;
+// 3-zone layout: meeting (full top), lounge (bottom-left 60%), chill (bottom-right 40%)
+const topH = Math.round((OFFICE.height - OFFICE.corridorWidth) * 0.5);
+const bottomH = OFFICE.height - OFFICE.corridorWidth - topH;
+const bottomY = OFFICE.y + topH + OFFICE.corridorWidth;
+const loungeW = Math.round(OFFICE.width * 0.6);
+const chillW = OFFICE.width - loungeW;
 
 export const ZONES = {
-  desk: { x: OFFICE.x, y: OFFICE.y, width: halfW, height: halfH, label: "固定工位区" },
-  meeting: { x: rightX, y: OFFICE.y, width: halfW, height: halfH, label: "会议区" },
-  hotDesk: { x: OFFICE.x, y: bottomY, width: halfW, height: halfH, label: "热工位区" },
-  lounge: { x: rightX, y: bottomY, width: loungeW, height: halfH, label: "休息区" },
-  chill: { x: rightX + loungeW, y: bottomY, width: chillW, height: halfH, label: "The Rooftop" },
+  meeting: { x: OFFICE.x, y: OFFICE.y, width: OFFICE.width, height: topH, label: "会议室" },
+  lounge: { x: OFFICE.x, y: bottomY, width: loungeW, height: bottomH, label: "休息区" },
+  chill: { x: OFFICE.x + loungeW, y: bottomY, width: chillW, height: bottomH, label: "The Rooftop" },
 } as const;
 
-// Corridor entrance point: bottom center of the building (main entrance door)
+// Corridor entrance point: bottom center of lounge (main entrance door)
 export const CORRIDOR_ENTRANCE = {
   x: ZONES.lounge.x + ZONES.lounge.width / 2,
   y: OFFICE.y + OFFICE.height - 30,
 } as const;
 
-// Corridor center crossing point
+// Corridor center crossing point (horizontal corridor between top and bottom zones)
 export const CORRIDOR_CENTER = {
   x: OFFICE.x + OFFICE.width / 2,
-  y: OFFICE.y + OFFICE.height / 2,
+  y: OFFICE.y + topH + OFFICE.corridorWidth / 2,
 } as const;
 
 export const ZONE_COLORS = {
-  desk: "#f4f6f9",
-  meeting: "#eef3fa",
-  hotDesk: "#f1f3f7",
-  lounge: "#f3f1f7",
-  chill: "#f0f3f1",
+  meeting: "#fef3c7", // warm amber
+  lounge: "#ede9fe", // lavender
+  chill: "#ccfbf1", // teal
   corridor: "#e8ecf1",
   wall: "#8b9bb0",
 } as const;
 
 export const ZONE_COLORS_DARK = {
-  desk: "#001a00",
-  meeting: "#002200",
-  hotDesk: "#001a00",
-  lounge: "#0a1a0a",
-  chill: "#050d05",
+  meeting: "#1a1500",
+  lounge: "#0d0a1a",
+  chill: "#051a15",
   corridor: "#000d00",
   wall: "#0a3d0a",
 } as const;
@@ -105,32 +98,15 @@ export const AGENT_COLORS: Record<string, string> = {
   kat: "#66ff99",
 };
 
-export const DESK_GRID_COLS = 4;
-export const DESK_GRID_ROWS = 3;
-export const DESK_MAX_AGENTS = DESK_GRID_COLS * DESK_GRID_ROWS;
-
-export const HOT_DESK_GRID_COLS = 4;
-export const HOT_DESK_GRID_ROWS = 3;
-
-export const MIN_DESK_WIDTH = 100;
 export const DEFAULT_MAX_SUB_AGENTS = 8;
 
 // 家具尺寸常量 (flat isometric 2D)
 export const FURNITURE = {
-  desk: { width: 100, height: 60 },
   chair: { size: 30 },
   meetingTable: { minRadius: 60, maxRadius: 100 },
   sofa: { width: 110, height: 50 },
   plant: { width: 28, height: 36 },
   coffeeCup: { size: 14 },
-} as const;
-
-// 工位单元（Desk + Chair + AgentAvatar）
-export const DESK_UNIT = {
-  width: 140,
-  height: 110,
-  avatarRadius: 20,
-  avatarOffsetY: -8,
 } as const;
 
 // Agent 头像

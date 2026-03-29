@@ -140,7 +140,7 @@ export interface SpeechBubble {
   timestamp: number;
 }
 
-export type AgentZone = "desk" | "meeting" | "hotDesk" | "lounge" | "corridor" | "chill";
+export type AgentZone = "meeting" | "lounge" | "corridor" | "chill";
 
 export interface MovementState {
   path: Array<{ x: number; y: number }>;
@@ -170,8 +170,6 @@ export interface VisualAgent {
   originalPosition: { x: number; y: number } | null;
   movement: MovementState | null;
   confirmed: boolean;
-  /** Timestamp when this sub-agent arrived at hotDesk zone (for minimum stay enforcement) */
-  arrivedAtHotDeskAt: number | null;
   /** Whether lifecycle end has been received but retirement is deferred */
   pendingRetire: boolean;
 }

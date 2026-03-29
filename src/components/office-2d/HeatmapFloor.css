@@ -2,9 +2,18 @@
 
 @keyframes heatmap-pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  50% { opacity: 0.45; }
 }
 
 .heatmap-zone-active {
-  animation: heatmap-pulse 3s ease-in-out infinite;
+  animation: heatmap-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes heatmap-idle-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.heatmap-zone-empty {
+  animation: heatmap-idle-glow 4s ease-in-out infinite;
 }

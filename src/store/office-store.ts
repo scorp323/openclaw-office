@@ -40,10 +40,6 @@ const THEME_STORAGE_KEY = "openclaw-theme";
 const COLOR_THEME_STORAGE_KEY = "openclaw-color-theme";
 const CHAT_DOCK_HEIGHT_KEY = "openclaw-chat-dock-height";
 const DEFAULT_CHAT_DOCK_HEIGHT = 300;
-const LOUNGE_TO_HOTDESK_DEBOUNCE_MS = 300;
-const HOTDESK_TO_LOUNGE_DELAY_MS = 30_000;
-const MIN_HOTDESK_STAY_MS = 10_000;
-
 const subAgentRetireTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 const chillTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -117,7 +113,6 @@ function createVisualAgent(
       originalPosition: null,
       movement: null,
       confirmed: false,
-      arrivedAtHotDeskAt: null,
       pendingRetire: false,
     };
   }
@@ -137,11 +132,10 @@ function createVisualAgent(
     isPlaceholder: false,
     parentAgentId: null,
     childAgentIds: [],
-    zone: isSubAgent ? ("hotDesk" as const) : ("desk" as const),
+    zone: isSubAgent ? ("meeting" as const) : ("lounge" as const),
     originalPosition: null,
     movement: null,
     confirmed: true,
-    arrivedAtHotDeskAt: isSubAgent ? Date.now() : null,
     pendingRetire: false,
   };
 }
@@ -197,12 +191,12 @@ function allocateNextPosition(
     return free ?? { x: cz.x + cz.width / 2, y: cz.y + cz.height / 2 };
   }
 
-  // hotDesk or desk — use allocatePosition
+  // meeting or other — use allocatePosition
   const occupied = new Set<string>();
   for (const a of agents.values()) {
     if (a.zone === toZone) occupied.add(positionKey(a.position));
   }
-  return allocatePosition("temp-" + Date.now(), toZone === "hotDesk", occupied);
+  return allocatePosition("temp-" + Date.now(), toZone === "meeting", occupied);
 }
 
 /**
@@ -347,7 +341,6 @@ export const useOfficeStore = create<OfficeStore>()(
             placeholder.status = "idle";
             placeholder.position = startPos;
             placeholder.confirmed = true;
-            placeholder.arrivedAtHotDeskAt = null;
             placeholder.pendingRetire = false;
             state.agents.set(info.agentId, placeholder);
           } else {
@@ -363,7 +356,7 @@ export const useOfficeStore = create<OfficeStore>()(
             );
             agent.parentAgentId = parentId;
             agent.runId = info.sessionKey;
-            agent.zone = "hotDesk";
+            agent.zone = "meeting";
             state.agents.set(info.agentId, agent);
           }
         }
@@ -384,10 +377,10 @@ export const useOfficeStore = create<OfficeStore>()(
 
         state.globalMetrics = computeMetrics(state.agents, state.globalMetrics);
       });
-      // Post-set: trigger walk animation to hotDesk (from lounge, corridor, or misclassified desk)
+      // Post-set: trigger walk animation to meeting (from lounge, corridor, etc.)
       const agent = useOfficeStore.getState().agents.get(info.agentId);
-      if (agent && agent.zone !== "hotDesk" && agent.zone !== "meeting") {
-        useOfficeStore.getState().startMovement(info.agentId, "hotDesk");
+      if (agent && agent.zone !== "meeting") {
+        useOfficeStore.getState().startMovement(info.agentId, "meeting");
       }
     },
 
@@ -464,7 +457,6 @@ export const useOfficeStore = create<OfficeStore>()(
             originalPosition: null,
             movement: null,
             confirmed: true,
-            arrivedAtHotDeskAt: null,
             pendingRetire: false,
           };
           state.agents.set(phId, ph);
@@ -502,7 +494,7 @@ export const useOfficeStore = create<OfficeStore>()(
     returnFromMeeting: (agentId: string) => {
       const agent = useOfficeStore.getState().agents.get(agentId);
       if (!agent?.originalPosition) return;
-      const returnZone = agent.isSubAgent ? "hotDesk" : "desk";
+      const returnZone = agent.isSubAgent ? "meeting" : "lounge";
       const returnPos = { ...agent.originalPosition };
       set((state) => {
         const a = state.agents.get(agentId);
@@ -539,7 +531,6 @@ export const useOfficeStore = create<OfficeStore>()(
     },
 
     tickMovement: (agentId: string, deltaTime: number) => {
-      let arrivedAtHotDesk = false;
       let arrivedAtLounge = false;
 
       set((state) => {
@@ -558,22 +549,12 @@ export const useOfficeStore = create<OfficeStore>()(
           agent.zone = finalZone;
           agent.position = { ...finalPos };
 
-          if (finalZone === "hotDesk" && agent.isSubAgent) {
-            agent.arrivedAtHotDeskAt = Date.now();
-            arrivedAtHotDesk = true;
-          }
           if (finalZone === "lounge" && agent.isSubAgent && agent.pendingRetire) {
             arrivedAtLounge = true;
           }
         }
       });
 
-      if (arrivedAtHotDesk) {
-        const agent = useOfficeStore.getState().agents.get(agentId);
-        if (agent?.pendingRetire) {
-          scheduleRetireAfterMinStay(agentId);
-        }
-      }
       if (arrivedAtLounge) {
         const agent = useOfficeStore.getState().agents.get(agentId);
         if (agent?.isSubAgent && !agent.isPlaceholder && agent.pendingRetire) {
@@ -583,7 +564,6 @@ export const useOfficeStore = create<OfficeStore>()(
     },
 
     completeMovement: (agentId: string) => {
-      let arrivedHotDesk = false;
       let arrivedLounge = false;
 
       set((state) => {
@@ -595,21 +575,11 @@ export const useOfficeStore = create<OfficeStore>()(
         agent.zone = finalZone;
         agent.position = { ...finalPos };
 
-        if (finalZone === "hotDesk" && agent.isSubAgent) {
-          agent.arrivedAtHotDeskAt = Date.now();
-          arrivedHotDesk = true;
-        }
         if (finalZone === "lounge" && agent.isSubAgent && agent.pendingRetire) {
           arrivedLounge = true;
         }
       });
 
-      if (arrivedHotDesk) {
-        const agent = useOfficeStore.getState().agents.get(agentId);
-        if (agent?.pendingRetire) {
-          scheduleRetireAfterMinStay(agentId);
-        }
-      }
       if (arrivedLounge) {
         const agent = useOfficeStore.getState().agents.get(agentId);
         if (agent?.isSubAgent && !agent.isPlaceholder && agent.pendingRetire) {
@@ -643,7 +613,6 @@ export const useOfficeStore = create<OfficeStore>()(
             originalPosition: null,
             movement: null,
             confirmed: true,
-            arrivedAtHotDeskAt: null,
             pendingRetire: false,
           };
           state.agents.set(phId, ph);
@@ -668,13 +637,13 @@ export const useOfficeStore = create<OfficeStore>()(
           if (parentId) agent.parentAgentId = parentId;
           activateFromLoungePlaceholder(state, agent);
         } else {
-          // Confirmed as main agent — assign to desk zone
+          // Confirmed as main agent — assign to lounge zone
           const occupied = new Set<string>();
           for (const a of state.agents.values()) {
-            if (a.zone === "desk" && a.id !== agentId) occupied.add(positionKey(a.position));
+            if (a.zone === "lounge" && a.id !== agentId) occupied.add(positionKey(a.position));
           }
           agent.position = allocatePosition(agentId, false, occupied);
-          agent.zone = "desk";
+          agent.zone = "lounge";
         }
 
         state.globalMetrics = computeMetrics(state.agents, state.globalMetrics);
@@ -683,9 +652,9 @@ export const useOfficeStore = create<OfficeStore>()(
       const agent = useOfficeStore.getState().agents.get(agentId);
       if (agent && !agent.movement) {
         if (role === "sub") {
-          useOfficeStore.getState().startMovement(agentId, "hotDesk");
+          useOfficeStore.getState().startMovement(agentId, "meeting");
         } else {
-          useOfficeStore.getState().startMovement(agentId, "desk");
+          useOfficeStore.getState().startMovement(agentId, "lounge");
         }
       }
     },
@@ -925,26 +894,25 @@ export const useOfficeStore = create<OfficeStore>()(
           if (agent.isSubAgent && agent.confirmed && isActiveStatus(parsed.status)) {
             if (agent.pendingRetire) {
               agent.pendingRetire = false;
-              agent.arrivedAtHotDeskAt = null;
               cancelRetireTimer(agent.id);
             }
-            // Walking back to lounge? Turn around to hotDesk
+            // Walking back to lounge? Turn around to meeting
             if (agent.movement?.toZone === "lounge") {
               agent.movement = null;
               turnAroundToHotDesk = agent.id;
             }
-            // Still in lounge without movement? Walk to hotDesk
+            // Still in lounge without movement? Walk to meeting
             if (!agent.movement && agent.zone === "lounge") {
               turnAroundToHotDesk = agent.id;
             }
           }
 
-          // Zone migration: lounge ↔ hotDesk for confirmed sub-agents only
+          // Zone migration: lounge ↔ meeting for confirmed sub-agents only
           if (agent.isSubAgent && agent.confirmed && agent.zone !== "meeting") {
             scheduleZoneMigration(agent.id, prevStatus, agent.status);
           }
 
-          // Chill zone migration for main agents: desk ↔ chill
+          // Chill zone migration for main agents: lounge ↔ chill
           if (!agent.isSubAgent && agent.confirmed && agent.zone !== "meeting") {
             scheduleChillMigration(agent.id, prevStatus, agent.status);
           }
@@ -981,9 +949,9 @@ export const useOfficeStore = create<OfficeStore>()(
         state.globalMetrics = computeMetrics(state.agents, state.globalMetrics);
       });
 
-      // Post-set: sub-agent received new work while retreating → turn around to hotDesk
+      // Post-set: sub-agent received new work while retreating → turn around to meeting
       if (turnAroundToHotDesk) {
-        useOfficeStore.getState().startMovement(turnAroundToHotDesk, "hotDesk");
+        useOfficeStore.getState().startMovement(turnAroundToHotDesk, "meeting");
       }
 
       // Post-set: create sub-agent via addSubAgent (mock adapter path)
@@ -1318,35 +1286,31 @@ function scheduleZoneMigration(
   const nowActive = isActiveStatus(newStatus);
 
   if (!wasActive && nowActive) {
-    // lounge → hotDesk with debounce
-    const timer = setTimeout(() => {
-      zoneMigrationTimers.delete(agentId);
-      migrateAgentToHotDesk(agentId);
-    }, LOUNGE_TO_HOTDESK_DEBOUNCE_MS);
-    zoneMigrationTimers.set(agentId, timer);
+    // lounge → meeting
+    migrateAgentToMeeting(agentId);
   } else if (wasActive && !nowActive && newStatus === "idle") {
-    // hotDesk → lounge after sustained idle
+    // meeting → lounge after sustained idle
     const timer = setTimeout(() => {
       zoneMigrationTimers.delete(agentId);
       migrateAgentToLounge(agentId);
-    }, HOTDESK_TO_LOUNGE_DELAY_MS);
+    }, 30_000);
     zoneMigrationTimers.set(agentId, timer);
   }
 }
 
-function migrateAgentToHotDesk(agentId: string): void {
+function migrateAgentToMeeting(agentId: string): void {
   const state = useOfficeStore.getState();
   const agent = state.agents.get(agentId);
   if (!agent || !agent.isSubAgent || agent.zone !== "lounge") return;
-  if (agent.movement?.toZone === "hotDesk") return;
+  if (agent.movement?.toZone === "meeting") return;
 
-  useOfficeStore.getState().startMovement(agentId, "hotDesk");
+  useOfficeStore.getState().startMovement(agentId, "meeting");
 }
 
 function migrateAgentToLounge(agentId: string): void {
   const state = useOfficeStore.getState();
   const agent = state.agents.get(agentId);
-  if (!agent || !agent.isSubAgent || agent.zone !== "hotDesk") return;
+  if (!agent || !agent.isSubAgent || agent.zone !== "meeting") return;
   if (isActiveStatus(agent.status)) return;
   if (agent.movement?.toZone === "lounge") return;
   if (agent.pendingRetire) return;
