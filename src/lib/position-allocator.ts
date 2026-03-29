@@ -172,19 +172,21 @@ export function agentSlotIndex(agentId: string, totalSlots: number): number {
  */
 export function calculateLoungePositions(maxCount: number): Array<{ x: number; y: number }> {
   const lz = ZONES.lounge;
+  const w = lz.width;
+  const h = lz.height;
   const anchors = [
-    { x: lz.x + 60, y: lz.y + 40 },
-    { x: lz.x + 160, y: lz.y + 40 },
-    { x: lz.x + 260, y: lz.y + 40 },
-    { x: lz.x + 360, y: lz.y + 40 },
-    { x: lz.x + 60, y: lz.y + 120 },
-    { x: lz.x + 160, y: lz.y + 120 },
-    { x: lz.x + 260, y: lz.y + 120 },
-    { x: lz.x + 360, y: lz.y + 120 },
-    { x: lz.x + 440, y: lz.y + 60 },
-    { x: lz.x + 440, y: lz.y + 130 },
-    { x: lz.x + 100, y: lz.y + 180 },
-    { x: lz.x + 280, y: lz.y + 180 },
+    { x: lz.x + w * 0.15, y: lz.y + h * 0.13 },
+    { x: lz.x + w * 0.38, y: lz.y + h * 0.13 },
+    { x: lz.x + w * 0.62, y: lz.y + h * 0.13 },
+    { x: lz.x + w * 0.85, y: lz.y + h * 0.13 },
+    { x: lz.x + w * 0.15, y: lz.y + h * 0.40 },
+    { x: lz.x + w * 0.38, y: lz.y + h * 0.40 },
+    { x: lz.x + w * 0.62, y: lz.y + h * 0.40 },
+    { x: lz.x + w * 0.85, y: lz.y + h * 0.40 },
+    { x: lz.x + w * 0.25, y: lz.y + h * 0.65 },
+    { x: lz.x + w * 0.75, y: lz.y + h * 0.65 },
+    { x: lz.x + w * 0.25, y: lz.y + h * 0.85 },
+    { x: lz.x + w * 0.75, y: lz.y + h * 0.85 },
   ];
   return anchors.slice(0, Math.min(maxCount, anchors.length));
 }
