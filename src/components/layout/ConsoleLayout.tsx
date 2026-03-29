@@ -1,4 +1,4 @@
-import { Home, Bot, Radio, Puzzle, Clock, Settings, WifiOff, Terminal, DollarSign, Brain, Zap, Bell } from "lucide-react";
+import { Home, Bot, Radio, Puzzle, Clock, Settings, WifiOff, Terminal, DollarSign, Brain, Zap, Bell, Archive, Gauge } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -58,6 +58,8 @@ export function ConsoleLayout() {
     { path: "/memory", labelKey: "consoleNav.memory", icon: Brain },
     { path: "/actions", labelKey: "consoleNav.actions", icon: Zap },
     { path: "/notifications", labelKey: "consoleNav.notifications", icon: Bell },
+    { path: "/backup", labelKey: "consoleNav.backup", icon: Archive },
+    { path: "/metrics", labelKey: "consoleNav.metrics", icon: Gauge },
   ] as const;
 
   return (
@@ -72,13 +74,15 @@ export function ConsoleLayout() {
       <TopBar />
       <div className="flex flex-1 overflow-hidden">
         {!isChatRoute && !isMobile && (
-          <nav aria-label="Console navigation" className="flex w-52 shrink-0 flex-col border-r border-gray-200 bg-white py-3 dark:border-gray-700 dark:bg-gray-900">
+          <nav aria-label="Console navigation" data-tour="console-nav" className="flex w-52 shrink-0 flex-col border-r border-gray-200 bg-white py-3 dark:border-gray-700 dark:bg-gray-900">
             {sidebarNavItems.map((item) => {
               const isActive = location.pathname === item.path;
               const Icon = item.icon;
+              const tourAttr = item.path.replace("/", "nav-");
               return (
                 <button
                   key={item.path}
+                  data-tour={tourAttr}
                   onClick={() => navigate(item.path)}
                   onMouseEnter={() => {
                     // Prefetch page on hover
@@ -94,6 +98,8 @@ export function ConsoleLayout() {
                       "/memory": () => import("@/components/pages/MemoryPage"),
                       "/actions": () => import("@/components/pages/ActionsPage"),
                       "/notifications": () => import("@/components/pages/NotificationsPage"),
+                      "/backup": () => import("@/components/pages/BackupPage"),
+                      "/metrics": () => import("@/components/pages/MetricsPage"),
                     };
                     pageMap[item.path]?.();
                   }}

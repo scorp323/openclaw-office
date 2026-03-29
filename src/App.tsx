@@ -27,6 +27,8 @@ const MemoryPage = lazy(() => import("@/components/pages/MemoryPage").then(m => 
 const ActionsPage = lazy(() => import("@/components/pages/ActionsPage").then(m => ({ default: m.ActionsPage })));
 const NotificationsPage = lazy(() => import("@/components/pages/NotificationsPage").then(m => ({ default: m.NotificationsPage })));
 const LoginPage = lazy(() => import("@/components/pages/LoginPage").then(m => ({ default: m.LoginPage })));
+const BackupPage = lazy(() => import("@/components/pages/BackupPage").then(m => ({ default: m.BackupPage })));
+const MetricsPage = lazy(() => import("@/components/pages/MetricsPage").then(m => ({ default: m.MetricsPage })));
 import type { PageId } from "@/gateway/types";
 import { useGatewayConnection } from "@/hooks/useGatewayConnection";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -37,6 +39,7 @@ import { useConsoleSettingsStore } from "@/store/console-stores/settings-store";
 import { useRestoreLastPage, useTrackCurrentPage } from "@/hooks/useSessionState";
 import { useNotificationSounds } from "@/hooks/useNotificationSounds";
 import { PwaInstallPrompt } from "@/components/shared/PwaInstallPrompt";
+import { OnboardingTour } from "@/components/console/shared/OnboardingTour";
 
 function LoadingScreen() {
   return (
@@ -88,6 +91,8 @@ const PAGE_MAP: Record<string, PageId> = {
   "/memory": "memory",
   "/actions": "actions",
   "/notifications": "notifications",
+  "/backup": "backup",
+  "/metrics": "metrics",
 };
 
 function resolveGatewayWsUrl(pathOrUrl: string, fallbackUrl: string): string {
@@ -176,6 +181,7 @@ export function App() {
       <PwaInstallPrompt />
       <RouteAnnouncer />
       <ToastContainer />
+      <OnboardingTour />
       <ChatWorkspaceBootstrap wsClient={wsClient} />
       <SearchSpotlight />
       <SystemHealthBar />
@@ -201,6 +207,8 @@ export function App() {
                 <Route path="/memory" element={<MemoryPage />} />
                 <Route path="/actions" element={<ActionsPage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/backup" element={<BackupPage />} />
+                <Route path="/metrics" element={<MetricsPage />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

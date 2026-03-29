@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import TextareaAutosize from "react-textarea-autosize";
 import { AgentSelector } from "@/components/chat/AgentSelector";
 import { MessageBubble } from "@/components/chat/MessageBubble";
+import { SvgAvatar } from "@/components/shared/SvgAvatar";
 import { getSlashCommands } from "@/lib/chat-slash-commands";
 import { useChatDockStore } from "@/store/console-stores/chat-dock-store";
 import { useOfficeStore } from "@/store/office-store";
@@ -331,6 +332,9 @@ export function ChatPage() {
         <section className={`flex min-h-0 min-w-0 flex-1 flex-col bg-white dark:bg-gray-950 ${focusMode ? "mx-auto max-w-5xl" : ""}`}>
           <div className="flex items-center justify-between border-b border-gray-100/80 px-6 py-2.5 dark:border-gray-800/80">
             <div className="flex items-center gap-3 overflow-hidden">
+              {targetAgentId && (
+                <SvgAvatar agentId={targetAgentId} size={28} className="shrink-0" />
+              )}
               <h2 className="truncate text-[13px] font-semibold text-gray-800 dark:text-gray-200">
                 {formatSessionTitle(currentSessionKey, targetAgentId, agents)}
               </h2>
@@ -446,9 +450,13 @@ export function ChatPage() {
                       )
                     )}
                     {isStreaming && !streamingText && (
-                      <div className="mb-5 flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        <span>{t("dock.thinkingStatus")}</span>
+                      <div className="mb-5 flex items-start gap-3">
+                        {targetAgentId && <SvgAvatar agentId={targetAgentId} size={32} className="shrink-0" />}
+                        <div className="flex items-center gap-1.5 rounded-2xl bg-gray-100 px-4 py-3 dark:bg-gray-800">
+                          <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 dark:bg-gray-500 [animation-delay:-0.3s]" />
+                          <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 dark:bg-gray-500 [animation-delay:-0.15s]" />
+                          <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 dark:bg-gray-500" />
+                        </div>
                       </div>
                     )}
                   </>

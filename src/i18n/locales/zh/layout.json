@@ -67,6 +67,8 @@
     "costs": "成本",
     "memory": "记忆",
     "actions": "操作",
-    "notifications": "通知"
+    "notifications": "通知",
+    "backup": "备份",
+    "metrics": "性能"
   }
 }
