@@ -255,7 +255,14 @@
     "card": {
       "lastRun": "Last run",
       "nextRun": "Next run",
-      "runNow": "Run now"
+      "runNow": "Run now",
+      "pause": "Pause",
+      "resume": "Resume",
+      "viewLogs": "View Logs"
+    },
+    "logs": {
+      "title": "Cron Logs",
+      "empty": "No log entries found for this task"
     },
     "presets": {
       "everyHour": "Every hour",

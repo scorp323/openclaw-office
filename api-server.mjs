@@ -434,6 +434,12 @@ function matchDynamicRoute(pathname) {
   // /api/agents/:id/history
   const agentHistoryMatch = /^\/api\/agents\/([^/]+)\/history$/.exec(pathname);
   if (agentHistoryMatch) return { handler: "agentHistory", params: { id: agentHistoryMatch[1] } };
+  // /api/cron/:id/run
+  const cronRunMatch = /^\/api\/cron\/([^/]+)\/run$/.exec(pathname);
+  if (cronRunMatch) return { handler: "cronRun", params: { id: cronRunMatch[1] } };
+  // /api/cron/:id/logs
+  const cronLogsMatch = /^\/api\/cron\/([^/]+)\/logs$/.exec(pathname);
+  if (cronLogsMatch) return { handler: "cronLogs", params: { id: cronLogsMatch[1] } };
   return null;
 }
 
@@ -513,6 +519,51 @@ function getAgentHistory(agentId) {
   });
 }
 
+function getCronLogs(cronId) {
+  const entries = [];
+  const home = homedir();
+  // Read from workspace logs for cron-related entries
+  try {
+    const wsLogs = join(home, ".openclaw", "workspace", "logs");
+    if (existsSync(wsLogs)) {
+      const files = readdirSync(wsLogs).filter(f => f.includes("cron") || f.endsWith(".jsonl")).slice(0, 10);
+      for (const file of files) {
+        try {
+          const content = readFileSync(join(wsLogs, file), "utf8");
+          const lines = content.split("\n").filter(l => l.trim()).slice(-100);
+          for (const line of lines) {
+            if (line.includes(cronId) || cronId === "all") {
+              let ts = Date.now();
+              let text = line;
+              try {
+                const parsed = JSON.parse(line);
+                ts = parsed.ts || parsed.timestamp || ts;
+                text = parsed.message || parsed.text || line;
+              } catch {}
+              entries.push({ ts, text, file });
+            }
+          }
+        } catch {}
+      }
+    }
+  } catch {}
+  // Also include cron state from cron list
+  try {
+    const crons = getCrons();
+    for (const job of (crons.jobs || [])) {
+      if (job.id === cronId || job.name.includes(cronId)) {
+        entries.push({
+          ts: job.state?.lastRunAtMs || Date.now(),
+          text: `[${job.state?.lastRunStatus || "unknown"}] ${job.name} — ${job.state?.lastError || "OK"} (${Math.round((job.state?.lastDurationMs || 0) / 1000)}s)`,
+          file: "cron-state",
+        });
+      }
+    }
+  } catch {}
+  entries.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  return { logs: entries.slice(0, 100), cronId };
+}
+
 // ── Server ───────────────────────────────────────────
 const server = createServer((req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -542,6 +593,11 @@ const server = createServer((req, res) => {
         let data;
         if (dynamic.handler === "agentHistory") {
           data = getAgentHistory(dynamic.params.id);
+        } else if (dynamic.handler === "cronRun") {
+          const result = textExec(`openclaw cron run --id "${dynamic.params.id}" 2>&1`, 30000);
+          data = { ok: !result.startsWith("ERROR"), output: result, id: dynamic.params.id };
+        } else if (dynamic.handler === "cronLogs") {
+          data = getCronLogs(dynamic.params.id);
         }
         res.writeHead(200);
         res.end(JSON.stringify(data || { error: "unknown handler" }));

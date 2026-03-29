@@ -1,5 +1,5 @@
-import { RefreshCw, Plus, Clock } from "lucide-react";
-import { useEffect, useState } from "react";
+import { RefreshCw, Plus, Clock, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CronStatsBar } from "@/components/console/cron/CronStatsBar";
 import { CronTaskCard } from "@/components/console/cron/CronTaskCard";
@@ -31,6 +31,23 @@ export function CronPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [runTarget, setRunTarget] = useState<string | null>(null);
+  const [logsTarget, setLogsTarget] = useState<string | null>(null);
+  const [logsData, setLogsData] = useState<Array<{ ts: number; text: string; file: string }>>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+
+  const handleViewLogs = useCallback(async (id: string) => {
+    setLogsTarget(id);
+    setLogsLoading(true);
+    try {
+      const res = await fetch(`/mc-api/cron/${encodeURIComponent(id)}/logs`);
+      const data = await res.json();
+      setLogsData(data.logs ?? []);
+    } catch {
+      setLogsData([]);
+    } finally {
+      setLogsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchTasks();
@@ -119,6 +136,7 @@ export function CronPage() {
               onRun={setRunTarget}
               onEdit={openDialog}
               onDelete={setDeleteTarget}
+              onViewLogs={handleViewLogs}
             />
           ))}
         </div>
@@ -148,6 +166,48 @@ export function CronPage() {
         onConfirm={handleRunConfirm}
         onCancel={() => setRunTarget(null)}
       />
+
+      {/* Logs dialog */}
+      {logsTarget !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="mx-4 max-h-[70vh] w-full max-w-2xl overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                {t("cron.logs.title")} — {logsTarget}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setLogsTarget(null)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="max-h-[55vh] overflow-auto p-4">
+              {logsLoading ? (
+                <div className="py-8 text-center text-sm text-gray-400">Loading logs...</div>
+              ) : logsData.length === 0 ? (
+                <div className="py-8 text-center text-sm text-gray-400">
+                  {t("cron.logs.empty")}
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {logsData.map((entry, i) => (
+                    <div key={`${entry.ts}-${i}`} className="flex gap-3 rounded px-2 py-1 text-xs hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <span className="shrink-0 text-gray-400 dark:text-gray-500">
+                        {new Date(entry.ts).toLocaleTimeString()}
+                      </span>
+                      <span className="min-w-0 break-all text-gray-700 dark:text-gray-300">
+                        {entry.text}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

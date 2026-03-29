@@ -255,7 +255,14 @@
     "card": {
       "lastRun": "上次运行",
       "nextRun": "下次运行",
-      "runNow": "立即执行"
+      "runNow": "立即执行",
+      "pause": "暂停",
+      "resume": "恢复",
+      "viewLogs": "查看日志"
+    },
+    "logs": {
+      "title": "定时任务日志",
+      "empty": "未找到此任务的日志条目"
     },
     "presets": {
       "everyHour": "每小时",

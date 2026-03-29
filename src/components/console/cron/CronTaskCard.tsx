@@ -1,4 +1,4 @@
-import { Play, Pencil, Trash2, Check, XCircle, Minus } from "lucide-react";
+import { Play, Pencil, Trash2, Check, XCircle, Minus, Pause, ScrollText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { CronTask } from "@/gateway/adapter-types";
 import { toCronTaskCardVM } from "@/lib/view-models";
@@ -9,6 +9,7 @@ interface CronTaskCardProps {
   onRun: (id: string) => void;
   onEdit: (task: CronTask) => void;
   onDelete: (id: string) => void;
+  onViewLogs?: (id: string) => void;
 }
 
 const STATUS_ICON = {
@@ -17,7 +18,7 @@ const STATUS_ICON = {
   skipped: <Minus className="h-3.5 w-3.5 text-gray-400" />,
 };
 
-export function CronTaskCard({ task, onToggle, onRun, onEdit, onDelete }: CronTaskCardProps) {
+export function CronTaskCard({ task, onToggle, onRun, onEdit, onDelete, onViewLogs }: CronTaskCardProps) {
   const { t } = useTranslation("console");
   const vm = toCronTaskCardVM(task);
 
@@ -83,6 +84,24 @@ export function CronTaskCard({ task, onToggle, onRun, onEdit, onDelete }: CronTa
           >
             <Play className="h-4 w-4" />
           </button>
+          <button
+            type="button"
+            onClick={() => onToggle(task.id, !task.enabled)}
+            className="rounded p-1.5 text-gray-400 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/20 dark:hover:text-amber-400 transition-colors"
+            title={task.enabled ? t("cron.card.pause") : t("cron.card.resume")}
+          >
+            <Pause className="h-4 w-4" />
+          </button>
+          {onViewLogs && (
+            <button
+              type="button"
+              onClick={() => onViewLogs(task.id)}
+              className="rounded p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400 transition-colors"
+              title={t("cron.card.viewLogs")}
+            >
+              <ScrollText className="h-4 w-4" />
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onEdit(task)}
