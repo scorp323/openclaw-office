@@ -646,12 +646,12 @@ export function CommandCenter() {
       {/* Main content */}
       <div style={{ position: "relative", zIndex: 10, display: "flex", minHeight: "100vh" }}>
 
-        {/* ── Left Sidebar: JARVIS Roster ───────────── */}
-        <aside style={{
+        {/* ── Left Sidebar: JARVIS Roster (hidden on mobile) ───────────── */}
+        <aside className="hidden md:flex" style={{
           width: 240, minWidth: 240, padding: "20px 14px",
           borderRight: "1px solid rgba(0, 255, 65, 0.08)",
           background: "rgba(0, 5, 0, 0.4)",
-          display: "flex", flexDirection: "column", gap: 16,
+          flexDirection: "column", gap: 16,
           overflowY: "auto",
         }}>
           {/* Logo + clock */}
@@ -938,7 +938,6 @@ export function CommandCenter() {
           .mc-bottom-grid { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 768px) {
-          aside { display: none !important; }
           main { padding-bottom: 60px !important; }
         }
       `}</style>

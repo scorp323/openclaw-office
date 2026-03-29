@@ -145,13 +145,8 @@ export function FloorPlan() {
     ? Math.min(0.08, 0.03 + (activeCount / totalCount) * 0.05)
     : 0.03;
 
-  // ── Mobile portrait view: scrollable card list ──
-  if (isMobile) {
-    const visibleAgents = agentList.filter((a) => !a.isPlaceholder);
-    return (
-      <MobileAgentList agents={visibleAgents} activeCount={activeCount} totalCount={totalCount} isDark={isDark} />
-    );
-  }
+  // Mobile: show the SVG floor plan in a scrollable/zoomable container
+  // (removed card list fallback — the 2D office IS the feature)
 
   /** Apply custom position override for an agent (from drag-drop) */
   const applyCustomPos = useCallback(
