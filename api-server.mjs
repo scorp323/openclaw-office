@@ -1,6 +1,6 @@
 import { createServer } from "http";
 import { execSync } from "child_process";
-import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from "fs";
+import { readFileSync, writeFileSync, appendFileSync, existsSync, readdirSync, mkdirSync } from "fs";
 import { homedir } from "os";
 import { join, basename } from "path";
 
@@ -694,6 +694,28 @@ const server = createServer((req, res) => {
   if (!checkAuth(req)) {
     res.writeHead(401);
     res.end(JSON.stringify({ error: "Unauthorized" }));
+    return;
+  }
+
+  // POST /api/errors — log frontend errors
+  if (url.pathname === "/api/errors" && req.method === "POST") {
+    let body = "";
+    req.on("data", (chunk) => { body += chunk; });
+    req.on("end", () => {
+      try {
+        const entry = JSON.parse(body);
+        const logLine = `[${new Date(entry.timestamp || Date.now()).toISOString()}] ${entry.message || "unknown"}\n  URL: ${entry.url || "?"}\n  ${(entry.stack || "").split("\n").slice(0, 5).join("\n  ")}\n\n`;
+        const errorLogPath = join(homedir(), ".openclaw", "workspace", "projects", "mission-control", "morpheus-office", "error.log");
+        const dir = join(homedir(), ".openclaw", "workspace", "projects", "mission-control", "morpheus-office");
+        if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+        appendFileSync(errorLogPath, logLine);
+        res.writeHead(200);
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: String(e) }));
+      }
+    });
     return;
   }
 
