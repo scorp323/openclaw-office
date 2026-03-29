@@ -1,42 +1,15 @@
 import { Home, Bot, Radio, Puzzle, Clock, Settings, WifiOff, Terminal, DollarSign, Brain, Zap, Bell, Archive, Gauge, Newspaper } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { PageTransition } from "@/components/console/shared/PageTransition";
 import { RestartBanner } from "@/components/shared/RestartBanner";
 import { useIsStale } from "@/hooks/useLiveData";
 import { useNotificationBadge } from "@/hooks/useNotificationBadge";
 import { useResponsive } from "@/hooks/useResponsive";
+import { FavoritesBar } from "./FavoritesBar";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { StatusSummaryBar } from "./StatusSummaryBar";
 import { TopBar } from "./TopBar";
-
-function PageTransition({ locationKey }: { locationKey: string }) {
-  const [visible, setVisible] = useState(true);
-  const prevKey = useRef(locationKey);
-
-  useEffect(() => {
-    if (prevKey.current !== locationKey) {
-      setVisible(false);
-      const id = requestAnimationFrame(() => {
-        prevKey.current = locationKey;
-        setVisible(true);
-      });
-      return () => cancelAnimationFrame(id);
-    }
-  }, [locationKey]);
-
-  return (
-    <div
-      className="transition-[opacity,transform] duration-200 ease-out"
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(6px)",
-      }}
-    >
-      <Outlet />
-    </div>
-  );
-}
 
 export function ConsoleLayout() {
   const { t } = useTranslation(["layout", "console"]);
@@ -75,6 +48,7 @@ export function ConsoleLayout() {
       )}
       <TopBar />
       <StatusSummaryBar />
+      <FavoritesBar />
       <div className="flex flex-1 overflow-hidden">
         {!isChatRoute && !isMobile && (
           <nav aria-label="Console navigation" data-tour="console-nav" className="flex w-52 shrink-0 flex-col border-r border-gray-200 bg-white py-3 dark:border-gray-700 dark:bg-gray-900">

@@ -7,7 +7,6 @@ import {
   FileText,
   Loader2,
   MessageSquareMore,
-  MessageSquarePlus,
   Paperclip,
   Send,
   Square,
@@ -19,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import TextareaAutosize from "react-textarea-autosize";
 import { AgentSelector } from "@/components/chat/AgentSelector";
 import { MessageBubble } from "@/components/chat/MessageBubble";
+import { ChatHistorySidebar } from "@/components/console/chat/ChatHistorySidebar";
 import { SvgAvatar } from "@/components/shared/SvgAvatar";
 import { getSlashCommands } from "@/lib/chat-slash-commands";
 import { useChatDockStore } from "@/store/console-stores/chat-dock-store";
@@ -73,17 +73,6 @@ function formatSessionTitle(
   return formatSessionName(sessionKey);
 }
 
-function formatRelativeTime(ts: number, t: (key: string, options?: Record<string, unknown>) => string): string {
-  const diff = Date.now() - ts;
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return t("sessionSwitcher.relativeNow");
-  if (mins < 60) return t("sessionSwitcher.relativeMinutes", { count: mins });
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return t("sessionSwitcher.relativeHours", { count: hours });
-  const days = Math.floor(hours / 24);
-  return t("sessionSwitcher.relativeDays", { count: days });
-}
-
 function TypewriterText({ text }: { text: string }) {
   const [displayedLen, setDisplayedLen] = useState(0);
   const prevLenRef = useRef(0);
@@ -120,7 +109,6 @@ export function ChatPage() {
   const { t } = useTranslation(["chat", "common"]);
   const slashCommands = useMemo(() => getSlashCommands(), []);
   const messages = useChatDockStore((s) => s.messages);
-  const sessions = useChatDockStore((s) => s.sessions);
   const isStreaming = useChatDockStore((s) => s.isStreaming);
   const streamingMessage = useChatDockStore((s) => s.streamingMessage);
   const isHistoryLoading = useChatDockStore((s) => s.isHistoryLoading);
@@ -130,8 +118,6 @@ export function ChatPage() {
   const sendMessage = useChatDockStore((s) => s.sendMessage);
   const abort = useChatDockStore((s) => s.abort);
   const currentSessionKey = useChatDockStore((s) => s.currentSessionKey);
-  const switchSession = useChatDockStore((s) => s.switchSession);
-  const newSession = useChatDockStore((s) => s.newSession);
   const draft = useChatDockStore((s) => s.draft);
   const setDraft = useChatDockStore((s) => s.setDraft);
   const attachments = useChatDockStore((s) => s.attachments);
@@ -201,11 +187,6 @@ export function ChatPage() {
     );
   }, [draft, slashCommands]);
 
-  const sortedSessions = useMemo(
-    () => [...sessions].sort((a, b) => (b.lastActiveAt ?? 0) - (a.lastActiveAt ?? 0)),
-    [sessions],
-  );
-
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
@@ -268,66 +249,7 @@ export function ChatPage() {
           focusMode ? "justify-center" : ""
         }`}
       >
-        {!focusMode && (
-          <aside className="flex w-[260px] shrink-0 flex-col border-r border-gray-100 bg-gray-50/50 dark:border-gray-800 dark:bg-gray-900/50">
-            <div className="px-3 pb-3 pt-3">
-              <button
-                type="button"
-                onClick={() => newSession()}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200/80 bg-white px-3 py-2 text-[13px] font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100"
-              >
-                <MessageSquarePlus className="h-3.5 w-3.5" />
-                <span>{t("page.newSessionPrimary")}</span>
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between px-4 pb-1.5">
-              <span className="text-[11px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                {t("page.sessionHistory")}
-              </span>
-              <span className="text-[11px] tabular-nums text-gray-300 dark:text-gray-600">{sortedSessions.length}</span>
-            </div>
-
-            <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
-              {sortedSessions.length === 0 ? (
-                <div className="px-3 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
-                  {t("page.sessionEmpty")}
-                </div>
-              ) : (
-                <div className="space-y-0.5">
-                  {sortedSessions.map((session) => {
-                    const isActive = session.key === currentSessionKey;
-                    const meta = t("page.sessionMeta", {
-                      time: formatRelativeTime(session.lastActiveAt ?? Date.now(), t),
-                      detail: t("sessionSwitcher.messageCount", {
-                        count: session.messageCount ?? 0,
-                      }),
-                    });
-                    return (
-                      <button
-                        key={session.key}
-                        type="button"
-                        onClick={() => switchSession(session.key)}
-                        className={`w-full rounded-lg px-3 py-2.5 text-left transition-colors ${
-                          isActive
-                            ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-gray-100"
-                            : "text-gray-600 hover:bg-white/60 dark:text-gray-400 dark:hover:bg-gray-800/50"
-                        }`}
-                      >
-                        <div className="truncate text-[13px] font-medium">
-                          {session.label ? formatSessionName(session.label) : formatSessionName(session.key)}
-                        </div>
-                        <div className="mt-0.5 truncate text-xs text-gray-400 dark:text-gray-500">
-                          {meta}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </aside>
-        )}
+        {!focusMode && <ChatHistorySidebar />}
 
         <section className={`flex min-h-0 min-w-0 flex-1 flex-col bg-white dark:bg-gray-950 ${focusMode ? "mx-auto max-w-5xl" : ""}`}>
           <div className="flex items-center justify-between border-b border-gray-100/80 px-6 py-2.5 dark:border-gray-800/80">

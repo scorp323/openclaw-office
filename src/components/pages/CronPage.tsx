@@ -1,6 +1,7 @@
-import { RefreshCw, Plus, Clock, List, BarChart3 } from "lucide-react";
+import { RefreshCw, Plus, Clock, List, BarChart3, GitBranch } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { CronDependencyGraph } from "@/components/console/cron/CronDependencyGraph";
 import { CronLogViewer } from "@/components/console/cron/CronLogViewer";
 import { CronStatsBar } from "@/components/console/cron/CronStatsBar";
 import { CronTaskCard } from "@/components/console/cron/CronTaskCard";
@@ -35,7 +36,7 @@ export function CronPage() {
   const [runTarget, setRunTarget] = useState<string | null>(null);
   const [disableTarget, setDisableTarget] = useState<string | null>(null);
   const [logsTarget, setLogsTarget] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "timeline">("list");
+  const [viewMode, setViewMode] = useState<"list" | "timeline" | "graph">("list");
 
   const handleViewLogs = useCallback((id: string) => {
     setLogsTarget(id);
@@ -153,34 +154,33 @@ export function CronPage() {
         <>
           {/* View toggle */}
           <div className="flex items-center gap-1 rounded-md border border-gray-200 p-0.5 dark:border-[rgba(0,255,65,0.15)]">
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
-                viewMode === "list"
-                  ? "bg-gray-100 text-gray-800 dark:bg-[rgba(0,255,65,0.12)] dark:text-[#00ff41]"
-                  : "text-gray-400 hover:text-gray-600 dark:text-[#0a5d0a] dark:hover:text-[#00ff41]"
-              }`}
-            >
-              <List className="h-3.5 w-3.5" />
-              {t("cron.view.list", { defaultValue: "List" })}
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("timeline")}
-              className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
-                viewMode === "timeline"
-                  ? "bg-gray-100 text-gray-800 dark:bg-[rgba(0,255,65,0.12)] dark:text-[#00ff41]"
-                  : "text-gray-400 hover:text-gray-600 dark:text-[#0a5d0a] dark:hover:text-[#00ff41]"
-              }`}
-            >
-              <BarChart3 className="h-3.5 w-3.5" />
-              {t("cron.view.timeline", { defaultValue: "Timeline" })}
-            </button>
+            {(
+              [
+                { mode: "list", icon: List, label: t("cron.view.list", { defaultValue: "List" }) },
+                { mode: "timeline", icon: BarChart3, label: t("cron.view.timeline", { defaultValue: "Timeline" }) },
+                { mode: "graph", icon: GitBranch, label: t("cron.view.graph", { defaultValue: "Graph" }) },
+              ] as const
+            ).map(({ mode, icon: Icon, label }) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setViewMode(mode)}
+                className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                  viewMode === mode
+                    ? "bg-gray-100 text-gray-800 dark:bg-[rgba(0,255,65,0.12)] dark:text-[#00ff41]"
+                    : "text-gray-400 hover:text-gray-600 dark:text-[#0a5d0a] dark:hover:text-[#00ff41]"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+              </button>
+            ))}
           </div>
 
           {viewMode === "timeline" ? (
             <CronTimeline tasks={tasks} />
+          ) : viewMode === "graph" ? (
+            <CronDependencyGraph tasks={tasks} />
           ) : (
             <div className="space-y-3">
               {sortedTasks.map((task) => (
