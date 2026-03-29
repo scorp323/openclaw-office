@@ -8,6 +8,7 @@ import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { SystemHealthBar } from "@/components/layout/SystemHealthBar";
 import { CommandCenter } from "@/components/pages/CommandCenter";
 import { ChatWorkspaceBootstrap } from "@/components/chat/ChatWorkspaceBootstrap";
+import { ToastContainer } from "@/components/shared/ToastContainer";
 
 // Lazy-load heavy pages — keeps initial bundle small
 const FloorPlan = lazy(() => import("@/components/office-2d/FloorPlan").then(m => ({ default: m.FloorPlan })));
@@ -126,6 +127,7 @@ export function App() {
     <>
       <ThemeSync />
       <PageTracker />
+      <ToastContainer />
       <ChatWorkspaceBootstrap wsClient={wsClient} />
       <SearchSpotlight />
       <SystemHealthBar />

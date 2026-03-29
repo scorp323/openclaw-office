@@ -295,7 +295,8 @@
     },
     "run": {
       "title": "立即执行",
-      "description": "确认要立即执行此定时任务吗？"
+      "description": "确认要立即执行此定时任务吗？",
+      "started": "定时任务已开始执行"
     }
   },
   "settings": {

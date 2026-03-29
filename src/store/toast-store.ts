@@ -20,7 +20,7 @@ interface ToastInput {
   duration?: number;
 }
 
-const MAX_TOASTS = 5;
+const MAX_TOASTS = 3;
 
 interface ToastStoreState {
   toasts: ToastItem[];

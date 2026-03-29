@@ -295,7 +295,8 @@
     },
     "run": {
       "title": "Run Now",
-      "description": "Are you sure you want to run this cron task immediately?"
+      "description": "Are you sure you want to run this cron task immediately?",
+      "started": "Cron task execution started"
     }
   },
   "settings": {

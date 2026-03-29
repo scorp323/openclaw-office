@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/console/shared/EmptyState";
 import { ErrorState } from "@/components/console/shared/ErrorState";
 import { LoadingState } from "@/components/console/shared/LoadingState";
 import { useCronStore } from "@/store/console-stores/cron-store";
+import { toastSuccess, toastError } from "@/store/toast-store";
 
 export function CronPage() {
   const { t } = useTranslation("console");
@@ -68,7 +69,12 @@ export function CronPage() {
 
   const handleRunConfirm = async () => {
     if (runTarget) {
-      await runTask(runTarget);
+      try {
+        await runTask(runTarget);
+        toastSuccess(t("cron.run.title"), t("cron.run.started"));
+      } catch (err) {
+        toastError(t("cron.run.title"), String(err));
+      }
       setRunTarget(null);
       await fetchTasks();
     }

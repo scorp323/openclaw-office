@@ -41,32 +41,63 @@ const STYLE_MAP: Record<ToastType, { border: string; icon: string; bg: string }>
   },
 };
 
+const PROGRESS_COLORS: Record<ToastType, string> = {
+  success: "bg-green-500",
+  error: "bg-red-500",
+  warning: "bg-yellow-500",
+  info: "bg-blue-500",
+};
+
 function ToastCard({ toast }: { toast: ToastItem }) {
   const { t } = useTranslation("console");
   const removeToast = useToastStore((s) => s.removeToast);
   const [expanded, setExpanded] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [progress, setProgress] = useState(100);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const startTimeRef = useRef(Date.now());
+  const remainingRef = useRef(toast.duration);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
   }, []);
 
   const startTimer = useCallback(() => {
     clearTimer();
     if (toast.duration > 0 && !expanded) {
-      timerRef.current = setTimeout(() => removeToast(toast.id), toast.duration);
+      startTimeRef.current = Date.now();
+      timerRef.current = setTimeout(() => removeToast(toast.id), remainingRef.current);
+      const tick = () => {
+        const elapsed = Date.now() - startTimeRef.current;
+        const pct = Math.max(0, ((remainingRef.current - elapsed) / toast.duration) * 100);
+        setProgress(pct);
+        if (pct > 0) rafRef.current = requestAnimationFrame(tick);
+      };
+      rafRef.current = requestAnimationFrame(tick);
     }
   }, [toast.duration, toast.id, expanded, removeToast, clearTimer]);
 
+  const pauseTimer = useCallback(() => {
+    if (toast.duration > 0) {
+      const elapsed = Date.now() - startTimeRef.current;
+      remainingRef.current = Math.max(0, remainingRef.current - elapsed);
+    }
+    clearTimer();
+  }, [toast.duration, clearTimer]);
+
   useEffect(() => {
     if (!hovered) startTimer();
-    else clearTimer();
+    else pauseTimer();
     return clearTimer;
-  }, [hovered, startTimer, clearTimer]);
+  }, [hovered, startTimer, pauseTimer, clearTimer]);
 
   const Icon = ICON_MAP[toast.type];
   const style = STYLE_MAP[toast.type];
@@ -75,9 +106,9 @@ function ToastCard({ toast }: { toast: ToastItem }) {
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`pointer-events-auto w-80 rounded-xl border ${style.border} ${style.bg} p-3 shadow-lg backdrop-blur-sm animate-in slide-in-from-right-5 fade-in duration-200`}
+      className={`pointer-events-auto w-80 overflow-hidden rounded-xl border ${style.border} ${style.bg} shadow-lg backdrop-blur-sm animate-in slide-in-from-right-5 fade-in duration-200`}
     >
-      <div className="flex items-start gap-2.5">
+      <div className="flex items-start gap-2.5 p-3">
         <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${style.icon}`} />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{toast.title}</p>
@@ -110,6 +141,14 @@ function ToastCard({ toast }: { toast: ToastItem }) {
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
+      {toast.duration > 0 && (
+        <div className="h-0.5 w-full bg-gray-200/30 dark:bg-gray-700/30">
+          <div
+            className={`h-full transition-none ${PROGRESS_COLORS[toast.type]}`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
     </div>
   );
 }
