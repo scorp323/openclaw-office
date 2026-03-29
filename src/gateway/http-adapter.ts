@@ -379,7 +379,7 @@ export class HttpAdapter implements GatewayAdapter {
 
   async agentsList(): Promise<AgentsListResponse> {
     const data = await apiFetch<{ agents?: AgentsListResponse["agents"] }>("/agents");
-    return { agents: data.agents ?? [] };
+    return { agents: data.agents ?? [], defaultId: "", mainKey: "", scope: "" };
   }
 
   async agentsCreate(_params: AgentCreateParams): Promise<AgentCreateResult> {

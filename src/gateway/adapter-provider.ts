@@ -12,7 +12,6 @@ let adapterReadyWaiters: Array<{
   resolve: (adapter: GatewayAdapter) => void;
   reject: (error: Error) => void;
 }> = [];
-let httpFallbackInstance: HttpAdapter | null = null;
 
 export function getAdapter(): GatewayAdapter {
   if (adapterInstance) return adapterInstance;
@@ -133,7 +132,6 @@ export async function initHttpAdapter(): Promise<GatewayAdapter> {
   const httpAdapter = new HttpAdapter();
   try {
     await httpAdapter.connect();
-    httpFallbackInstance = httpAdapter;
     adapterInstance = httpAdapter;
     resolveWaiters(httpAdapter);
     return httpAdapter;
@@ -155,5 +153,4 @@ export function __resetAdapterForTests(): void {
   adapterInitPromise = null;
   adapterInitError = null;
   adapterReadyWaiters = [];
-  httpFallbackInstance = null;
 }

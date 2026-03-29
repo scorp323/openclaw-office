@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { CronTask } from "@/gateway/adapter-types";
 import { toCronTaskCardVM } from "@/lib/view-models";
-import { toastSuccess, toastError } from "@/store/toast-store";
+import { toastSuccess } from "@/store/toast-store";
 
 interface CronTaskCardProps {
   task: CronTask;

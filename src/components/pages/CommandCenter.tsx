@@ -169,29 +169,6 @@ function Sparkline({ data, color = "#00ff41", height = 28, width = 90 }: { data:
   );
 }
 
-/* ── Arc Gauge ─────────────────────────────────────── */
-function ArcGauge({ value, max, size = 56, color = "#00ff41", label }: { value: number; max: number; size?: number; color?: string; label?: string }) {
-  const r = (size - 8) / 2;
-  const cx = size / 2;
-  const cy = size / 2;
-  const circumference = Math.PI * r; // half-circle
-  const pct = Math.min(value / (max || 1), 1);
-  const dashLen = pct * circumference;
-
-  return (
-    <div style={{ position: "relative", width: size, height: size / 2 + 12 }}>
-      <svg width={size} height={size / 2 + 4} style={{ transform: "rotate(0deg)" }}>
-        <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
-          fill="none" stroke="rgba(0,255,65,0.08)" strokeWidth="4" strokeLinecap="round" />
-        <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
-          fill="none" stroke={color} strokeWidth="4" strokeLinecap="round"
-          strokeDasharray={`${dashLen} ${circumference}`}
-          style={{ filter: `drop-shadow(0 0 4px ${color}60)`, transition: "stroke-dasharray 0.5s ease" }} />
-      </svg>
-      {label && <div style={{ position: "absolute", bottom: 0, width: "100%", textAlign: "center", fontSize: 9, color: "rgba(255,255,255,0.4)", fontFamily: "'JetBrains Mono', monospace" }}>{label}</div>}
-    </div>
-  );
-}
 
 /* ── JARVIS Agent Card ─────────────────────────────── */
 function JarvisAgentCard({ agent, onClick, isSelected, recentCronCount }: { agent: RealAgent; onClick: () => void; isSelected: boolean; recentCronCount?: number }) {

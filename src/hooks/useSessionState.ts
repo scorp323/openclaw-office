@@ -122,25 +122,22 @@ export function useSessionFilters<T extends Record<string, unknown>>(
   pageKey: string,
   defaultValue: T,
 ): [T, (update: Partial<T>) => void] {
-  const ref = useRef<T>(() => {
+  const ref = useRef<T | null>(null);
+
+  // Initialize lazily from sessionStorage
+  if (ref.current === null) {
     const all = loadAllFilters();
     const saved = all[pageKey];
-    if (saved) return { ...defaultValue, ...saved } as T;
-    return defaultValue;
-  });
-
-  // Initialize lazily
-  if (typeof ref.current === "function") {
-    ref.current = (ref.current as unknown as () => T)();
+    ref.current = saved ? ({ ...defaultValue, ...saved } as T) : defaultValue;
   }
 
   const setFilters = useCallback((update: Partial<T>) => {
-    const next = { ...ref.current, ...update };
+    const next = { ...(ref.current as T), ...update };
     ref.current = next;
     const all = loadAllFilters();
     all[pageKey] = next;
     saveAllFilters(all);
   }, [pageKey]);
 
-  return [ref.current, setFilters];
+  return [ref.current as T, setFilters];
 }

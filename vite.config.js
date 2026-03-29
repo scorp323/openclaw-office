@@ -213,9 +213,18 @@ function chatCacheMiddleware() {
         },
     };
 }
+// ── Performance budget ──
+// Target chunk sizes (gzipped):
+//   vendor (react+router): <50KB
+//   charts (recharts):     <150KB — lazy-loaded only on /costs page
+//   ui (lucide-react):     <30KB
+//   state (zustand+immer): <10KB
+//   app code:              <120KB
+// If `npx vite build` reports chunks exceeding these, investigate splitting or tree-shaking.
 export default defineConfig({
     define: {
         __APP_VERSION__: JSON.stringify(pkg.version),
+        __BUILD_TIMESTAMP__: JSON.stringify(new Date().toISOString()),
     },
     plugins: [react(), tailwindcss(), chatCacheMiddleware()],
     resolve: {
