@@ -27,7 +27,7 @@
 - [x] **live-status-badges** — Show cron health/last run/error error count on dashboard cards without clicking into /cron. (COMPLETED 2026-03-29 15:46 CST)
 
 ## WAVE 2 — QUEUED
-10. **agent-detail-modal** — Tap an agent in the office to see a detail panel: name, role, model, current task, last active, status history. Mobile-friendly bottom sheet.
+10. **agent-detail-modal** — QUEUED — Tap an agent in the office to see a detail panel: name, role, model, current task, last active, status history. Mobile-friendly bottom sheet.
 11. **cron-timeline** — Visual timeline on /cron showing when each cron last ran and when it runs next. Color-coded: green=ok, red=error, gray=disabled.
 12. **real-time-cost-counter** — Live-updating cost display in the header: today's API spend, tokens used, model breakdown. Pulls from /mc-api/costs.
 13. **agent-chat-shortcut** — From the office floor plan, tap agent → "Chat" button → opens /chat pre-addressed to that agent.
