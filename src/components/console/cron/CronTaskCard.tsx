@@ -1,7 +1,9 @@
-import { Play, Pencil, Trash2, Check, XCircle, Minus, Pause, ScrollText } from "lucide-react";
+import { Play, Pencil, Trash2, Check, XCircle, Minus, Pause, ScrollText, Loader2, Clock } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { CronTask } from "@/gateway/adapter-types";
 import { toCronTaskCardVM } from "@/lib/view-models";
+import { toastSuccess, toastError } from "@/store/toast-store";
 
 interface CronTaskCardProps {
   task: CronTask;
@@ -21,6 +23,8 @@ const STATUS_ICON = {
 export function CronTaskCard({ task, onToggle, onRun, onEdit, onDelete, onViewLogs }: CronTaskCardProps) {
   const { t } = useTranslation("console");
   const vm = toCronTaskCardVM(task);
+  const [runLoading, setRunLoading] = useState(false);
+  const [toggleLoading, setToggleLoading] = useState(false);
 
   const message =
     task.payload.kind === "agentTurn"
@@ -30,6 +34,46 @@ export function CronTaskCard({ task, onToggle, onRun, onEdit, onDelete, onViewLo
         : "";
   const lastRun = vm.lastRunAt ? new Date(vm.lastRunAt).toLocaleString() : "—";
   const nextRun = vm.nextRunAt ? new Date(vm.nextRunAt).toLocaleString() : "—";
+
+  const handleQuickRun = async () => {
+    setRunLoading(true);
+    try {
+      const res = await fetch("/mc-api/actions/cron-run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cronId: task.id }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      toastSuccess(t("cron.card.runNow", { defaultValue: "Run Now" }), `${task.name} triggered`);
+    } catch {
+      // Fall back to existing adapter-based run
+      onRun(task.id);
+    } finally {
+      setRunLoading(false);
+    }
+  };
+
+  const handleQuickToggle = async () => {
+    setToggleLoading(true);
+    try {
+      const res = await fetch("/mc-api/actions/cron-toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cronId: task.id }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const newEnabled = !task.enabled;
+      toastSuccess(
+        newEnabled ? t("cron.toggle.enabled", { defaultValue: "Enabled" }) : t("cron.toggle.disabled", { defaultValue: "Disabled" }),
+        `${task.name} ${newEnabled ? "enabled" : "disabled"}`,
+      );
+    } catch {
+      // Fall back to existing toggle handler
+      onToggle(task.id, !task.enabled);
+    } finally {
+      setToggleLoading(false);
+    }
+  };
 
   return (
     <div
@@ -41,17 +85,30 @@ export function CronTaskCard({ task, onToggle, onRun, onEdit, onDelete, onViewLo
             <input
               type="checkbox"
               checked={task.enabled}
-              onChange={() => onToggle(task.id, !task.enabled)}
+              onChange={handleQuickToggle}
+              disabled={toggleLoading}
               className="peer sr-only"
             />
-            <div className="peer h-5 w-9 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white dark:bg-gray-700 dark:peer-checked:bg-blue-500" />
+            {toggleLoading ? (
+              <div className="flex h-5 w-9 items-center justify-center">
+                <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+              </div>
+            ) : (
+              <div className="peer h-5 w-9 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white dark:bg-gray-700 dark:peer-checked:bg-blue-500" />
+            )}
           </label>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="font-medium text-gray-900 dark:text-gray-100">{task.name}</span>
-              <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+              <span className="flex items-center gap-1 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                <Clock className="h-2.5 w-2.5" />
                 {vm.scheduleLabel}
               </span>
+              {!task.enabled && (
+                <span className="rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-600 dark:text-gray-400">
+                  disabled
+                </span>
+              )}
             </div>
             {message && (
               <p className="mt-1 line-clamp-1 text-sm text-gray-500 dark:text-gray-400">
@@ -78,19 +135,21 @@ export function CronTaskCard({ task, onToggle, onRun, onEdit, onDelete, onViewLo
         <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={() => onRun(task.id)}
-            className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-colors"
+            onClick={handleQuickRun}
+            disabled={runLoading}
+            className="rounded p-1.5 text-gray-400 hover:bg-green-50 hover:text-green-600 disabled:opacity-50 dark:hover:bg-green-900/20 dark:hover:text-green-400 transition-colors"
             title={t("cron.card.runNow")}
           >
-            <Play className="h-4 w-4" />
+            {runLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
           </button>
           <button
             type="button"
-            onClick={() => onToggle(task.id, !task.enabled)}
-            className="rounded p-1.5 text-gray-400 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/20 dark:hover:text-amber-400 transition-colors"
+            onClick={handleQuickToggle}
+            disabled={toggleLoading}
+            className="rounded p-1.5 text-gray-400 hover:bg-amber-50 hover:text-amber-600 disabled:opacity-50 dark:hover:bg-amber-900/20 dark:hover:text-amber-400 transition-colors"
             title={task.enabled ? t("cron.card.pause") : t("cron.card.resume")}
           >
-            <Pause className="h-4 w-4" />
+            {toggleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pause className="h-4 w-4" />}
           </button>
           {onViewLogs && (
             <button

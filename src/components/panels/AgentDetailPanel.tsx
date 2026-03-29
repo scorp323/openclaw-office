@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle, XCircle, Clock, History } from "lucide-react";
+import { CheckCircle, XCircle, Clock, History, RefreshCw } from "lucide-react";
 import Markdown from "react-markdown";
 import { SvgAvatar } from "@/components/shared/SvgAvatar";
 import { STATUS_COLORS } from "@/lib/constants";
@@ -25,6 +25,16 @@ function formatDuration(ms: number): string {
   return `${Math.floor(s / 60)}m ${s % 60}s`;
 }
 
+function relativeTime(ts: number): string {
+  const diffMs = Date.now() - ts;
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
 function HistoryTab({ agentId }: { agentId: string }) {
   const [tasks, setTasks] = useState<TaskHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,11 +42,13 @@ function HistoryTab({ agentId }: { agentId: string }) {
   const fetchHistory = useCallback(async () => {
     setLoading(true);
     try {
+      // TODO: If /mc-api/agents/{id}/history doesn't exist yet, the server should
+      // return { tasks: [] } with mock data structured as TaskHistoryItem[]
       const res = await fetch(`/mc-api/agents/${encodeURIComponent(agentId)}/history`);
       const data = await res.json();
-      if (Array.isArray(data.tasks)) setTasks(data.tasks);
+      if (Array.isArray(data.tasks)) setTasks(data.tasks.slice(0, 20));
     } catch {
-      // silently fail
+      // silently fail — endpoint may not exist yet
     } finally {
       setLoading(false);
     }
@@ -47,39 +59,68 @@ function HistoryTab({ agentId }: { agentId: string }) {
   }, [fetchHistory]);
 
   if (loading) {
-    return <div className="py-4 text-center text-xs text-gray-400">Loading history...</div>;
+    return (
+      <div className="flex items-center justify-center py-6">
+        <RefreshCw className="h-4 w-4 animate-spin text-gray-400" />
+      </div>
+    );
   }
 
   if (tasks.length === 0) {
-    return <div className="py-4 text-center text-xs text-gray-400">No task history</div>;
+    return (
+      <div className="flex flex-col items-center gap-1 py-6 text-center">
+        <History className="h-6 w-6 text-gray-300 dark:text-gray-600" strokeWidth={1.5} />
+        <p className="text-xs text-gray-400">No task history</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-1">
-      {tasks.map((task) => (
-        <div
-          key={task.id}
-          className="rounded border border-gray-100 px-2 py-1.5 dark:border-gray-700"
-        >
-          <div className="flex items-center justify-between">
-            <span className="truncate text-xs font-medium text-gray-700 dark:text-gray-300">
-              {task.task}
-            </span>
-            {task.result === "success" ? (
-              <CheckCircle className="h-3.5 w-3.5 shrink-0 text-green-500" />
-            ) : (
-              <XCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />
+    <div className="space-y-0.5">
+      {tasks.map((task, i) => {
+        const isSuccess = task.result === "success";
+        return (
+          <div key={task.id} className="relative flex gap-2 pl-3">
+            {/* Timeline connector */}
+            {i < tasks.length - 1 && (
+              <div className="absolute left-[6px] top-4 bottom-0 w-px bg-gray-200 dark:bg-gray-700" />
             )}
+            {/* Dot */}
+            <div className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full border-2 ${
+              isSuccess
+                ? "border-green-400 bg-green-100 dark:border-green-500 dark:bg-green-900/30"
+                : "border-red-400 bg-red-100 dark:border-red-500 dark:bg-red-900/30"
+            }`} />
+            {/* Content */}
+            <div className="min-w-0 flex-1 pb-2">
+              <div className="flex items-center justify-between gap-1">
+                <span className="truncate text-xs font-medium text-gray-700 dark:text-gray-300">
+                  {task.task}
+                </span>
+                {isSuccess ? (
+                  <CheckCircle className="h-3 w-3 shrink-0 text-green-500" />
+                ) : (
+                  <XCircle className="h-3 w-3 shrink-0 text-red-500" />
+                )}
+              </div>
+              <div className="mt-0.5 flex items-center gap-2 text-[10px] text-gray-400">
+                <span title={new Date(task.timestamp).toLocaleString()}>
+                  {relativeTime(task.timestamp)}
+                </span>
+                <span className="flex items-center gap-0.5">
+                  <Clock className="h-2.5 w-2.5" />
+                  {formatDuration(task.durationMs)}
+                </span>
+                {task.type && (
+                  <span className="rounded bg-gray-100 px-1 py-0.5 text-[9px] dark:bg-gray-700">
+                    {task.type}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="mt-0.5 flex items-center gap-2 text-[10px] text-gray-400">
-            <span>{new Date(task.timestamp).toLocaleString()}</span>
-            <span className="flex items-center gap-0.5">
-              <Clock className="h-2.5 w-2.5" />
-              {formatDuration(task.durationMs)}
-            </span>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
