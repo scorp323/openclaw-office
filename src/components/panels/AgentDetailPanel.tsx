@@ -1,10 +1,88 @@
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { CheckCircle, XCircle, Clock, History } from "lucide-react";
 import Markdown from "react-markdown";
 import { SvgAvatar } from "@/components/shared/SvgAvatar";
 import { STATUS_COLORS } from "@/lib/constants";
 import { useChatDockStore } from "@/store/console-stores/chat-dock-store";
 import { useOfficeStore } from "@/store/office-store";
+
+interface TaskHistoryItem {
+  id: string;
+  type: string;
+  task: string;
+  result: "success" | "fail";
+  durationMs: number;
+  timestamp: number;
+  detail: string;
+}
+
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  return `${Math.floor(s / 60)}m ${s % 60}s`;
+}
+
+function HistoryTab({ agentId }: { agentId: string }) {
+  const [tasks, setTasks] = useState<TaskHistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchHistory = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/mc-api/agents/${encodeURIComponent(agentId)}/history`);
+      const data = await res.json();
+      if (Array.isArray(data.tasks)) setTasks(data.tasks);
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false);
+    }
+  }, [agentId]);
+
+  useEffect(() => {
+    void fetchHistory();
+  }, [fetchHistory]);
+
+  if (loading) {
+    return <div className="py-4 text-center text-xs text-gray-400">Loading history...</div>;
+  }
+
+  if (tasks.length === 0) {
+    return <div className="py-4 text-center text-xs text-gray-400">No task history</div>;
+  }
+
+  return (
+    <div className="space-y-1">
+      {tasks.map((task) => (
+        <div
+          key={task.id}
+          className="rounded border border-gray-100 px-2 py-1.5 dark:border-gray-700"
+        >
+          <div className="flex items-center justify-between">
+            <span className="truncate text-xs font-medium text-gray-700 dark:text-gray-300">
+              {task.task}
+            </span>
+            {task.result === "success" ? (
+              <CheckCircle className="h-3.5 w-3.5 shrink-0 text-green-500" />
+            ) : (
+              <XCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />
+            )}
+          </div>
+          <div className="mt-0.5 flex items-center gap-2 text-[10px] text-gray-400">
+            <span>{new Date(task.timestamp).toLocaleString()}</span>
+            <span className="flex items-center gap-0.5">
+              <Clock className="h-2.5 w-2.5" />
+              {formatDuration(task.durationMs)}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function AgentDetailPanel() {
   const { t } = useTranslation("panels");
@@ -13,6 +91,7 @@ export function AgentDetailPanel() {
   const agents = useOfficeStore((s) => s.agents);
   const selectAgent = useOfficeStore((s) => s.selectAgent);
   const setTargetAgent = useChatDockStore((s) => s.setTargetAgent);
+  const [activeTab, setActiveTab] = useState<"info" | "history">("info");
 
   if (!selectedId) {
     return null;
@@ -61,33 +140,63 @@ export function AgentDetailPanel() {
         </div>
       </div>
 
-      {agent.currentTool && (
-        <div className="mb-2 rounded bg-orange-50 px-2 py-1.5 text-xs dark:bg-orange-950/50">
-          <div className="text-orange-600 dark:text-orange-400">🔧 {agent.currentTool.name}</div>
-        </div>
-      )}
+      <div className="mb-2 flex border-b border-gray-200 dark:border-gray-700">
+        <button
+          onClick={() => setActiveTab("info")}
+          className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+            activeTab === "info"
+              ? "border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
+              : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+          }`}
+        >
+          Info
+        </button>
+        <button
+          onClick={() => setActiveTab("history")}
+          className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${
+            activeTab === "history"
+              ? "border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
+              : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+          }`}
+        >
+          <History className="h-3 w-3" />
+          History
+        </button>
+      </div>
 
-      {agent.speechBubble && (
-        <div className="mb-2 rounded bg-white px-2 py-1.5 text-xs leading-relaxed text-gray-700 shadow-sm dark:bg-gray-800 dark:text-gray-300">
-          <Markdown>{agent.speechBubble.text}</Markdown>
-        </div>
-      )}
-
-      {agent.toolCallHistory.length > 0 && (
-        <div className="mt-2">
-          <div className="mb-1 text-xs font-medium text-gray-400 dark:text-gray-500">
-            {t("agentDetail.toolCallHistory")}
-          </div>
-          {agent.toolCallHistory.map((t, i) => (
-            <div
-              key={`${t.name}-${t.timestamp}-${i}`}
-              className="flex items-center justify-between border-b border-gray-100 py-1 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400"
-            >
-              <span>{t.name}</span>
-              <span className="text-gray-400">{new Date(t.timestamp).toLocaleTimeString()}</span>
+      {activeTab === "info" ? (
+        <>
+          {agent.currentTool && (
+            <div className="mb-2 rounded bg-orange-50 px-2 py-1.5 text-xs dark:bg-orange-950/50">
+              <div className="text-orange-600 dark:text-orange-400">🔧 {agent.currentTool.name}</div>
             </div>
-          ))}
-        </div>
+          )}
+
+          {agent.speechBubble && (
+            <div className="mb-2 rounded bg-white px-2 py-1.5 text-xs leading-relaxed text-gray-700 shadow-sm dark:bg-gray-800 dark:text-gray-300">
+              <Markdown>{agent.speechBubble.text}</Markdown>
+            </div>
+          )}
+
+          {agent.toolCallHistory.length > 0 && (
+            <div className="mt-2">
+              <div className="mb-1 text-xs font-medium text-gray-400 dark:text-gray-500">
+                {t("agentDetail.toolCallHistory")}
+              </div>
+              {agent.toolCallHistory.map((tc, i) => (
+                <div
+                  key={`${tc.name}-${tc.timestamp}-${i}`}
+                  className="flex items-center justify-between border-b border-gray-100 py-1 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400"
+                >
+                  <span>{tc.name}</span>
+                  <span className="text-gray-400">{new Date(tc.timestamp).toLocaleTimeString()}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <HistoryTab agentId={agent.id} />
       )}
     </div>
   );
