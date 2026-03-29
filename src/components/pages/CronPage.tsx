@@ -11,6 +11,7 @@ import { ErrorState } from "@/components/console/shared/ErrorState";
 import { CronSkeleton } from "@/components/console/shared/Skeleton";
 import { useCronStore } from "@/store/console-stores/cron-store";
 import { toastSuccess, toastError } from "@/store/toast-store";
+import { useFetchWithRetry } from "@/hooks/useFetchWithRetry";
 
 export function CronPage() {
   const { t } = useTranslation("console");
@@ -34,22 +35,18 @@ export function CronPage() {
   const [runTarget, setRunTarget] = useState<string | null>(null);
   const [disableTarget, setDisableTarget] = useState<string | null>(null);
   const [logsTarget, setLogsTarget] = useState<string | null>(null);
-  const [logsData, setLogsData] = useState<Array<{ ts: number; text: string; file: string }>>([]);
-  const [logsLoading, setLogsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "timeline">("list");
 
-  const handleViewLogs = useCallback(async (id: string) => {
+  // Resilient logs fetch — 2 retries, exponential backoff, 10s timeout
+  type LogEntry = { ts: number; text: string; file: string };
+  const logsUrl = logsTarget !== null
+    ? `/mc-api/cron/${encodeURIComponent(logsTarget)}/logs`
+    : null;
+  const { data: logsRaw, isLoading: logsLoading } = useFetchWithRetry<{ logs: LogEntry[] }>(logsUrl);
+  const logsData = logsRaw?.logs ?? [];
+
+  const handleViewLogs = useCallback((id: string) => {
     setLogsTarget(id);
-    setLogsLoading(true);
-    try {
-      const res = await fetch(`/mc-api/cron/${encodeURIComponent(id)}/logs`);
-      const data = await res.json();
-      setLogsData(data.logs ?? []);
-    } catch {
-      setLogsData([]);
-    } finally {
-      setLogsLoading(false);
-    }
   }, []);
 
   useEffect(() => {

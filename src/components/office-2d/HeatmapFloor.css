@@ -17,3 +17,13 @@
 .heatmap-zone-empty {
   animation: heatmap-idle-glow 4s ease-in-out infinite;
 }
+
+/* Error zones — red throb when agents have error status */
+@keyframes heatmap-error-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.15; }
+}
+
+.heatmap-zone-error {
+  animation: heatmap-error-pulse 0.9s ease-in-out infinite;
+}

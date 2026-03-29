@@ -22,6 +22,7 @@ export const SHORTCUT_LIST: ShortcutEntry[] = [
   { keys: "g o", label: "Go to Office" },
   { keys: "g a", label: "Go to Agents" },
   { keys: "g c", label: "Go to Cron" },
+  { keys: "g s", label: "Go to Settings" },
   { keys: "?", label: "Keyboard shortcuts" },
   { keys: "Esc", label: "Close overlay / modal" },
 ];
@@ -44,6 +45,7 @@ const G_NAV_MAP: Record<string, string> = {
   o: "/office",
   a: "/agents",
   c: "/cron",
+  s: "/settings",
 };
 
 const G_SEQUENCE_TIMEOUT_MS = 800;

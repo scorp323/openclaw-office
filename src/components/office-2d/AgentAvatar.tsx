@@ -13,15 +13,39 @@ const WALK_BOB_FREQ = 8;
 const IDLE_BEHAVIORS = ["reading", "sipping", "stretching", "leaning", "typing"] as const;
 type IdleBehavior = (typeof IDLE_BEHAVIORS)[number];
 
-/** Personality pose transforms keyed by lowercased agent name */
+/** Personality pose transforms keyed by lowercased agent name (exact match) */
 const PERSONALITY_POSES: Record<string, string> = {
-  morpheus: "scale(1.05)",                       // CEO: upright, slightly larger
-  "chief analyst": "rotate(2.5)",                // Trading: leaning forward, intense
-  "research director": "rotate(-1.5)",           // Research: slightly reclined
+  morpheus: "scale(1.05)",                          // CEO: upright, slightly larger
+  "chief analyst": "rotateZ(-5deg)",                // Trading: lean forward, intense
+  "research director": "rotate(-1.5)",              // Research: slightly reclined
   "technical director": "rotate(3) translateY(-1)", // Engineering: hunched forward
-  "content director": "rotate(-2)",              // Content: casual lean
-  "ops manager": "translateY(-2)",               // Ops: standing straight, patrol stance
+  "content director": "rotateZ(3deg)",              // Content: casual lean
+  "ops manager": "__patrol__",                      // Ops: patrol animation
 };
+
+const PATROL_MARKER = "__patrol__";
+
+/**
+ * Resolve personality pose for a given agent.
+ * Only applies when idle — working agents keep their working animation.
+ * Returns a CSS transform string, "__patrol__" for patrol animation, or null.
+ */
+function resolvePersonalityPose(
+  name: string,
+  status: import("@/gateway/types").AgentVisualStatus,
+): string | null {
+  if (status !== "idle") return null;
+  const nameLow = name.toLowerCase();
+  // Exact name match first
+  if (PERSONALITY_POSES[nameLow]) return PERSONALITY_POSES[nameLow];
+  // Trading agents (Jack*): lean forward
+  if (nameLow.startsWith("jack")) return "rotateZ(-5deg)";
+  // Content agents: relaxed recline
+  if (nameLow.startsWith("content")) return "rotateZ(3deg)";
+  // Ops patrol agents (kat*, email*): translateX oscillation
+  if (nameLow.startsWith("kat") || nameLow.startsWith("email")) return PATROL_MARKER;
+  return null;
+}
 
 /** Deterministic idle behavior based on agent id hash */
 function getIdleBehavior(agentId: string): IdleBehavior {
@@ -69,8 +93,9 @@ export const AgentAvatar = memo(function AgentAvatar({ agent }: AgentAvatarProps
   const showIdleAnim = isIdleZone && !isWalking && !isPlaceholder && agent.status === "idle";
   const idleBehavior = showIdleAnim ? getIdleBehavior(agent.id) : undefined;
   const personalityPose = !isWalking && !isPlaceholder
-    ? PERSONALITY_POSES[agent.name.toLowerCase()] ?? null
+    ? resolvePersonalityPose(agent.name, agent.status)
     : null;
+  const isPatrol = personalityPose === PATROL_MARKER;
 
   // Walk animation loop via requestAnimationFrame
   const agentIdRef = useRef(agent.id);
@@ -138,7 +163,10 @@ export const AgentAvatar = memo(function AgentAvatar({ agent }: AgentAvatarProps
       onMouseEnter={() => !isPlaceholder && setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-    <g style={personalityPose ? { transform: personalityPose, transformOrigin: "center" } : undefined}>
+    <g
+      style={personalityPose && !isPatrol ? { transform: personalityPose, transformOrigin: "center" } : undefined}
+      className={isPatrol ? "agent-patrol" : undefined}
+    >
       {/* Selected glow */}
       {isSelected && (
         <circle

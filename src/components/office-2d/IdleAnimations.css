@@ -65,3 +65,14 @@
 [data-idle-behavior="typing"] .idle-prop {
   animation: idle-typing 0.5s ease-in-out infinite;
 }
+
+/* 6. Patrol — ops agents walk back and forth when idle */
+@keyframes agent-patrol-walk {
+  0%, 100% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+}
+
+.agent-patrol {
+  animation: agent-patrol-walk 3s ease-in-out infinite;
+  transform-origin: center;
+}
