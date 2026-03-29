@@ -2,35 +2,57 @@
 
 import { createServer, request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
-import { createGzip } from "node:zlib";
+import { createGzip, createBrotliCompress } from "node:zlib";
 import { readFileSync, existsSync, mkdirSync } from "node:fs";
 import { readFile, writeFile, access, readdir, unlink, mkdir } from "node:fs/promises";
 import { resolve, join, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { networkInterfaces, homedir } from "node:os";
 
-// Gzip-compressible MIME types
-const GZIP_TYPES = new Set([
+// Compressible MIME types
+const COMPRESSIBLE_TYPES = new Set([
   "text/html", "text/css", "application/javascript", "application/json",
-  "image/svg+xml", "text/plain",
+  "text/plain",
 ]);
 
-function shouldGzip(mime, acceptEncoding) {
-  if (!acceptEncoding || !acceptEncoding.includes("gzip")) return false;
-  const base = mime.split(";")[0].trim();
-  return GZIP_TYPES.has(base);
+function getPreferredEncoding(acceptEncoding) {
+  if (!acceptEncoding) return null;
+  const encodings = acceptEncoding.split(',').map(s => s.trim().split(';')[0]);
+  if (encodings.includes('br')) return 'br';
+  if (encodings.includes('gzip')) return 'gzip';
+  return null;
 }
 
-function sendWithGzip(res, statusCode, headers, body, acceptEncoding) {
+function shouldCompress(mime) {
+  const base = mime.split(";")[0].trim();
+  return COMPRESSIBLE_TYPES.has(base);
+}
+
+function sendWithCompression(res, statusCode, headers, body, acceptEncoding) {
   const mime = headers["Content-Type"] || "";
-  if (shouldGzip(mime, acceptEncoding) && body.length > 1024) {
-    headers["Content-Encoding"] = "gzip";
+  const preferredEncoding = getPreferredEncoding(acceptEncoding);
+
+  if (shouldCompress(mime) && body.length > 1024 && preferredEncoding) {
     headers["Vary"] = "Accept-Encoding";
     delete headers["Content-Length"];
-    res.writeHead(statusCode, headers);
-    const gz = createGzip();
-    gz.pipe(res);
-    gz.end(body);
+
+    if (preferredEncoding === 'br') {
+      headers["Content-Encoding"] = "br";
+      res.writeHead(statusCode, headers);
+      const br = createBrotliCompress();
+      br.pipe(res);
+      br.end(body);
+    } else if (preferredEncoding === 'gzip') {
+      headers["Content-Encoding"] = "gzip";
+      res.writeHead(statusCode, headers);
+      const gz = createGzip();
+      gz.pipe(res);
+      gz.end(body);
+    } else {
+      headers["Content-Length"] = Buffer.byteLength(body);
+      res.writeHead(statusCode, headers);
+      res.end(body);
+    }
   } else {
     headers["Content-Length"] = Buffer.byteLength(body);
     res.writeHead(statusCode, headers);
@@ -627,7 +649,7 @@ const server = createServer(async (req, res) => {
   // Serve injected index.html for root and SPA routes
   if (pathname === "/" || pathname === "/index.html") {
     const html = await getIndexHtml();
-    sendWithGzip(res, 200, { "Content-Type": "text/html; charset=utf-8" }, html, acceptEncoding);
+    sendWithCompression(res, 200, { "Content-Type": "text/html; charset=utf-8" }, html, acceptEncoding);
     return;
   }
 
@@ -643,13 +665,13 @@ const server = createServer(async (req, res) => {
     if (pathname.startsWith("/assets/")) {
       headers["Cache-Control"] = "public, max-age=31536000, immutable";
     }
-    sendWithGzip(res, 200, headers, content, acceptEncoding);
+    sendWithCompression(res, 200, headers, content, acceptEncoding);
     return;
   }
 
   // SPA fallback for client-side routes
   const html = await getIndexHtml();
-  sendWithGzip(res, 200, { "Content-Type": "text/html; charset=utf-8" }, html, acceptEncoding);
+  sendWithCompression(res, 200, { "Content-Type": "text/html; charset=utf-8" }, html, acceptEncoding);
 });
 
 server.on("upgrade", (req, socket, head) => {
