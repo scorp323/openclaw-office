@@ -7,8 +7,6 @@
 - [x] Lazy-load all 8 page routes (main bundle 695KB → 481KB)
 - [x] Add Suspense loading screen
 - [x] **gzip-compression** — Add gzip/brotli to openclaw-office.js server. Target: 481KB → ~144KB transfer. (2026-03-29 15:01 CST)
-
-## COMPLETED
 - [x] **mobile-pinch-zoom** — Add pinch-to-zoom + tap-to-inspect on FloorPlan SVG for mobile. Touch-friendly agent interaction. (2026-03-29 15:17 CST)
 
 ## QUEUED (in priority order)
