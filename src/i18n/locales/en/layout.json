@@ -65,6 +65,7 @@
     "settings": "Settings",
     "logs": "Logs",
     "costs": "Costs",
-    "memory": "Memory"
+    "memory": "Memory",
+    "actions": "Actions"
   }
 }

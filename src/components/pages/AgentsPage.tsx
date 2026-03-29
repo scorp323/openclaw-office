@@ -1,5 +1,7 @@
-import { Bot, Clock, Cpu, RefreshCw } from "lucide-react";
+import { Bot, Clock, Cpu, Loader2, MessageSquare, RefreshCw, Send, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { apiPost } from "@/lib/api-actions";
+import { toastSuccess, toastError } from "@/store/toast-store";
 import { useTranslation } from "react-i18next";
 import { AgentDetailHeader } from "@/components/console/agents/AgentDetailHeader";
 import { AgentDetailTabs } from "@/components/console/agents/AgentDetailTabs";
@@ -57,13 +59,89 @@ function StatusDot({ status }: { status: string }) {
   );
 }
 
+function SendMessageModal({
+  agentName,
+  sessionKey,
+  onClose,
+}: {
+  agentName: string;
+  sessionKey: string;
+  onClose: () => void;
+}) {
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const handleSend = useCallback(async () => {
+    if (!message.trim()) return;
+    setSending(true);
+    try {
+      await apiPost(`/api/session/${encodeURIComponent(sessionKey)}/message`, {
+        message: message.trim(),
+      });
+      toastSuccess("Message Sent", `Message sent to ${agentName}`);
+      onClose();
+    } catch (err) {
+      toastError("Send Failed", err instanceof Error ? err.message : String(err));
+    } finally {
+      setSending(false);
+    }
+  }, [message, sessionKey, agentName, onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="mx-4 w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Send Message to {agentName}
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          rows={4}
+          placeholder="Type your message..."
+          autoFocus
+          className="mb-4 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:border-blue-500"
+        />
+        <div className="flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={sending || !message.trim()}
+            className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+          >
+            {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AgentFleetCard({
   agent,
   onClick,
+  onSendMessage,
   isSelected,
 }: {
   agent: FleetAgent;
   onClick: () => void;
+  onSendMessage: (agentId: string) => void;
   isSelected: boolean;
 }) {
   const uptimeStart = agent.status === "active" ? Date.now() - Math.floor(Math.random() * 86_400_000) : 0;
@@ -113,7 +191,7 @@ function AgentFleetCard({
             : "Model not loaded"}
       </p>
 
-      {/* Footer: Uptime + Last active */}
+      {/* Footer: Uptime + Last active + Send Message */}
       <div className="flex items-center justify-between border-t border-gray-100 pt-3 dark:border-gray-800">
         {agent.status === "active" ? (
           <span className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500">
@@ -123,9 +201,29 @@ function AgentFleetCard({
         ) : (
           <span className="text-[10px] text-gray-400 dark:text-gray-500">—</span>
         )}
-        <span className="text-[10px] text-gray-400 dark:text-gray-500">
-          {agent.status === "active" ? relativeTime(Date.now() - 30_000) : "—"}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-gray-400 dark:text-gray-500">
+            {agent.status === "active" ? relativeTime(Date.now() - 30_000) : "—"}
+          </span>
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSendMessage(agent.id);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.stopPropagation();
+                onSendMessage(agent.id);
+              }
+            }}
+            title="Send message"
+            className="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-blue-500 dark:hover:bg-gray-800 dark:hover:text-blue-400 transition-colors"
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+          </span>
+        </div>
       </div>
     </button>
   );
@@ -138,6 +236,7 @@ export function AgentsPage() {
 
   const [fleetAgents, setFleetAgents] = useState<FleetAgent[]>([]);
   const [loading, setLoading] = useState(false);
+  const [messageTarget, setMessageTarget] = useState<string | null>(null);
 
   const fetchFleet = useCallback(async () => {
     try {
@@ -216,6 +315,7 @@ export function AgentsPage() {
               agent={agent}
               isSelected={agent.id === selectedAgentId}
               onClick={() => selectAgent(agent.id)}
+              onSendMessage={setMessageTarget}
             />
           ))}
         </div>
@@ -233,6 +333,17 @@ export function AgentsPage() {
 
       <CreateAgentDialog />
       <DeleteAgentDialog />
+
+      {messageTarget !== null && (() => {
+        const targetAgent = mergedAgents.find((a) => a.id === messageTarget);
+        return (
+          <SendMessageModal
+            agentName={targetAgent?.name ?? messageTarget}
+            sessionKey={messageTarget}
+            onClose={() => setMessageTarget(null)}
+          />
+        );
+      })()}
     </div>
   );
 }

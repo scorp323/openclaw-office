@@ -10,6 +10,7 @@ import {
   Terminal,
   DollarSign,
   Brain,
+  Zap,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -39,6 +40,7 @@ const MORE_NAV: NavItem[] = [
   { path: "/logs", labelKey: "consoleNav.logs", icon: Terminal },
   { path: "/costs", labelKey: "consoleNav.costs", icon: DollarSign },
   { path: "/memory", labelKey: "consoleNav.memory", icon: Brain },
+  { path: "/actions", labelKey: "consoleNav.actions", icon: Zap },
 ];
 
 function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {

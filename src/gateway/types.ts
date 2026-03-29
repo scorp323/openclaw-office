@@ -252,7 +252,8 @@ export type PageId =
   | "settings"
   | "logs"
   | "costs"
-  | "memory";
+  | "memory"
+  | "actions";
 
 export interface TokenSnapshot {
   timestamp: number;

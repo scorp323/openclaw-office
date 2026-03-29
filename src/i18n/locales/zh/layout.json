@@ -65,6 +65,7 @@
     "settings": "设置",
     "logs": "日志",
     "costs": "成本",
-    "memory": "记忆"
+    "memory": "记忆",
+    "actions": "操作"
   }
 }

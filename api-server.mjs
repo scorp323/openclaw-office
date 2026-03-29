@@ -2,7 +2,7 @@ import { createServer } from "http";
 import { execSync } from "child_process";
 import { readFileSync, writeFileSync, appendFileSync, existsSync, readdirSync, mkdirSync } from "fs";
 import { homedir } from "os";
-import { join, basename } from "path";
+import { join, basename, resolve } from "path";
 
 const PORT = 3335;
 const HISTORY_FILE = "/tmp/mc-history.json";
@@ -569,6 +569,15 @@ function matchDynamicRoute(pathname) {
   // /api/cron/:id/logs
   const cronLogsMatch = /^\/api\/cron\/([^/]+)\/logs$/.exec(pathname);
   if (cronLogsMatch) return { handler: "cronLogs", params: { id: cronLogsMatch[1] } };
+  // /api/session/:key/kill
+  const sessionKillMatch = /^\/api\/session\/([^/]+)\/kill$/.exec(pathname);
+  if (sessionKillMatch) return { handler: "sessionKill", params: { key: sessionKillMatch[1] } };
+  // /api/cron/:id/toggle
+  const cronToggleMatch = /^\/api\/cron\/([^/]+)\/toggle$/.exec(pathname);
+  if (cronToggleMatch) return { handler: "cronToggle", params: { id: cronToggleMatch[1] } };
+  // /api/session/:key/message
+  const sessionMsgMatch = /^\/api\/session\/([^/]+)\/message$/.exec(pathname);
+  if (sessionMsgMatch) return { handler: "sessionMessage", params: { key: sessionMsgMatch[1] } };
   return null;
 }
 
@@ -693,6 +702,12 @@ function getCronLogs(cronId) {
   return { logs: entries.slice(0, 100), cronId };
 }
 
+// ── Shell escape helper ──────────────────────────────
+function shellEscape(s) {
+  if (typeof s !== "string") return "''";
+  return "'" + s.replace(/'/g, "'\\''") + "'";
+}
+
 // ── Auth helpers ─────────────────────────────────────
 function checkAuth(req) {
   const authHeader = req.headers["authorization"] || "";
@@ -771,6 +786,165 @@ const server = createServer((req, res) => {
     return;
   }
 
+  // POST /api/gateway/restart — restart openclaw gateway
+  if (url.pathname === "/api/gateway/restart" && req.method === "POST") {
+    const output = textExec("openclaw gateway restart 2>&1", 30000);
+    cache.delete("gateway");
+    res.writeHead(200);
+    res.end(JSON.stringify({ ok: !output.startsWith("ERROR"), output }));
+    return;
+  }
+
+  // POST /api/session/:key/kill — kill a session (dynamic route)
+  // POST /api/workmode — switch work mode
+  if (url.pathname === "/api/workmode" && req.method === "POST") {
+    let body = "";
+    req.on("data", (c) => { body += c; });
+    req.on("end", () => {
+      try {
+        const { mode } = JSON.parse(body);
+        const safeMode = (mode === "recording" || mode === "default") ? mode : "default";
+        const scriptPath = join(homedir(), ".openclaw", "workspace", "scripts", "work-mode.sh");
+        const output = textExec(`bash ${shellEscape(scriptPath)} ${shellEscape(safeMode)} 2>&1`, 15000);
+        res.writeHead(200);
+        res.end(JSON.stringify({ ok: !output.startsWith("ERROR"), mode: safeMode, output }));
+      } catch (e) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: String(e) }));
+      }
+    });
+    return;
+  }
+
+  // POST /api/ollama/load — load an ollama model
+  if (url.pathname === "/api/ollama/load" && req.method === "POST") {
+    let body = "";
+    req.on("data", (c) => { body += c; });
+    req.on("end", () => {
+      try {
+        const { model } = JSON.parse(body);
+        if (!model || typeof model !== "string" || !/^[\w.:\-/]+$/.test(model)) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: "Invalid model name" }));
+          return;
+        }
+        const output = textExec(`ollama run ${shellEscape(model)} --keepalive 30m </dev/null 2>&1`, 15000);
+        cache.delete("ollama");
+        cache.delete("ollama-ps");
+        res.writeHead(200);
+        res.end(JSON.stringify({ ok: !output.startsWith("ERROR"), model, output }));
+      } catch (e) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: String(e) }));
+      }
+    });
+    return;
+  }
+
+  // POST /api/ollama/unload — stop an ollama model
+  if (url.pathname === "/api/ollama/unload" && req.method === "POST") {
+    let body = "";
+    req.on("data", (c) => { body += c; });
+    req.on("end", () => {
+      try {
+        const { model } = JSON.parse(body);
+        if (!model || typeof model !== "string" || !/^[\w.:\-/]+$/.test(model)) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: "Invalid model name" }));
+          return;
+        }
+        const output = textExec(`ollama stop ${shellEscape(model)} 2>&1`, 15000);
+        cache.delete("ollama");
+        cache.delete("ollama-ps");
+        res.writeHead(200);
+        res.end(JSON.stringify({ ok: !output.startsWith("ERROR"), model, output }));
+      } catch (e) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: String(e) }));
+      }
+    });
+    return;
+  }
+
+  // POST /api/message/send — send a message via channel
+  if (url.pathname === "/api/message/send" && req.method === "POST") {
+    let body = "";
+    req.on("data", (c) => { body += c; });
+    req.on("end", () => {
+      try {
+        const { channel, to, text } = JSON.parse(body);
+        if (!text || typeof text !== "string") {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: "Missing text" }));
+          return;
+        }
+        let cmd;
+        if (channel === "imessage" || channel === "imsg") {
+          if (!to) { res.writeHead(400); res.end(JSON.stringify({ error: "Missing 'to'" })); return; }
+          cmd = `osascript -e 'tell application "Messages" to send ${shellEscape(text)} to buddy ${shellEscape(to)} of service "iMessage"' 2>&1`;
+        } else {
+          if (!to) { res.writeHead(400); res.end(JSON.stringify({ error: "Missing 'to'" })); return; }
+          cmd = `openclaw channel send --channel ${shellEscape(channel || "default")} --to ${shellEscape(to)} --message ${shellEscape(text)} 2>&1`;
+        }
+        const output = textExec(cmd, 15000);
+        res.writeHead(200);
+        res.end(JSON.stringify({ ok: !output.startsWith("ERROR"), output }));
+      } catch (e) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: String(e) }));
+      }
+    });
+    return;
+  }
+
+  // POST /api/memory/write — write a memory file
+  if (url.pathname === "/api/memory/write" && req.method === "POST") {
+    let body = "";
+    req.on("data", (c) => { body += c; });
+    req.on("end", () => {
+      try {
+        const { file, content } = JSON.parse(body);
+        if (!file || typeof file !== "string" || file.includes("..") || file.includes("/") || file.includes("\\")) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: "Invalid file name" }));
+          return;
+        }
+        if (typeof content !== "string") {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: "Missing content" }));
+          return;
+        }
+        const memDir = join(homedir(), ".openclaw", "workspace", "memory");
+        if (!existsSync(memDir)) mkdirSync(memDir, { recursive: true });
+        const fullPath = join(memDir, file);
+        // Double-check resolved path is within memDir
+        const resolved = resolve(fullPath);
+        if (!resolved.startsWith(resolve(memDir))) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: "Path traversal detected" }));
+          return;
+        }
+        writeFileSync(fullPath, content);
+        cache.delete("memory");
+        res.writeHead(200);
+        res.end(JSON.stringify({ ok: true, file }));
+      } catch (e) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: String(e) }));
+      }
+    });
+    return;
+  }
+
+  // POST /api/deploy — pull, build, restart
+  if (url.pathname === "/api/deploy" && req.method === "POST") {
+    const projectDir = join(homedir(), ".openclaw", "workspace", "projects", "mission-control", "morpheus-office");
+    const output = textExec(`cd ${shellEscape(projectDir)} && git pull && npm run build && pm2 restart mc-api 2>/dev/null || true`, 60000);
+    res.writeHead(200);
+    res.end(JSON.stringify({ ok: !output.startsWith("ERROR"), output }));
+    return;
+  }
+
   const handler = routes[url.pathname];
 
   if (handler) {
@@ -791,10 +965,54 @@ const server = createServer((req, res) => {
         if (dynamic.handler === "agentHistory") {
           data = getAgentHistory(dynamic.params.id);
         } else if (dynamic.handler === "cronRun") {
-          const result = textExec(`openclaw cron run --id "${dynamic.params.id}" 2>&1`, 30000);
+          const result = textExec(`openclaw cron run --id ${shellEscape(dynamic.params.id)} 2>&1`, 30000);
           data = { ok: !result.startsWith("ERROR"), output: result, id: dynamic.params.id };
         } else if (dynamic.handler === "cronLogs") {
           data = getCronLogs(dynamic.params.id);
+        } else if (dynamic.handler === "sessionKill" && req.method === "POST") {
+          const result = textExec(`openclaw session kill ${shellEscape(dynamic.params.key)} 2>&1`, 15000);
+          cache.delete("sessions");
+          data = { ok: !result.startsWith("ERROR"), output: result };
+          res.writeHead(200);
+          res.end(JSON.stringify(data));
+          return;
+        } else if (dynamic.handler === "cronToggle" && req.method === "POST") {
+          let body = "";
+          req.on("data", (c) => { body += c; });
+          req.on("end", () => {
+            try {
+              const { enabled } = JSON.parse(body);
+              const action = enabled ? "enable" : "disable";
+              const result = textExec(`openclaw cron ${action} --id ${shellEscape(dynamic.params.id)} 2>&1`, 15000);
+              cache.delete("crons");
+              res.writeHead(200);
+              res.end(JSON.stringify({ ok: !result.startsWith("ERROR"), enabled: !!enabled, output: result }));
+            } catch (e) {
+              res.writeHead(400);
+              res.end(JSON.stringify({ error: String(e) }));
+            }
+          });
+          return;
+        } else if (dynamic.handler === "sessionMessage" && req.method === "POST") {
+          let body = "";
+          req.on("data", (c) => { body += c; });
+          req.on("end", () => {
+            try {
+              const { message } = JSON.parse(body);
+              if (!message || typeof message !== "string") {
+                res.writeHead(400);
+                res.end(JSON.stringify({ error: "Missing message" }));
+                return;
+              }
+              const result = textExec(`openclaw session send --key ${shellEscape(dynamic.params.key)} --message ${shellEscape(message)} 2>&1`, 15000);
+              res.writeHead(200);
+              res.end(JSON.stringify({ ok: !result.startsWith("ERROR"), output: result }));
+            } catch (e) {
+              res.writeHead(400);
+              res.end(JSON.stringify({ error: String(e) }));
+            }
+          });
+          return;
         }
         res.writeHead(200);
         res.end(JSON.stringify(data || { error: "unknown handler" }));
