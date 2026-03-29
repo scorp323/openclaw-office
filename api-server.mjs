@@ -8,6 +8,7 @@ const PORT = 3335;
 const HISTORY_FILE = "/tmp/mc-history.json";
 const MAX_HISTORY_POINTS = 288;
 const MC_AUTH_PIN = process.env.MC_AUTH_PIN || "1337";
+const SETTINGS_FILE = join(homedir(), ".openclaw", "workspace", "projects", "mission-control", "morpheus-office", "user-settings.json");
 
 // ── Cache layer ──────────────────────────────────────
 const cache = new Map();
