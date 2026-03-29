@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useLiveData } from "@/hooks/useLiveData";
 import { useRealAgentSync } from "@/hooks/useRealAgentSync";
@@ -189,7 +189,8 @@ export function FloorPlan() {
         {/* ── Layer 5b: Main entrance door on outer wall ── */}
         <EntranceDoor isDark={isDark} />
 
-        {/* ── Layer 6: Collaboration lines ── */}
+        {/* ── Layer 6: Collaboration glow + lines ── */}
+        <CollaborationGlow agents={meetingAgents} seats={meetingSeats} isDark={isDark} />
         {links.map((link) => {
           const source = agents.get(link.sourceId);
           const target = agents.get(link.targetId);
@@ -266,21 +267,25 @@ function OfficeStatusOverlay({
 
 /* ═══ Sub-components ═══ */
 
-/** Central cross-shaped corridor with tile pattern */
+/** Horizontal corridor between Meeting (top) and Lounge/Rooftop (bottom) */
 function CorridorFloor({ isDark }: { isDark: boolean }) {
   const cw = OFFICE.corridorWidth;
+  // Horizontal corridor sits between meeting zone (top) and bottom zones
   const hCorrX = OFFICE.x;
-  const hCorrY = OFFICE.y + (OFFICE.height - cw) / 2;
-  const vCorrX = OFFICE.x + (OFFICE.width - cw) / 2;
-  const vCorrY = OFFICE.y;
+  const hCorrY = ZONES.meeting.y + ZONES.meeting.height;
+
+  // Vertical divider between Lounge and Rooftop (bottom half only)
+  const vDivX = ZONES.lounge.x + ZONES.lounge.width;
+  const vDivY = ZONES.lounge.y;
+  const vDivH = ZONES.lounge.height;
 
   return (
     <g>
-      {/* Horizontal corridor */}
+      {/* Horizontal corridor (full width) */}
       <rect x={hCorrX} y={hCorrY} width={OFFICE.width} height={cw} fill="url(#corridor-tiles)" />
-      {/* Vertical corridor */}
-      <rect x={vCorrX} y={vCorrY} width={cw} height={OFFICE.height} fill="url(#corridor-tiles)" />
-      {/* Corridor center guide lines */}
+      {/* Vertical divider between Lounge and Rooftop */}
+      <rect x={vDivX} y={vDivY} width={cw} height={vDivH} fill="url(#corridor-tiles)" />
+      {/* Corridor center guide line */}
       <line
         x1={hCorrX}
         y1={hCorrY + cw / 2}
@@ -291,43 +296,31 @@ function CorridorFloor({ isDark }: { isDark: boolean }) {
         strokeDasharray="8 6"
         opacity={0.6}
       />
-      <line
-        x1={vCorrX + cw / 2}
-        y1={vCorrY}
-        x2={vCorrX + cw / 2}
-        y2={vCorrY + OFFICE.height}
-        stroke={isDark ? "#0a3d0a" : "#c8d0dc"}
-        strokeWidth={0.5}
-        strokeDasharray="8 6"
-        opacity={0.6}
-      />
     </g>
   );
 }
 
-/** Internal partition walls between zones — double-line architectural style */
+/** Internal partition walls — horizontal divider + vertical lounge/rooftop divider */
 function PartitionWalls({ isDark }: { isDark: boolean }) {
   const wallColor = isDark ? "#0a3d0a" : "#8b9bb0";
   const fillColor = isDark ? "#062806" : "#c8d0dc";
   const wallW = 4;
   const cw = OFFICE.corridorWidth;
-  const midX = OFFICE.x + (OFFICE.width - cw) / 2;
-  const midY = OFFICE.y + (OFFICE.height - cw) / 2;
 
-  // Render walls as filled rectangles for a proper architectural look
+  // Horizontal corridor position
+  const corrY = ZONES.meeting.y + ZONES.meeting.height;
+  // Vertical divider between lounge and rooftop
+  const divX = ZONES.lounge.x + ZONES.lounge.width;
+
   const walls = [
-    // Vertical walls (left of corridor)
-    { x: midX - wallW / 2, y: OFFICE.y, w: wallW, h: midY - OFFICE.y },
-    { x: midX - wallW / 2, y: midY + cw, w: wallW, h: OFFICE.y + OFFICE.height - midY - cw },
-    // Vertical walls (right of corridor)
-    { x: midX + cw - wallW / 2, y: OFFICE.y, w: wallW, h: midY - OFFICE.y },
-    { x: midX + cw - wallW / 2, y: midY + cw, w: wallW, h: OFFICE.y + OFFICE.height - midY - cw },
-    // Horizontal walls (above corridor)
-    { x: OFFICE.x, y: midY - wallW / 2, w: midX - OFFICE.x, h: wallW },
-    { x: midX + cw, y: midY - wallW / 2, w: OFFICE.x + OFFICE.width - midX - cw, h: wallW },
-    // Horizontal walls (below corridor)
-    { x: OFFICE.x, y: midY + cw - wallW / 2, w: midX - OFFICE.x, h: wallW },
-    { x: midX + cw, y: midY + cw - wallW / 2, w: OFFICE.x + OFFICE.width - midX - cw, h: wallW },
+    // Horizontal wall: top of corridor (below meeting zone) — full width
+    { x: OFFICE.x, y: corrY - wallW / 2, w: OFFICE.width, h: wallW },
+    // Horizontal wall: bottom of corridor (above lounge/rooftop) — full width
+    { x: OFFICE.x, y: corrY + cw - wallW / 2, w: OFFICE.width, h: wallW },
+    // Vertical wall: left side of lounge/rooftop divider
+    { x: divX - wallW / 2, y: corrY + cw, w: wallW, h: ZONES.lounge.height },
+    // Vertical wall: right side of lounge/rooftop divider
+    { x: divX + cw - wallW / 2, y: corrY + cw, w: wallW, h: ZONES.lounge.height },
   ];
 
   return (
@@ -348,29 +341,24 @@ function PartitionWalls({ isDark }: { isDark: boolean }) {
   );
 }
 
-/** Door openings cut into partition walls */
+/** Door openings cut into partition walls — 3 zones connected via corridor */
 function DoorOpenings({ isDark }: { isDark: boolean }) {
   const cw = OFFICE.corridorWidth;
-  const midX = OFFICE.x + (OFFICE.width - cw) / 2;
-  const midY = OFFICE.y + (OFFICE.height - cw) / 2;
+  const corrY = ZONES.meeting.y + ZONES.meeting.height;
+  const divX = ZONES.lounge.x + ZONES.lounge.width;
   const doorWidth = 40;
   const doorColor = isDark ? ZONE_COLORS_DARK.corridor : ZONE_COLORS.corridor;
   const arcColor = isDark ? "#0a5d0a" : "#94a3b8";
 
-  // Door positions: where walls meet corridor, centered on each wall segment
   const doors = [
-    // Top wall doors (into corridor)
-    { cx: (OFFICE.x + midX) / 2, cy: midY, horizontal: true },
-    { cx: (midX + cw + OFFICE.x + OFFICE.width) / 2, cy: midY, horizontal: true },
-    // Bottom wall doors
-    { cx: (OFFICE.x + midX) / 2, cy: midY + cw, horizontal: true },
-    { cx: (midX + cw + OFFICE.x + OFFICE.width) / 2, cy: midY + cw, horizontal: true },
-    // Left wall doors
-    { cx: midX, cy: (OFFICE.y + midY) / 2, horizontal: false },
-    { cx: midX + cw, cy: (OFFICE.y + midY) / 2, horizontal: false },
-    // Right wall doors (below corridor)
-    { cx: midX, cy: (midY + cw + OFFICE.y + OFFICE.height) / 2, horizontal: false },
-    { cx: midX + cw, cy: (midY + cw + OFFICE.y + OFFICE.height) / 2, horizontal: false },
+    // Meeting → corridor (top wall, center)
+    { cx: ZONES.meeting.x + ZONES.meeting.width / 2, cy: corrY, horizontal: true },
+    // Lounge → corridor (bottom wall, center of lounge)
+    { cx: ZONES.lounge.x + ZONES.lounge.width / 2, cy: corrY + cw, horizontal: true },
+    // Rooftop → corridor (bottom wall, center of rooftop)
+    { cx: ZONES.chill.x + ZONES.chill.width / 2, cy: corrY + cw, horizontal: true },
+    // Lounge ↔ Rooftop (vertical divider, midpoint)
+    { cx: divX, cy: ZONES.lounge.y + ZONES.lounge.height / 2, horizontal: false },
   ];
 
   return (
@@ -380,9 +368,7 @@ function DoorOpenings({ isDark }: { isDark: boolean }) {
         if (d.horizontal) {
           return (
             <g key={`door-${i}`}>
-              {/* Erase wall segment */}
               <rect x={d.cx - half} y={d.cy - 3} width={doorWidth} height={6} fill={doorColor} />
-              {/* Door swing arc */}
               <path
                 d={`M ${d.cx - half} ${d.cy} A ${half} ${half} 0 0 1 ${d.cx + half} ${d.cy}`}
                 fill="none"
@@ -586,6 +572,101 @@ function ChillZoneDecor({ isDark }: { isDark: boolean }) {
       <Sofa x={cx - 20} y={cy + 50} rotation={180} isDark={isDark} />
     </g>
   );
+}
+
+/** Collaboration glow — shared aura under agents working together in meeting zone */
+function CollaborationGlow({
+  agents: meetingAgents,
+  seats,
+  isDark,
+}: {
+  agents: Array<{ id: string; status: string; parentAgentId: string | null; isSubAgent: boolean }>;
+  seats: Array<{ x: number; y: number }>;
+  isDark: boolean;
+}) {
+  if (meetingAgents.length < 2) return null;
+
+  // Group agents by shared work context (same parent, or main+its subs)
+  const groups = new Map<string, number[]>();
+  meetingAgents.forEach((agent, i) => {
+    const groupKey = agent.parentAgentId || agent.id;
+    if (!groups.has(groupKey)) groups.set(groupKey, []);
+    groups.get(groupKey)!.push(i);
+  });
+
+  // Also group by matching active status (both thinking, both tool_calling)
+  const statusGroups = new Map<string, number[]>();
+  meetingAgents.forEach((agent, i) => {
+    if (agent.status === "thinking" || agent.status === "tool_calling" || agent.status === "speaking") {
+      if (!statusGroups.has(agent.status)) statusGroups.set(agent.status, []);
+      statusGroups.get(agent.status)!.push(i);
+    }
+  });
+
+  const glowColors = ["#3b82f6", "#a855f7", "#06b6d4", "#f97316", "#22c55e"];
+  let colorIdx = 0;
+
+  const glowElements: React.ReactElement[] = [];
+
+  // Render glow for parent-child clusters
+  for (const [groupKey, indices] of groups) {
+    if (indices.length < 2) continue;
+    const positions = indices.map((i) => seats[i]).filter(Boolean);
+    if (positions.length < 2) continue;
+
+    const cx = positions.reduce((s, p) => s + p.x, 0) / positions.length;
+    const cy = positions.reduce((s, p) => s + p.y, 0) / positions.length;
+    const maxDist = Math.max(...positions.map((p) => Math.sqrt((p.x - cx) ** 2 + (p.y - cy) ** 2)));
+    const glowRadius = maxDist + 45;
+    const color = glowColors[colorIdx++ % glowColors.length];
+
+    glowElements.push(
+      <circle
+        key={`glow-${groupKey}`}
+        cx={cx}
+        cy={cy}
+        r={glowRadius}
+        fill={color}
+        opacity={isDark ? 0.08 : 0.06}
+        style={{
+          animation: "agent-breathe 3s ease-in-out infinite",
+          filter: `drop-shadow(0 0 ${isDark ? 12 : 8}px ${color})`,
+        }}
+      />,
+    );
+  }
+
+  // Render glow for status-matched groups (if not already covered by parent-child)
+  for (const [status, indices] of statusGroups) {
+    if (indices.length < 2) continue;
+    const positions = indices.map((i) => seats[i]).filter(Boolean);
+    if (positions.length < 2) continue;
+
+    const cx = positions.reduce((s, p) => s + p.x, 0) / positions.length;
+    const cy = positions.reduce((s, p) => s + p.y, 0) / positions.length;
+    const maxDist = Math.max(...positions.map((p) => Math.sqrt((p.x - cx) ** 2 + (p.y - cy) ** 2)));
+    const glowRadius = maxDist + 35;
+    const color = status === "thinking" ? "#3b82f6" : status === "tool_calling" ? "#f97316" : "#a855f7";
+
+    glowElements.push(
+      <circle
+        key={`status-glow-${status}`}
+        cx={cx}
+        cy={cy}
+        r={glowRadius}
+        fill="none"
+        stroke={color}
+        strokeWidth={2}
+        strokeDasharray="8 4"
+        opacity={isDark ? 0.25 : 0.15}
+        style={{
+          animation: "agent-pulse 2s ease-in-out infinite",
+        }}
+      />,
+    );
+  }
+
+  return <g>{glowElements}</g>;
 }
 
 /** Main entrance door cut into the bottom outer wall of lounge zone */
