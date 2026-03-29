@@ -1,5 +1,8 @@
 {
   "loading3D": "Loading 3D scene...",
+  "statusOverlay": {
+    "agents": "agents online"
+  },
   "zones": {
     "desk": "Desk Zone",
     "meeting": "Meeting Zone",

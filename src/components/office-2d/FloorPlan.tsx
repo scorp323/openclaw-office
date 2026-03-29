@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { VisualAgent } from "@/gateway/types";
 import {
   SVG_WIDTH,
@@ -89,14 +90,19 @@ export function FloorPlan() {
     [meetingAgents.length, meetingCenter.x, meetingCenter.y, meetingTableRadius],
   );
 
+  const activeCount = agentList.filter((a) => a.status !== "idle" && a.status !== "offline" && !a.isPlaceholder).length;
+  const totalCount = agentList.filter((a) => !a.isPlaceholder).length;
+
   return (
-    <div className="relative h-full w-full bg-gray-100 dark:bg-black">
-      <MatrixRain />
-      <svg
-        viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
-        className="h-full w-full"
-        preserveAspectRatio="xMidYMid meet"
-      >
+    <div className="relative flex h-full w-full flex-col bg-gray-100 dark:bg-black md:flex-row">
+      <div className="relative min-h-0 flex-1">
+        <MatrixRain />
+        <OfficeStatusOverlay activeCount={activeCount} totalCount={totalCount} isDark={isDark} />
+        <svg
+          viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
+          className="h-full w-full"
+          preserveAspectRatio="xMidYMid meet"
+        >
         <defs>
           <filter id="building-shadow" x="-3%" y="-3%" width="106%" height="106%">
             <feDropShadow dx="0" dy="3" stdDeviation="6" floodOpacity={isDark ? 0.5 : 0.12} />
@@ -234,9 +240,41 @@ export function FloorPlan() {
         {walkingAgents.map((agent) => (
           <AgentAvatar key={`walk-${agent.id}`} agent={agent} />
         ))}
-      </svg>
+        </svg>
+      </div>
+    </div>
+  );
+}
 
-      {/* Speaking indicators now rendered inside AgentAvatar SVG (SpeakingIndicator) */}
+/* ═══ Status Overlay ═══ */
+
+function OfficeStatusOverlay({
+  activeCount,
+  totalCount,
+  isDark,
+}: {
+  activeCount: number;
+  totalCount: number;
+  isDark: boolean;
+}) {
+  const { t } = useTranslation("office");
+
+  if (!isDark) return null;
+
+  return (
+    <div className="pointer-events-none absolute left-3 top-3 z-10 flex items-center gap-3 rounded-lg border border-[rgba(0,255,65,0.15)] bg-[rgba(0,0,0,0.6)] px-3 py-1.5 backdrop-blur-md">
+      <div className="flex items-center gap-1.5">
+        <span
+          className="inline-block h-2 w-2 rounded-full bg-[#00ff41]"
+          style={{ boxShadow: "0 0 6px #00ff41" }}
+        />
+        <span className="font-mono text-xs text-[#00ff41]">
+          {activeCount}/{totalCount}
+        </span>
+      </div>
+      <span className="font-mono text-[10px] text-[#0a5d0a]">
+        {t("statusOverlay.agents", { defaultValue: "agents online" })}
+      </span>
     </div>
   );
 }

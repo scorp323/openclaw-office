@@ -100,7 +100,7 @@ function TopNav({ currentPage }: { currentPage: PageId }) {
   const isConsolePage = !isOfficePage && !isChatPage;
 
   const items: { active: boolean; label: string; onClick: () => void }[] = [
-    { active: isOfficePage, label: t("topbar.office"), onClick: () => navigate("/") },
+    { active: isOfficePage, label: t("topbar.office"), onClick: () => navigate("/office") },
     { active: isChatPage, label: t("topbar.chat"), onClick: () => navigate("/chat") },
     { active: isConsolePage, label: t("topbar.console"), onClick: () => navigate("/dashboard") },
   ];

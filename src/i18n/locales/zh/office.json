@@ -1,5 +1,8 @@
 {
   "loading3D": "加载 3D 场景...",
+  "statusOverlay": {
+    "agents": "在线 Agent"
+  },
   "zones": {
     "desk": "固定工位区",
     "meeting": "会议区",

@@ -181,6 +181,48 @@ export const AgentAvatar = memo(function AgentAvatar({ agent }: AgentAvatarProps
         </foreignObject>
       )}
 
+      {/* Speech bubble — last action text */}
+      {agent.speechBubble?.text && (
+        <foreignObject
+          x={-80}
+          y={-r - 52}
+          width={160}
+          height={44}
+          style={{ pointerEvents: "none" }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              animation: "bubble-fade-in 0.3s ease-out",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "9px",
+                fontWeight: 400,
+                color: isDark ? "#00ff41" : "#166534",
+                backgroundColor: isDark ? "rgba(0,10,0,0.85)" : "rgba(255,255,255,0.9)",
+                backdropFilter: "blur(8px)",
+                borderRadius: "8px",
+                padding: "3px 8px",
+                maxWidth: "150px",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                border: `1px solid ${isDark ? "rgba(0,255,65,0.2)" : "rgba(0,0,0,0.08)"}`,
+                boxShadow: isDark ? "0 2px 8px rgba(0,255,65,0.1)" : "0 2px 6px rgba(0,0,0,0.08)",
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              {agent.speechBubble.text.length > 30
+                ? `${agent.speechBubble.text.slice(0, 30)}…`
+                : agent.speechBubble.text}
+            </span>
+          </div>
+        </foreignObject>
+      )}
+
       {/* Codename + real name label */}
       <foreignObject
         x={-60}
@@ -309,6 +351,8 @@ function getStatusRingAnimation(status: AgentVisualStatus): React.CSSProperties 
       return { animation: "agent-blink 0.8s ease-in-out infinite" };
     case "spawning":
       return { animation: "agent-spawn 0.5s ease-out forwards" };
+    case "idle":
+      return { animation: "agent-breathe 3s ease-in-out infinite" };
     default:
       return {};
   }
