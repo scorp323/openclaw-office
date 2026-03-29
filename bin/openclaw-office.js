@@ -669,9 +669,16 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  // Return 404 for missing static assets (prevents MIME type errors from stale caches)
+  if (pathname.startsWith("/assets/") || pathname.match(/\.\w{2,5}$/)) {
+    res.writeHead(404, { "Content-Type": "text/plain" });
+    res.end("Not Found");
+    return;
+  }
+
   // SPA fallback for client-side routes
   const html = await getIndexHtml();
-  sendWithCompression(res, 200, { "Content-Type": "text/html; charset=utf-8" }, html, acceptEncoding);
+  sendWithCompression(res, 200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" }, html, acceptEncoding);
 });
 
 server.on("upgrade", (req, socket, head) => {
