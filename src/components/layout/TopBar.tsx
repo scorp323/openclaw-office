@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { CostCounter } from "@/components/layout/CostCounter";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 import type { ConnectionStatus, ThemeMode, PageId } from "@/gateway/types";
 import { useOfficeStore } from "@/store/office-store";
@@ -41,6 +42,7 @@ export function TopBar({ isMobile = false }: TopBarProps) {
       </div>
       <TopNav currentPage={currentPage} />
       <div className="ml-auto flex items-center gap-3 justify-self-end">
+        <CostCounter />
         <ThemeToggle theme={theme} setTheme={setTheme} />
         <LanguageSwitcher />
         <ConnectionIndicator

@@ -176,6 +176,32 @@ const routes = {
     } catch { return { channels: [] }; }
   }),
 
+  "/api/costs": () => cached("costs", 10_000, () => {
+    let todayCost = 0;
+    let todayTokens = 0;
+    try {
+      const throttlePath = "/tmp/morpheus-throttle-state";
+      if (existsSync(throttlePath)) {
+        const raw = readFileSync(throttlePath, "utf8");
+        const data = JSON.parse(raw);
+        todayCost = data.todayCostUsd ?? data.costUsd ?? 0;
+        todayTokens = data.todayTokens ?? data.totalTokens ?? 0;
+      }
+    } catch {}
+    // Fallback: try codexbar cost data
+    if (todayCost === 0) {
+      try {
+        const out = textExec("openclaw usage status --json 2>/dev/null", 5000);
+        if (!out.startsWith("ERROR")) {
+          const usage = JSON.parse(out);
+          todayCost = usage.todayCostUsd ?? 0;
+          todayTokens = usage.todayTokens ?? 0;
+        }
+      } catch {}
+    }
+    return { todayCostUsd: todayCost, todayTokens, updatedAt: Date.now() };
+  }),
+
   "/api/memory": () => cached("memory", 30_000, () => {
     try {
       const out = textExec("ls -t /Users/morpheusqilee/.openclaw/workspace/memory/*.md 2>/dev/null | head -5");
