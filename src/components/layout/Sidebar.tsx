@@ -62,7 +62,7 @@ export function Sidebar() {
       <aside className="flex w-12 flex-col items-center border-l border-gray-200 bg-white py-3 dark:border-[rgba(0,255,65,0.15)] dark:bg-black">
         <button
           onClick={() => setSidebarCollapsed(false)}
-          className="text-gray-400 hover:text-gray-700 dark:text-[#0a3d0a] dark:hover:text-[#00ff41]"
+          className="text-gray-400 hover:text-gray-700 dark:text-[#1a6e1a] dark:hover:text-[#00ff41]"
           aria-label={t("sidebar.expand")}
           title={t("sidebar.expand")}
         >
@@ -87,7 +87,7 @@ export function Sidebar() {
         </span>
         <button
           onClick={() => setSidebarCollapsed(true)}
-          className="text-gray-400 hover:text-gray-600 dark:text-[#0a3d0a] dark:hover:text-[#00ff41]"
+          className="text-gray-400 hover:text-gray-600 dark:text-[#1a6e1a] dark:hover:text-[#00ff41]"
           aria-label={t("sidebar.collapse")}
           title={t("sidebar.collapse")}
         >

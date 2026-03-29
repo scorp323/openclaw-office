@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useRef } from "react";
+import React, { useMemo, useCallback, useRef, useState } from "react";
 import type { VisualAgent } from "@/gateway/types";
 import { useTranslation } from "react-i18next";
 import { useLiveData } from "@/hooks/useLiveData";
@@ -18,6 +18,7 @@ import { useAmbientSounds } from "@/hooks/useAmbientSounds";
 import { useAgentDragDrop, clientToSvg } from "@/hooks/useAgentDragDrop";
 import { exportSvgAsPng } from "@/lib/export-utils";
 import { AgentAvatar } from "./AgentAvatar";
+import { SvgAvatar } from "@/components/shared/SvgAvatar";
 import { ConnectionLine } from "./ConnectionLine";
 import { MeetingTable, Sofa, Plant, CoffeeCup, Chair } from "./furniture";
 import { HeatmapFloor } from "./HeatmapFloor";
@@ -33,12 +34,14 @@ export function FloorPlan() {
   const { agents: realAgents } = useLiveData(30000);
   useRealAgentSync(realAgents);
   useAmbientSounds();
-  useResponsive();
+  const { isMobile } = useResponsive();
   const svgRef = useRef<SVGSVGElement>(null);
 
   const agents = useOfficeStore((s) => s.agents);
   const links = useOfficeStore((s) => s.links);
   const theme = useOfficeStore((s) => s.theme);
+  const selectAgent = useOfficeStore((s) => s.selectAgent);
+  const [forceSvgOnMobile, setForceSvgOnMobile] = useState(false);
 
   const {
     dragAgentId,
@@ -146,6 +149,14 @@ export function FloorPlan() {
 
   return (
     <div className="relative flex h-full w-full flex-col bg-gray-100 dark:bg-black">
+      {isMobile && !forceSvgOnMobile ? (
+        <MobileOfficeCards
+          agents={agentList.filter((a) => !a.isPlaceholder)}
+          onSelectAgent={selectAgent}
+          onShowMap={() => setForceSvgOnMobile(true)}
+          isDark={isDark}
+        />
+      ) : (
       <div className="relative min-h-0 flex-1 overflow-auto">
         <MatrixRain opacity={rainOpacity} />
         <OfficeStatusOverlay activeCount={activeCount} totalCount={totalCount} isDark={isDark} />
@@ -173,6 +184,15 @@ export function FloorPlan() {
                 <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
               </svg>
               Reset Layout
+            </button>
+          )}
+          {isMobile && (
+            <button
+              onClick={() => setForceSvgOnMobile(false)}
+              title="Switch to card view"
+              className="pointer-events-auto flex h-7 items-center gap-1 rounded-md border border-gray-300 bg-white/80 px-2 text-[10px] font-medium text-gray-600 backdrop-blur-sm transition-colors hover:bg-gray-100 dark:border-[rgba(0,255,65,0.2)] dark:bg-[rgba(0,0,0,0.6)] dark:text-[#00ff41] dark:hover:bg-[rgba(0,255,65,0.1)]"
+            >
+              ← Cards
             </button>
           )}
         </div>
@@ -383,6 +403,163 @@ export function FloorPlan() {
         {/* ── Layer 9: Time-of-day ambiance overlay ── */}
         <TimeAmbiance />
         </svg>
+      </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══ Mobile Card View ═══ */
+
+const ZONE_DISPLAY: Record<string, string> = {
+  meeting: "Meeting Room",
+  lounge: "Lounge",
+  chill: "The Rooftop",
+  corridor: "Corridor",
+};
+
+const MOBILE_STATUS_COLORS: Record<string, string> = {
+  idle: "#22c55e",
+  thinking: "#3b82f6",
+  tool_calling: "#f97316",
+  speaking: "#a855f7",
+  spawning: "#06b6d4",
+  error: "#ef4444",
+  offline: "#6b7280",
+};
+
+const ZONE_ORDER = ["meeting", "lounge", "chill", "corridor"] as const;
+
+function MobileOfficeCards({
+  agents,
+  onSelectAgent,
+  onShowMap,
+  isDark,
+}: {
+  agents: import("@/gateway/types").VisualAgent[];
+  onSelectAgent: (id: string | null) => void;
+  onShowMap: () => void;
+  isDark: boolean;
+}) {
+  const [collapsedZones, setCollapsedZones] = useState<Set<string>>(new Set());
+
+  const toggleZone = useCallback((zone: string) => {
+    setCollapsedZones((prev) => {
+      const next = new Set(prev);
+      if (next.has(zone)) next.delete(zone);
+      else next.add(zone);
+      return next;
+    });
+  }, []);
+
+  const grouped = useMemo(() => {
+    const groups: Record<string, typeof agents> = {};
+    for (const agent of agents) {
+      const z = agent.zone || "corridor";
+      if (!groups[z]) groups[z] = [];
+      groups[z].push(agent);
+    }
+    return ZONE_ORDER
+      .filter((z) => (groups[z]?.length ?? 0) > 0)
+      .map((z) => ({ zone: z, agents: groups[z] ?? [] }));
+  }, [agents]);
+
+  return (
+    <div className={`flex h-full flex-col overflow-hidden ${isDark ? "bg-black" : "bg-gray-50"}`}>
+      {/* Header */}
+      <div className={`flex shrink-0 items-center justify-between border-b px-4 py-3 ${isDark ? "border-[rgba(0,255,65,0.15)] bg-black" : "border-gray-200 bg-white"}`}>
+        <h2 className={`text-sm font-semibold ${isDark ? "text-[#00ff41]" : "text-gray-800"}`}>
+          Agents
+        </h2>
+        <button
+          type="button"
+          onClick={onShowMap}
+          className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+            isDark
+              ? "border-[rgba(0,255,65,0.2)] text-[#00ff41] hover:bg-[rgba(0,255,65,0.1)]"
+              : "border-gray-300 text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M3 9h18M9 21V9" />
+          </svg>
+          Floor Plan
+        </button>
+      </div>
+
+      {/* Zone groups */}
+      <div className="flex-1 overflow-y-auto px-3 py-2">
+        {agents.length === 0 ? (
+          <div className={`flex flex-col items-center gap-2 py-12 text-center text-sm ${isDark ? "text-[#0a5d0a]" : "text-gray-400"}`}>
+            No agents online
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {grouped.map(({ zone, agents: zoneAgents }) => {
+              const isCollapsed = collapsedZones.has(zone);
+              return (
+                <div key={zone}>
+                  <button
+                    type="button"
+                    onClick={() => toggleZone(zone)}
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
+                      isDark
+                        ? "text-[#0a5d0a] hover:bg-[rgba(0,255,65,0.05)] hover:text-[#00ff41]"
+                        : "text-gray-500 hover:bg-gray-100"
+                    }`}
+                  >
+                    <span className="text-[10px]">{isCollapsed ? "▶" : "▼"}</span>
+                    {ZONE_DISPLAY[zone] ?? zone}
+                    <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] ${isDark ? "bg-[rgba(0,255,65,0.1)] text-[#00ff41]" : "bg-gray-200 text-gray-500"}`}>
+                      {zoneAgents.length}
+                    </span>
+                  </button>
+                  {!isCollapsed && (
+                    <div className="mt-1 space-y-1.5 pl-2">
+                      {zoneAgents.map((agent) => (
+                        <button
+                          key={agent.id}
+                          type="button"
+                          onClick={() => onSelectAgent(agent.id)}
+                          className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all active:scale-[0.98] ${
+                            isDark
+                              ? "border-[rgba(0,255,65,0.12)] bg-[rgba(0,10,0,0.6)] hover:border-[rgba(0,255,65,0.25)]"
+                              : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+                          }`}
+                        >
+                          <SvgAvatar agentId={agent.id} size={36} />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className={`truncate text-sm font-medium ${isDark ? "text-[#00ff41]" : "text-gray-800"}`}>
+                                {agent.name}
+                              </span>
+                              <span
+                                className="inline-block h-2 w-2 shrink-0 rounded-full"
+                                style={{
+                                  backgroundColor: MOBILE_STATUS_COLORS[agent.status] ?? "#6b7280",
+                                  boxShadow: `0 0 4px ${MOBILE_STATUS_COLORS[agent.status] ?? "#6b7280"}`,
+                                }}
+                              />
+                            </div>
+                            {agent.speechBubble && (
+                              <p className={`mt-0.5 line-clamp-2 text-xs ${isDark ? "text-[#3d7a3d]" : "text-gray-500"}`}>
+                                {agent.speechBubble.text}
+                              </p>
+                            )}
+                            <span className={`mt-1 inline-block text-[9px] font-medium uppercase tracking-wider ${isDark ? "text-[#1a5e1a]" : "text-gray-400"}`}>
+                              {ZONE_DISPLAY[agent.zone] ?? agent.zone}
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

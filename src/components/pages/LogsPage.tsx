@@ -295,13 +295,13 @@ export function LogsPage() {
         {entries === null ? (
           <LogsSkeleton />
         ) : filtered.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-gray-600">
+          <div className="flex h-full items-center justify-center text-gray-400">
             <div className="text-center">
               <Terminal className="mx-auto mb-3 h-12 w-12 opacity-30" strokeWidth={1.5} />
               <p className="text-sm font-medium text-gray-400">
                 {textSearch ? "No matching log entries" : "No log entries yet"}
               </p>
-              <p className="mt-1 max-w-xs text-xs text-gray-600">
+              <p className="mt-1 max-w-xs text-xs text-gray-500">
                 {textSearch
                   ? "Try a different search term or adjust filters"
                   : "Logs will appear here from agent activity, cron jobs, and system events"}
