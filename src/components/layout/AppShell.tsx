@@ -47,7 +47,7 @@ export function AppShell({ children, isMobile = false }: AppShellProps) {
       <ToastContainer />
       <div className="relative flex flex-1 overflow-hidden">
         <main id="main-content" className="relative flex flex-1 flex-col overflow-hidden">
-          <div className="relative flex-1 overflow-hidden">{content}</div>
+          <div className={`relative flex-1 ${currentPage === "office" ? "overflow-hidden" : "overflow-y-auto"}`}>{content}</div>
           <ChatDialog />
           {!hideSidebar && <ChatDockBar />}
         </main>
