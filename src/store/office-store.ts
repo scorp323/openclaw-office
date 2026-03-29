@@ -255,7 +255,7 @@ export const useOfficeStore = create<OfficeStore>()(
     agentCosts: {} as Record<string, number>,
     currentPage: "office" as PageId,
     chatDockHeight: getInitialChatDockHeight(),
-    soundEnabled: (() => { try { return localStorage.getItem("openclaw-sound") !== "false"; } catch { return false; } })() as boolean,
+    soundEnabled: (() => { try { return localStorage.getItem("openclaw-sound") === "true"; } catch { return false; } })() as boolean,
     maxSubAgents: 8,
     agentToAgentConfig: { enabled: false, allow: [] } as AgentToAgentConfig,
     runIdMap: new Map(),
@@ -1082,6 +1082,17 @@ export const useOfficeStore = create<OfficeStore>()(
       });
       try {
         localStorage.setItem(CHAT_DOCK_HEIGHT_KEY, String(height));
+      } catch {
+        // localStorage unavailable
+      }
+    },
+
+    setSoundEnabled: (enabled: boolean) => {
+      set((state) => {
+        state.soundEnabled = enabled;
+      });
+      try {
+        localStorage.setItem("openclaw-sound", String(enabled));
       } catch {
         // localStorage unavailable
       }

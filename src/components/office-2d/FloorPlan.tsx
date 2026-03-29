@@ -12,6 +12,7 @@ import {
 } from "@/lib/constants";
 import { calculateMeetingSeatsSvg } from "@/lib/position-allocator";
 import { useOfficeStore } from "@/store/office-store";
+import { useAmbientSounds } from "@/hooks/useAmbientSounds";
 import { AgentAvatar } from "./AgentAvatar";
 import { ConnectionLine } from "./ConnectionLine";
 import { MeetingTable, Sofa, Plant, CoffeeCup, Chair } from "./furniture";
@@ -26,6 +27,7 @@ export function FloorPlan() {
   // Fetch agents from MC API so the office view works independently
   const { agents: realAgents } = useLiveData(30000);
   useRealAgentSync(realAgents);
+  useAmbientSounds();
 
   const agents = useOfficeStore((s) => s.agents);
   const links = useOfficeStore((s) => s.links);
@@ -79,14 +81,15 @@ export function FloorPlan() {
     : 0.2;
 
   return (
-    <div className="relative flex h-full w-full flex-col bg-gray-100 dark:bg-black md:flex-row">
-      <div className="relative min-h-0 flex-1">
+    <div className="relative flex h-full w-full flex-col bg-gray-100 dark:bg-black">
+      <div className="relative min-h-0 flex-1 overflow-auto">
         <MatrixRain opacity={rainOpacity} />
         <OfficeStatusOverlay activeCount={activeCount} totalCount={totalCount} isDark={isDark} />
         <svg
           viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
-          className="h-full w-full"
-          preserveAspectRatio="xMidYMid meet"
+          className="block h-auto w-full"
+          preserveAspectRatio="xMidYMin meet"
+          style={{ minHeight: "100%" }}
         >
         <defs>
           <filter id="building-shadow" x="-3%" y="-3%" width="106%" height="106%">

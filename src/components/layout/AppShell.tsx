@@ -23,7 +23,7 @@ export function AppShell({ children, isMobile = false }: AppShellProps) {
   const currentPage = useOfficeStore((s) => s.currentPage);
 
   const initEventHistory = useOfficeStore((s) => s.initEventHistory);
-  const hideSidebar = currentPage === "chat";
+  const hideSidebar = currentPage === "chat" || currentPage === "office";
   const shellRef = useRef<HTMLDivElement>(null);
   useSwipeNavigation(shellRef);
 

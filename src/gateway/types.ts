@@ -342,6 +342,7 @@ export interface OfficeStore {
   setAgentCosts: (costs: Record<string, number>) => void;
   setCurrentPage: (page: PageId) => void;
   setChatDockHeight: (height: number) => void;
+  setSoundEnabled: (enabled: boolean) => void;
 
   // 指标
   updateMetrics: () => void;

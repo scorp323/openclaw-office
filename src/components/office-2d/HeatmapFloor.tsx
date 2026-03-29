@@ -9,49 +9,37 @@ interface HeatmapFloorProps {
   agents: VisualAgent[];
 }
 
-/** Count agents per zone and return normalized intensity (0-1) */
-function getZoneIntensities(agents: VisualAgent[]): Record<ZoneKey, number> {
-  const counts: Record<string, number> = {};
-  for (const key of Object.keys(ZONES)) {
+/** Count agents per zone */
+function getZoneCounts(agents: VisualAgent[]): Record<ZoneKey, number> {
+  const counts = {} as Record<ZoneKey, number>;
+  for (const key of Object.keys(ZONES) as ZoneKey[]) {
     counts[key] = 0;
   }
   for (const agent of agents) {
     if (agent.zone in counts && !agent.isPlaceholder) {
-      counts[agent.zone]++;
+      counts[agent.zone as ZoneKey]++;
     }
   }
-
-  const max = Math.max(1, ...Object.values(counts));
-  const intensities = {} as Record<ZoneKey, number>;
-  for (const key of Object.keys(ZONES) as ZoneKey[]) {
-    intensities[key] = counts[key] / max;
-  }
-  return intensities;
+  return counts;
 }
 
-/** Interpolate between cool blue and warm orange-red based on intensity */
-function getHeatColor(intensity: number): string {
-  if (intensity <= 0.01) {
-    // Empty zones: faint cool blue glow so user sees something
-    return "rgba(59, 130, 246, 0.05)";
-  }
-  // Lerp from blue to orange-red
-  const r = Math.round(59 + (249 - 59) * intensity);
-  const g = Math.round(130 + (115 - 130) * intensity);
-  const b = Math.round(246 + (22 - 246) * intensity);
-  const alpha = 0.12 + intensity * 0.25;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+/** Warm amber glow — opacity scales with agent count, transparent when empty */
+function getHeatColor(count: number): string {
+  if (count === 0) return "transparent";
+  // Clamp intensity: 1 agent → 0.08, 3+ agents → 0.15-0.3
+  const t = Math.min(count / 5, 1);
+  const alpha = 0.08 + t * 0.22; // 0.08 → 0.30
+  return `rgba(245, 158, 11, ${alpha.toFixed(3)})`;
 }
 
 export function HeatmapFloor({ agents }: HeatmapFloorProps) {
-  const intensities = useMemo(() => getZoneIntensities(agents), [agents]);
+  const counts = useMemo(() => getZoneCounts(agents), [agents]);
 
   return (
     <g className="heatmap-floor" pointerEvents="none">
       {(Object.keys(ZONES) as ZoneKey[]).map((key) => {
         const zone = ZONES[key];
-        const intensity = intensities[key];
-        const isActive = intensity > 0.01;
+        const count = counts[key];
 
         return (
           <rect
@@ -61,8 +49,9 @@ export function HeatmapFloor({ agents }: HeatmapFloorProps) {
             width={zone.width - 4}
             height={zone.height - 4}
             rx={4}
-            fill={getHeatColor(intensity)}
-            className={isActive ? "heatmap-zone-active" : "heatmap-zone-empty"}
+            fill={getHeatColor(count)}
+            className={count > 0 ? "heatmap-zone-active" : undefined}
+            style={{ transition: "fill 2s ease" }}
           />
         );
       })}

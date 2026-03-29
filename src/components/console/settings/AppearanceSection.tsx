@@ -1,4 +1,4 @@
-import { Sun, Moon, Monitor } from "lucide-react";
+import { Sun, Moon, Monitor, Volume2, VolumeX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ColorTheme } from "@/gateway/types";
 import { useConsoleSettingsStore } from "@/store/console-stores/settings-store";
@@ -35,6 +35,8 @@ export function AppearanceSection() {
   const setOfficeTheme = useOfficeStore((s) => s.setTheme);
   const colorTheme = useOfficeStore((s) => s.colorTheme);
   const setColorTheme = useOfficeStore((s) => s.setColorTheme);
+  const soundEnabled = useOfficeStore((s) => s.soundEnabled);
+  const setSoundEnabled = useOfficeStore((s) => s.setSoundEnabled);
 
   const handleThemeChange = (pref: ThemePreference) => {
     setThemePref(pref);
@@ -118,6 +120,39 @@ export function AppearanceSection() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {soundEnabled ? (
+              <Volume2 className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            ) : (
+              <VolumeX className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            )}
+            <div>
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                {t("settings.appearance.ambientSound")}
+              </span>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {t("settings.appearance.ambientSoundHint")}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={soundEnabled}
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+              soundEnabled ? "bg-blue-600" : "bg-gray-300 dark:bg-gray-600"
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                soundEnabled ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
         </div>
       </div>
     </div>

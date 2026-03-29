@@ -314,7 +314,9 @@
       "colorTheme": "Color Theme",
       "colorMatrix": "Matrix",
       "colorCyberpunk": "Cyberpunk",
-      "colorMidnight": "Midnight"
+      "colorMidnight": "Midnight",
+      "ambientSound": "Ambient Office Sounds",
+      "ambientSoundHint": "Keyboard clicks, chimes, and alerts from agent activity"
     },
     "providers": {
       "title": "AI Providers",

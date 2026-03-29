@@ -314,7 +314,9 @@
       "colorTheme": "配色主题",
       "colorMatrix": "矩阵",
       "colorCyberpunk": "赛博朋克",
-      "colorMidnight": "午夜"
+      "colorMidnight": "午夜",
+      "ambientSound": "办公室环境音效",
+      "ambientSoundHint": "键盘声、提示音和来自智能体活动的警报音"
     },
     "providers": {
       "title": "AI 提供方",

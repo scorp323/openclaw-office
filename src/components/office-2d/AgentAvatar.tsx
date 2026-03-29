@@ -13,6 +13,16 @@ const WALK_BOB_FREQ = 8;
 const IDLE_BEHAVIORS = ["reading", "sipping", "stretching", "leaning", "typing"] as const;
 type IdleBehavior = (typeof IDLE_BEHAVIORS)[number];
 
+/** Personality pose transforms keyed by lowercased agent name */
+const PERSONALITY_POSES: Record<string, string> = {
+  morpheus: "scale(1.05)",                       // CEO: upright, slightly larger
+  "chief analyst": "rotate(2.5)",                // Trading: leaning forward, intense
+  "research director": "rotate(-1.5)",           // Research: slightly reclined
+  "technical director": "rotate(3) translateY(-1)", // Engineering: hunched forward
+  "content director": "rotate(-2)",              // Content: casual lean
+  "ops manager": "translateY(-2)",               // Ops: standing straight, patrol stance
+};
+
 /** Deterministic idle behavior based on agent id hash */
 function getIdleBehavior(agentId: string): IdleBehavior {
   let hash = 0;
@@ -58,6 +68,9 @@ export const AgentAvatar = memo(function AgentAvatar({ agent }: AgentAvatarProps
   const isIdleZone = agent.zone === "lounge" || agent.zone === "chill";
   const showIdleAnim = isIdleZone && !isWalking && !isPlaceholder && agent.status === "idle";
   const idleBehavior = showIdleAnim ? getIdleBehavior(agent.id) : undefined;
+  const personalityPose = !isWalking && !isPlaceholder
+    ? PERSONALITY_POSES[agent.name.toLowerCase()] ?? null
+    : null;
 
   // Walk animation loop via requestAnimationFrame
   const agentIdRef = useRef(agent.id);
@@ -125,6 +138,7 @@ export const AgentAvatar = memo(function AgentAvatar({ agent }: AgentAvatarProps
       onMouseEnter={() => !isPlaceholder && setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
+    <g style={personalityPose ? { transform: personalityPose, transformOrigin: "center" } : undefined}>
       {/* Selected glow */}
       {isSelected && (
         <circle
@@ -323,6 +337,7 @@ export const AgentAvatar = memo(function AgentAvatar({ agent }: AgentAvatarProps
           </div>
         </foreignObject>
       )}
+    </g>
     </g>
   );
 });
