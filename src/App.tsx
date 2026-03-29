@@ -29,6 +29,7 @@ const NotificationsPage = lazy(() => import("@/components/pages/NotificationsPag
 const LoginPage = lazy(() => import("@/components/pages/LoginPage").then(m => ({ default: m.LoginPage })));
 const BackupPage = lazy(() => import("@/components/pages/BackupPage").then(m => ({ default: m.BackupPage })));
 const MetricsPage = lazy(() => import("@/components/pages/MetricsPage").then(m => ({ default: m.MetricsPage })));
+const BriefingPage = lazy(() => import("@/components/pages/BriefingPage").then(m => ({ default: m.BriefingPage })));
 import type { PageId } from "@/gateway/types";
 import { useGatewayConnection } from "@/hooks/useGatewayConnection";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -93,6 +94,7 @@ const PAGE_MAP: Record<string, PageId> = {
   "/notifications": "notifications",
   "/backup": "backup",
   "/metrics": "metrics",
+  "/briefing": "dashboard",
 };
 
 function resolveGatewayWsUrl(pathOrUrl: string, fallbackUrl: string): string {
@@ -209,6 +211,7 @@ export function App() {
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/backup" element={<BackupPage />} />
                 <Route path="/metrics" element={<MetricsPage />} />
+                <Route path="/briefing" element={<BriefingPage />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

@@ -1,4 +1,4 @@
-import { Home, Bot, Radio, Puzzle, Clock, Settings, WifiOff, Terminal, DollarSign, Brain, Zap, Bell, Archive, Gauge } from "lucide-react";
+import { Home, Bot, Radio, Puzzle, Clock, Settings, WifiOff, Terminal, DollarSign, Brain, Zap, Bell, Archive, Gauge, Newspaper } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -7,6 +7,7 @@ import { useIsStale } from "@/hooks/useLiveData";
 import { useNotificationBadge } from "@/hooks/useNotificationBadge";
 import { useResponsive } from "@/hooks/useResponsive";
 import { MobileBottomNav } from "./MobileBottomNav";
+import { StatusSummaryBar } from "./StatusSummaryBar";
 import { TopBar } from "./TopBar";
 
 function PageTransition({ locationKey }: { locationKey: string }) {
@@ -60,6 +61,7 @@ export function ConsoleLayout() {
     { path: "/notifications", labelKey: "consoleNav.notifications", icon: Bell },
     { path: "/backup", labelKey: "consoleNav.backup", icon: Archive },
     { path: "/metrics", labelKey: "consoleNav.metrics", icon: Gauge },
+    { path: "/briefing", labelKey: "consoleNav.briefing", icon: Newspaper },
   ] as const;
 
   return (
@@ -72,6 +74,7 @@ export function ConsoleLayout() {
         </div>
       )}
       <TopBar />
+      <StatusSummaryBar />
       <div className="flex flex-1 overflow-hidden">
         {!isChatRoute && !isMobile && (
           <nav aria-label="Console navigation" data-tour="console-nav" className="flex w-52 shrink-0 flex-col border-r border-gray-200 bg-white py-3 dark:border-gray-700 dark:bg-gray-900">
@@ -100,6 +103,7 @@ export function ConsoleLayout() {
                       "/notifications": () => import("@/components/pages/NotificationsPage"),
                       "/backup": () => import("@/components/pages/BackupPage"),
                       "/metrics": () => import("@/components/pages/MetricsPage"),
+                      "/briefing": () => import("@/components/pages/BriefingPage"),
                     };
                     pageMap[item.path]?.();
                   }}

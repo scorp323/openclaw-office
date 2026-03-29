@@ -69,6 +69,7 @@
     "actions": "操作",
     "notifications": "通知",
     "backup": "备份",
-    "metrics": "性能"
+    "metrics": "性能",
+    "briefing": "晨报"
   }
 }

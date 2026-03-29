@@ -69,6 +69,7 @@
     "actions": "Actions",
     "notifications": "Notifications",
     "backup": "Backup",
-    "metrics": "Metrics"
+    "metrics": "Metrics",
+    "briefing": "Briefing"
   }
 }
