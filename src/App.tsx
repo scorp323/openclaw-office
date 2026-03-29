@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
 import { ConsoleLayout } from "@/components/layout/ConsoleLayout";
+import { SearchSpotlight } from "@/components/layout/SearchSpotlight";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { CommandCenter } from "@/components/pages/CommandCenter";
 import { ChatWorkspaceBootstrap } from "@/components/chat/ChatWorkspaceBootstrap";
@@ -111,6 +112,7 @@ export function App() {
       <ThemeSync />
       <PageTracker />
       <ChatWorkspaceBootstrap wsClient={wsClient} />
+      <SearchSpotlight />
       <ErrorBoundary>
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
