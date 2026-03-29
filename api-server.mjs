@@ -108,24 +108,28 @@ const routes = {
 
   "/api/sessions": () => cached("sessions", 15_000, () => {
     // Try JSON output first
-    const jsonOut = jsonExec("openclaw session list --json 2>/dev/null", 15000);
+    const jsonOut = jsonExec("openclaw sessions --all-agents --json 2>/dev/null", 15000);
     if (jsonOut && !jsonOut.error && (Array.isArray(jsonOut) || jsonOut.sessions)) {
       const sessions = Array.isArray(jsonOut) ? jsonOut : (jsonOut.sessions || []);
       return {
+        count: jsonOut.count || sessions.length,
         sessions: sessions.map(s => ({
           key: s.key || s.sessionKey || `agent:${s.agentId || "unknown"}:${s.id || "main"}`,
           agentId: s.agentId || s.agent || null,
-          label: s.label || s.name || null,
+          label: s.label || s.name || s.key || null,
           model: s.model || null,
+          modelProvider: s.modelProvider || null,
           kind: s.kind || "chat",
-          messageCount: s.messageCount ?? s.messages ?? 0,
-          lastActiveAt: s.lastActiveAt || s.updatedAt || s.ts || Date.now(),
-          percentUsed: s.percentUsed ?? s.contextUsed ?? 0,
+          totalTokens: s.totalTokens || 0,
+          contextTokens: s.contextTokens || 0,
+          percentUsed: s.contextTokens > 0 ? Math.round((s.totalTokens / s.contextTokens) * 100) : 0,
+          lastActiveAt: s.updatedAt || s.lastActiveAt || s.ts || Date.now(),
+          ageMs: s.ageMs || 0,
         })),
       };
     }
     // Fallback: parse text output
-    const text = textExec("openclaw session list 2>/dev/null | head -50");
+    const text = textExec("openclaw sessions --all-agents 2>/dev/null | head -50");
     const lines = text.split("\n").filter(l => l.trim() && !l.startsWith("ERROR"));
     const sessions = [];
     for (const line of lines) {
@@ -264,9 +268,20 @@ const routes = {
 
   "/api/channels": () => cached("channels", 30_000, () => {
     try {
+      const channelData = jsonExec("openclaw channels list --json 2>/dev/null", 15000);
+      if (channelData && !channelData.error) return channelData;
       const status = getStatus();
       return { channels: status?.channelSummary || [] };
     } catch { return { channels: [] }; }
+  }),
+
+  "/api/skills": () => cached("skills", 30_000, () => {
+    try {
+      // openclaw skills list --json outputs to stderr, not stdout
+      const skillData = jsonExec("openclaw skills list --json 2>&1", 20000);
+      if (skillData && !skillData.error && skillData.skills) return skillData;
+      return { skills: [], error: "Failed to fetch skills" };
+    } catch { return { skills: [] }; }
   }),
 
   "/api/costs": () => cached("costs", 10_000, () => {
@@ -386,6 +401,26 @@ const routes = {
             const lines = content.split("\n").filter(l => l.trim()).slice(-100);
             for (const line of lines) {
               entries.push({ source: "system", text: line, file, ts: Date.now() });
+            }
+          } catch {}
+        }
+      }
+    } catch {}
+    // Read from /tmp/openclaw/ gateway logs
+    try {
+      const tmpLogsDir = "/tmp/openclaw";
+      if (existsSync(tmpLogsDir)) {
+        const gatewayLogs = readdirSync(tmpLogsDir).filter(f => f.startsWith("openclaw-") && f.endsWith(".log")).sort().slice(-2);
+        for (const file of gatewayLogs) {
+          try {
+            const content = readFileSync(join(tmpLogsDir, file), "utf8");
+            const lines = content.split("\n").filter(l => l.trim()).slice(-200);
+            for (const line of lines) {
+              let ts = Date.now();
+              // Try to parse ISO timestamp from start of line
+              const tsMatch = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/.exec(line);
+              if (tsMatch) ts = new Date(tsMatch[1]).getTime() || ts;
+              entries.push({ source: "gateway", text: line, file, ts });
             }
           } catch {}
         }
@@ -936,6 +971,50 @@ const server = createServer((req, res) => {
     return;
   }
 
+  // POST /api/actions/cron-run — run a cron job now
+  if (url.pathname === "/api/actions/cron-run" && req.method === "POST") {
+    let body = "";
+    req.on("data", chunk => body += chunk);
+    req.on("end", () => {
+      try {
+        const { cronId } = JSON.parse(body);
+        if (!cronId) { res.writeHead(400); res.end(JSON.stringify({ error: "Missing cronId" })); return; }
+        const result = textExec(`openclaw cron run ${shellEscape(cronId)} 2>&1`, 30000);
+        cache.delete("crons");
+        res.writeHead(200);
+        res.end(JSON.stringify({ ok: !result.startsWith("ERROR"), output: result }));
+      } catch (e) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: String(e) }));
+      }
+    });
+    return;
+  }
+
+  // POST /api/actions/cron-toggle — enable/disable a cron job
+  if (url.pathname === "/api/actions/cron-toggle" && req.method === "POST") {
+    let body = "";
+    req.on("data", chunk => body += chunk);
+    req.on("end", () => {
+      try {
+        const { cronId } = JSON.parse(body);
+        if (!cronId) { res.writeHead(400); res.end(JSON.stringify({ error: "Missing cronId" })); return; }
+        // Check current state to toggle
+        const crons = getCrons();
+        const job = (crons.jobs || []).find(j => j.id === cronId);
+        const action = job && job.enabled ? "disable" : "enable";
+        const result = textExec(`openclaw cron ${action} ${shellEscape(cronId)} 2>&1`, 15000);
+        cache.delete("crons");
+        res.writeHead(200);
+        res.end(JSON.stringify({ ok: !result.startsWith("ERROR"), action, output: result }));
+      } catch (e) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: String(e) }));
+      }
+    });
+    return;
+  }
+
   // POST /api/deploy — pull, build, restart
   if (url.pathname === "/api/deploy" && req.method === "POST") {
     const projectDir = join(homedir(), ".openclaw", "workspace", "projects", "mission-control", "morpheus-office");
@@ -965,12 +1044,12 @@ const server = createServer((req, res) => {
         if (dynamic.handler === "agentHistory") {
           data = getAgentHistory(dynamic.params.id);
         } else if (dynamic.handler === "cronRun") {
-          const result = textExec(`openclaw cron run --id ${shellEscape(dynamic.params.id)} 2>&1`, 30000);
+          const result = textExec(`openclaw cron run ${shellEscape(dynamic.params.id)} 2>&1`, 30000);
           data = { ok: !result.startsWith("ERROR"), output: result, id: dynamic.params.id };
         } else if (dynamic.handler === "cronLogs") {
           data = getCronLogs(dynamic.params.id);
         } else if (dynamic.handler === "sessionKill" && req.method === "POST") {
-          const result = textExec(`openclaw session kill ${shellEscape(dynamic.params.key)} 2>&1`, 15000);
+          const result = textExec(`openclaw sessions cleanup 2>&1`, 15000);
           cache.delete("sessions");
           data = { ok: !result.startsWith("ERROR"), output: result };
           res.writeHead(200);
@@ -983,7 +1062,7 @@ const server = createServer((req, res) => {
             try {
               const { enabled } = JSON.parse(body);
               const action = enabled ? "enable" : "disable";
-              const result = textExec(`openclaw cron ${action} --id ${shellEscape(dynamic.params.id)} 2>&1`, 15000);
+              const result = textExec(`openclaw cron ${action} ${shellEscape(dynamic.params.id)} 2>&1`, 15000);
               cache.delete("crons");
               res.writeHead(200);
               res.end(JSON.stringify({ ok: !result.startsWith("ERROR"), enabled: !!enabled, output: result }));
@@ -1004,7 +1083,7 @@ const server = createServer((req, res) => {
                 res.end(JSON.stringify({ error: "Missing message" }));
                 return;
               }
-              const result = textExec(`openclaw session send --key ${shellEscape(dynamic.params.key)} --message ${shellEscape(message)} 2>&1`, 15000);
+              const result = textExec(`openclaw agent --session-key ${shellEscape(dynamic.params.key)} ${shellEscape(message)} 2>&1`, 30000);
               res.writeHead(200);
               res.end(JSON.stringify({ ok: !result.startsWith("ERROR"), output: result }));
             } catch (e) {
