@@ -1,9 +1,38 @@
 import { Home, Bot, Radio, Puzzle, Clock, Settings, WifiOff, Terminal, DollarSign } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { RestartBanner } from "@/components/shared/RestartBanner";
 import { useIsStale } from "@/hooks/useLiveData";
 import { TopBar } from "./TopBar";
+
+function PageTransition({ locationKey }: { locationKey: string }) {
+  const [visible, setVisible] = useState(true);
+  const prevKey = useRef(locationKey);
+
+  useEffect(() => {
+    if (prevKey.current !== locationKey) {
+      setVisible(false);
+      const id = requestAnimationFrame(() => {
+        prevKey.current = locationKey;
+        setVisible(true);
+      });
+      return () => cancelAnimationFrame(id);
+    }
+  }, [locationKey]);
+
+  return (
+    <div
+      className="transition-[opacity,transform] duration-200 ease-out"
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(6px)",
+      }}
+    >
+      <Outlet />
+    </div>
+  );
+}
 
 export function ConsoleLayout() {
   const { t } = useTranslation(["layout", "console"]);
@@ -58,7 +87,7 @@ export function ConsoleLayout() {
         )}
         <main className="flex-1 overflow-auto">
           <div className={isChatRoute ? "h-full p-6" : "mx-auto max-w-6xl p-6"}>
-            <Outlet />
+            <PageTransition locationKey={location.key} />
           </div>
         </main>
       </div>
