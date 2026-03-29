@@ -2,13 +2,23 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOfficeStore } from "@/store/office-store";
 
+type ResultType = "agent" | "page" | "cron" | "memory" | "chat";
+
 interface SearchResult {
   id: string;
-  type: "agent" | "page" | "cron";
+  type: ResultType;
   title: string;
   subtitle: string;
   path: string;
 }
+
+const CATEGORY_TABS: Array<{ key: ResultType | "all"; label: string }> = [
+  { key: "all", label: "All" },
+  { key: "agent", label: "Agents" },
+  { key: "cron", label: "Crons" },
+  { key: "memory", label: "Memory" },
+  { key: "chat", label: "Chat" },
+];
 
 const PAGES: SearchResult[] = [
   { id: "p-home", type: "page", title: "Home", subtitle: "Command Center", path: "/" },
@@ -29,6 +39,9 @@ export function SearchSpotlight() {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [cronResults, setCronResults] = useState<SearchResult[]>([]);
+  const [memoryResults, setMemoryResults] = useState<SearchResult[]>([]);
+  const [chatResults, setChatResults] = useState<SearchResult[]>([]);
+  const [activeCategory, setActiveCategory] = useState<ResultType | "all">("all");
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const agents = useOfficeStore((s) => s.agents);
@@ -57,12 +70,16 @@ export function SearchSpotlight() {
     }
   }, [isOpen]);
 
-  // Fetch cron tasks for search
+  // Fetch cron, memory, and chat data for search
   useEffect(() => {
     if (!isOpen) return;
+    const token = (() => { try { return localStorage.getItem("openclaw-mc-auth-token"); } catch { return null; } })();
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
     void (async () => {
       try {
-        const res = await fetch(`${API_BASE}/crons`);
+        const res = await fetch(`${API_BASE}/crons`, { headers });
         const data = await res.json();
         const jobs: Array<{ id: string; name: string }> = data.jobs ?? [];
         setCronResults(
@@ -76,6 +93,44 @@ export function SearchSpotlight() {
         );
       } catch {
         setCronResults([]);
+      }
+    })();
+
+    void (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/memory`, { headers });
+        const data = await res.json();
+        const files: Array<{ name: string; lines: number }> = data.files ?? [];
+        setMemoryResults(
+          files.map((f) => ({
+            id: `mem-${f.name}`,
+            type: "memory" as const,
+            title: f.name,
+            subtitle: `${f.lines} lines`,
+            path: "/memory",
+          })),
+        );
+      } catch {
+        setMemoryResults([]);
+      }
+    })();
+
+    void (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/chat/sessions`, { headers });
+        const data = await res.json();
+        const sessions: Array<{ key: string; agentId?: string; label?: string }> = data.sessions ?? [];
+        setChatResults(
+          sessions.map((s) => ({
+            id: `chat-${s.key}`,
+            type: "chat" as const,
+            title: s.label || s.key,
+            subtitle: s.agentId ? `Agent: ${s.agentId}` : "Chat session",
+            path: "/chat",
+          })),
+        );
+      } catch {
+        setChatResults([]);
       }
     })();
   }, [isOpen]);
@@ -96,21 +151,25 @@ export function SearchSpotlight() {
   }, [agents]);
 
   const allItems = useMemo(
-    () => [...PAGES, ...agentResults, ...cronResults],
-    [agentResults, cronResults],
+    () => [...PAGES, ...agentResults, ...cronResults, ...memoryResults, ...chatResults],
+    [agentResults, cronResults, memoryResults, chatResults],
   );
 
   const filtered = useMemo(() => {
-    if (!query.trim()) return allItems.slice(0, 10);
+    let items = allItems;
+    if (activeCategory !== "all") {
+      items = items.filter((item) => item.type === activeCategory);
+    }
+    if (!query.trim()) return items.slice(0, 12);
     const q = query.toLowerCase();
-    return allItems
+    return items
       .filter(
         (item) =>
           item.title.toLowerCase().includes(q) ||
           item.subtitle.toLowerCase().includes(q),
       )
       .slice(0, 12);
-  }, [query, allItems]);
+  }, [query, allItems, activeCategory]);
 
   // Reset selection on filter change
   useEffect(() => {
@@ -172,6 +231,24 @@ export function SearchSpotlight() {
           </kbd>
         </div>
 
+        {/* Category tabs */}
+        <div className="flex gap-1 border-b border-gray-200 px-4 py-1.5 dark:border-[rgba(0,255,65,0.1)]">
+          {CATEGORY_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => { setActiveCategory(tab.key); setSelectedIndex(0); }}
+              className={`rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                activeCategory === tab.key
+                  ? "bg-gray-100 text-gray-800 dark:bg-[rgba(0,255,65,0.12)] dark:text-[#00ff41]"
+                  : "text-gray-400 hover:text-gray-600 dark:text-[#0a5d0a] dark:hover:text-[#00ff41]"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         {/* Results */}
         <div className="max-h-72 overflow-y-auto py-2">
           {filtered.length === 0 ? (
@@ -192,7 +269,7 @@ export function SearchSpotlight() {
                 }`}
               >
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-xs">
-                  {result.type === "agent" ? "\uD83E\uDD16" : result.type === "cron" ? "\u23F0" : "\uD83D\uDCC4"}
+                  {result.type === "agent" ? "\uD83E\uDD16" : result.type === "cron" ? "\u23F0" : result.type === "memory" ? "\uD83E\uDDE0" : result.type === "chat" ? "\uD83D\uDCAC" : "\uD83D\uDCC4"}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">

@@ -8,7 +8,6 @@ import {
   ToggleRight,
   Upload,
   Download,
-  X,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";

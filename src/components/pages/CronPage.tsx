@@ -1,4 +1,4 @@
-import { RefreshCw, Plus, Clock, X } from "lucide-react";
+import { RefreshCw, Plus, Clock, X, List, BarChart3 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CronStatsBar } from "@/components/console/cron/CronStatsBar";
@@ -35,6 +35,7 @@ export function CronPage() {
   const [logsTarget, setLogsTarget] = useState<string | null>(null);
   const [logsData, setLogsData] = useState<Array<{ ts: number; text: string; file: string }>>([]);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "timeline">("list");
 
   const handleViewLogs = useCallback(async (id: string) => {
     setLogsTarget(id);
@@ -124,7 +125,6 @@ export function CronPage() {
         onCreate={() => openDialog()}
       />
       <CronStatsBar tasks={tasks} />
-      <CronTimeline tasks={tasks} />
 
       {tasks.length === 0 ? (
         <EmptyState
@@ -133,19 +133,53 @@ export function CronPage() {
           action={{ label: t("cron.empty.createFirst"), onClick: () => openDialog() }}
         />
       ) : (
-        <div className="space-y-3">
-          {sortedTasks.map((task) => (
-            <CronTaskCard
-              key={task.id}
-              task={task}
-              onToggle={handleToggle}
-              onRun={setRunTarget}
-              onEdit={openDialog}
-              onDelete={setDeleteTarget}
-              onViewLogs={handleViewLogs}
-            />
-          ))}
-        </div>
+        <>
+          {/* View toggle */}
+          <div className="flex items-center gap-1 rounded-md border border-gray-200 p-0.5 dark:border-[rgba(0,255,65,0.15)]">
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                viewMode === "list"
+                  ? "bg-gray-100 text-gray-800 dark:bg-[rgba(0,255,65,0.12)] dark:text-[#00ff41]"
+                  : "text-gray-400 hover:text-gray-600 dark:text-[#0a5d0a] dark:hover:text-[#00ff41]"
+              }`}
+            >
+              <List className="h-3.5 w-3.5" />
+              {t("cron.view.list", { defaultValue: "List" })}
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("timeline")}
+              className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                viewMode === "timeline"
+                  ? "bg-gray-100 text-gray-800 dark:bg-[rgba(0,255,65,0.12)] dark:text-[#00ff41]"
+                  : "text-gray-400 hover:text-gray-600 dark:text-[#0a5d0a] dark:hover:text-[#00ff41]"
+              }`}
+            >
+              <BarChart3 className="h-3.5 w-3.5" />
+              {t("cron.view.timeline", { defaultValue: "Timeline" })}
+            </button>
+          </div>
+
+          {viewMode === "timeline" ? (
+            <CronTimeline tasks={tasks} />
+          ) : (
+            <div className="space-y-3">
+              {sortedTasks.map((task) => (
+                <CronTaskCard
+                  key={task.id}
+                  task={task}
+                  onToggle={handleToggle}
+                  onRun={setRunTarget}
+                  onEdit={openDialog}
+                  onDelete={setDeleteTarget}
+                  onViewLogs={handleViewLogs}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <CronTaskDialog

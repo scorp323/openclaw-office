@@ -121,6 +121,22 @@ export function CronTimeline({ tasks }: CronTimelineProps) {
                     />
                   ))}
 
+                  {/* Span bar between last run and next run */}
+                  {lastRun && nextRun && lastRun >= startOfDay && nextRun <= endOfDay && lastRun < nextRun && (
+                    <div
+                      className="absolute top-1/2 -translate-y-1/2"
+                      style={{
+                        left: timeToXPosition(lastRun, startOfDay),
+                        width: Math.max(timeToXPosition(nextRun, startOfDay) - timeToXPosition(lastRun, startOfDay), 2),
+                        height: 6,
+                        borderRadius: 3,
+                        backgroundColor: color,
+                        opacity: 0.25,
+                      }}
+                      title={`${new Date(lastRun).toLocaleTimeString()} → ${new Date(nextRun).toLocaleTimeString()}`}
+                    />
+                  )}
+
                   {/* Last run marker */}
                   {lastRun && lastRun >= startOfDay && lastRun <= endOfDay && (
                     <div
