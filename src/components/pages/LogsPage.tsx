@@ -1,6 +1,7 @@
-import { Terminal, Pause, Play, ArrowDownToLine, Search, X, Trash2 } from "lucide-react";
+import { Terminal, Pause, Play, ArrowDownToLine, Search, X, Trash2, Download } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LogsSkeleton } from "@/components/console/shared/Skeleton";
+import { exportCsv } from "@/lib/export-utils";
 
 interface LogEntry {
   source: string;
@@ -236,6 +237,25 @@ export function LogsPage() {
             title="Clear logs"
           >
             <Trash2 className="h-3.5 w-3.5" />
+          </button>
+          {/* Export CSV */}
+          <button
+            type="button"
+            onClick={() => {
+              const rows = filtered.map((e) => ({
+                timestamp: new Date(e.ts).toISOString(),
+                source: e.source,
+                level: detectLevel(e.text),
+                text: e.text,
+                file: e.file,
+              }));
+              exportCsv(rows, `logs-${new Date().toISOString().slice(0, 10)}.csv`);
+            }}
+            disabled={filtered.length === 0}
+            className="flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-[rgba(0,255,65,0.08)] dark:text-gray-300 dark:hover:bg-[rgba(0,255,65,0.15)]"
+            title="Export as CSV"
+          >
+            <Download className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>

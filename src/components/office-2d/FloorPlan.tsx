@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useLiveData } from "@/hooks/useLiveData";
 import { useRealAgentSync } from "@/hooks/useRealAgentSync";
@@ -14,6 +14,8 @@ import {
 import { calculateMeetingSeatsSvg } from "@/lib/position-allocator";
 import { useOfficeStore } from "@/store/office-store";
 import { useAmbientSounds } from "@/hooks/useAmbientSounds";
+import { useAgentDragDrop, clientToSvg } from "@/hooks/useAgentDragDrop";
+import { exportSvgAsPng } from "@/lib/export-utils";
 import { AgentAvatar } from "./AgentAvatar";
 import { ConnectionLine } from "./ConnectionLine";
 import { MeetingTable, Sofa, Plant, CoffeeCup, Chair } from "./furniture";
@@ -50,10 +52,50 @@ export function FloorPlan() {
   useRealAgentSync(realAgents);
   useAmbientSounds();
   const { isMobile } = useResponsive();
+  const svgRef = useRef<SVGSVGElement>(null);
 
   const agents = useOfficeStore((s) => s.agents);
   const links = useOfficeStore((s) => s.links);
   const theme = useOfficeStore((s) => s.theme);
+
+  const {
+    dragAgentId,
+    dropPreview,
+    hasCustomPositions,
+    getCustomPosition,
+    startDrag,
+    updateDrag,
+    endDrag,
+    cancelDrag,
+    resetAllPositions,
+  } = useAgentDragDrop();
+
+  const handleExportPng = useCallback(() => {
+    if (svgRef.current) exportSvgAsPng(svgRef.current, "office-floor-plan.png");
+  }, []);
+
+  const handlePointerDown = useCallback(
+    (agentId: string, agentPos: { x: number; y: number }, e: React.PointerEvent) => {
+      if (!svgRef.current) return;
+      e.preventDefault();
+      const svgPos = clientToSvg(svgRef.current, e.clientX, e.clientY);
+      startDrag(agentId, agentPos, svgPos);
+    },
+    [startDrag],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!dragAgentId || !svgRef.current) return;
+      const svgPos = clientToSvg(svgRef.current, e.clientX, e.clientY);
+      updateDrag(svgPos);
+    },
+    [dragAgentId, updateDrag],
+  );
+
+  const handlePointerUp = useCallback(() => {
+    if (dragAgentId) endDrag();
+  }, [dragAgentId, endDrag]);
 
   const agentList = Array.from(agents.values());
   const isDark = theme === "dark";
@@ -110,16 +152,61 @@ export function FloorPlan() {
     );
   }
 
+  /** Apply custom position override for an agent (from drag-drop) */
+  const applyCustomPos = useCallback(
+    (agent: { id: string; position: { x: number; y: number } }) => {
+      // If this agent is being dragged, show at drop preview position
+      if (dragAgentId === agent.id && dropPreview) {
+        return { ...agent, position: dropPreview };
+      }
+      const custom = getCustomPosition(agent.id);
+      if (custom) return { ...agent, position: custom };
+      return agent;
+    },
+    [dragAgentId, dropPreview, getCustomPosition],
+  );
+
   return (
     <div className="relative flex h-full w-full flex-col bg-gray-100 dark:bg-black">
       <div className="relative min-h-0 flex-1 overflow-auto">
         <MatrixRain opacity={rainOpacity} />
         <OfficeStatusOverlay activeCount={activeCount} totalCount={totalCount} isDark={isDark} />
+        {/* Toolbar: export + reset buttons */}
+        <div className="pointer-events-none absolute right-3 top-3 z-10 flex items-center gap-2">
+          <button
+            onClick={handleExportPng}
+            title="Export as PNG"
+            className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-md border border-gray-300 bg-white/80 text-gray-600 backdrop-blur-sm transition-colors hover:bg-gray-100 dark:border-[rgba(0,255,65,0.2)] dark:bg-[rgba(0,0,0,0.6)] dark:text-[#00ff41] dark:hover:bg-[rgba(0,255,65,0.1)]"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </button>
+          {hasCustomPositions && (
+            <button
+              onClick={resetAllPositions}
+              title="Reset agent layout"
+              className="pointer-events-auto flex h-7 items-center gap-1 rounded-md border border-gray-300 bg-white/80 px-2 text-[10px] font-medium text-gray-600 backdrop-blur-sm transition-colors hover:bg-gray-100 dark:border-[rgba(0,255,65,0.2)] dark:bg-[rgba(0,0,0,0.6)] dark:text-[#00ff41] dark:hover:bg-[rgba(0,255,65,0.1)]"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="1 4 1 10 7 10" />
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+              </svg>
+              Reset Layout
+            </button>
+          )}
+        </div>
         <svg
+          ref={svgRef}
           viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
           className="block h-auto w-full"
           preserveAspectRatio="xMidYMin meet"
-          style={{ minHeight: "100%" }}
+          style={{ minHeight: "100%", cursor: dragAgentId ? "grabbing" : undefined }}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={cancelDrag}
         >
         <defs>
           <filter id="building-shadow" x="-3%" y="-3%" width="106%" height="106%">
@@ -207,17 +294,35 @@ export function FloorPlan() {
         <LoungeDecor isDark={isDark} />
 
         {/* ── Layer 5a: Lounge idle agents ── */}
-        {loungeAgents.map((agent) => (
-          <AgentAvatar key={`lounge-${agent.id}`} agent={agent} />
-        ))}
+        {loungeAgents.map((agent) => {
+          const positioned = applyCustomPos(agent);
+          return (
+            <g
+              key={`lounge-${agent.id}`}
+              style={{ cursor: dragAgentId === agent.id ? "grabbing" : "grab" }}
+              onPointerDown={(e) => handlePointerDown(agent.id, positioned.position, e)}
+            >
+              <AgentAvatar agent={positioned} />
+            </g>
+          );
+        })}
 
         {/* ── Layer 5: Furniture – Chill zone (The Rooftop) ── */}
         <ChillZoneDecor isDark={isDark} />
 
         {/* ── Layer 5a: Chill zone agents ── */}
-        {chillAgents.map((agent) => (
-          <AgentAvatar key={`chill-${agent.id}`} agent={agent} />
-        ))}
+        {chillAgents.map((agent) => {
+          const positioned = applyCustomPos(agent);
+          return (
+            <g
+              key={`chill-${agent.id}`}
+              style={{ cursor: dragAgentId === agent.id ? "grabbing" : "grab" }}
+              onPointerDown={(e) => handlePointerDown(agent.id, positioned.position, e)}
+            >
+              <AgentAvatar agent={positioned} />
+            </g>
+          );
+        })}
 
         {/* ── Layer 5b: Main entrance door on outer wall ── */}
         <EntranceDoor isDark={isDark} />
@@ -248,14 +353,54 @@ export function FloorPlan() {
         })}
 
         {/* ── Layer 7b: Unconfirmed agents at entrance (semi-transparent) ── */}
-        {corridorAgents.map((agent) => (
-          <AgentAvatar key={`corridor-${agent.id}`} agent={agent} />
-        ))}
+        {corridorAgents.map((agent) => {
+          const positioned = applyCustomPos(agent);
+          return (
+            <g
+              key={`corridor-${agent.id}`}
+              style={{ cursor: dragAgentId === agent.id ? "grabbing" : "grab" }}
+              onPointerDown={(e) => handlePointerDown(agent.id, positioned.position, e)}
+            >
+              <AgentAvatar agent={positioned} />
+            </g>
+          );
+        })}
 
         {/* ── Layer 8: Walking agents (above all zones, in corridor) ── */}
         {walkingAgents.map((agent) => (
           <AgentAvatar key={`walk-${agent.id}`} agent={agent} />
         ))}
+
+        {/* ── Drag-drop preview indicator ── */}
+        {dragAgentId && dropPreview && (
+          <g>
+            <circle
+              cx={dropPreview.x}
+              cy={dropPreview.y}
+              r={24}
+              fill={isDark ? "rgba(0,255,65,0.1)" : "rgba(59,130,246,0.1)"}
+              stroke={isDark ? "#00ff41" : "#3b82f6"}
+              strokeWidth={1.5}
+              strokeDasharray="4 3"
+              opacity={0.8}
+            />
+            {/* Grid snap crosshair */}
+            <line
+              x1={dropPreview.x - 8} y1={dropPreview.y}
+              x2={dropPreview.x + 8} y2={dropPreview.y}
+              stroke={isDark ? "#00ff41" : "#3b82f6"}
+              strokeWidth={0.5}
+              opacity={0.5}
+            />
+            <line
+              x1={dropPreview.x} y1={dropPreview.y - 8}
+              x2={dropPreview.x} y2={dropPreview.y + 8}
+              stroke={isDark ? "#00ff41" : "#3b82f6"}
+              strokeWidth={0.5}
+              opacity={0.5}
+            />
+          </g>
+        )}
 
         {/* ── Layer 9: Time-of-day ambiance overlay ── */}
         <TimeAmbiance />

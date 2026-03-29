@@ -113,6 +113,19 @@ export function ConsoleLayout() {
         </main>
       </div>
       {isMobile && <MobileBottomNav />}
+      {!isMobile && <BuildFooter />}
+    </div>
+  );
+}
+
+const BUILD_TIMESTAMP = typeof __BUILD_TIMESTAMP__ === "string" ? __BUILD_TIMESTAMP__ : "";
+
+function BuildFooter() {
+  if (!BUILD_TIMESTAMP) return null;
+  const formatted = BUILD_TIMESTAMP.replace("T", " ").slice(0, 19) + " UTC";
+  return (
+    <div className="shrink-0 border-t border-gray-200 bg-gray-50 px-4 py-1 text-center text-[10px] text-gray-400 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-600">
+      Built {formatted}
     </div>
   );
 }
