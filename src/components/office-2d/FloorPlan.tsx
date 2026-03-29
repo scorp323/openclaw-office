@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useLiveData } from "@/hooks/useLiveData";
 import { useRealAgentSync } from "@/hooks/useRealAgentSync";
+import { useResponsive } from "@/hooks/useResponsive";
 import {
   SVG_WIDTH,
   SVG_HEIGHT,
@@ -23,11 +24,32 @@ import { ZoneLabel } from "./ZoneLabel";
 
 type ZoneKey = keyof typeof ZONES;
 
+/* ═══ Status badge color mapping ═══ */
+const STATUS_BADGE: Record<string, { bg: string; text: string; label: string }> = {
+  idle:         { bg: "bg-gray-100 dark:bg-gray-800",              text: "text-gray-500 dark:text-gray-400",       label: "Idle" },
+  thinking:     { bg: "bg-blue-100 dark:bg-blue-900/30",           text: "text-blue-700 dark:text-blue-300",        label: "Thinking" },
+  tool_calling: { bg: "bg-orange-100 dark:bg-orange-900/30",       text: "text-orange-700 dark:text-orange-300",    label: "Tool Call" },
+  speaking:     { bg: "bg-purple-100 dark:bg-purple-900/30",       text: "text-purple-700 dark:text-purple-300",    label: "Speaking" },
+  spawning:     { bg: "bg-cyan-100 dark:bg-cyan-900/30",           text: "text-cyan-700 dark:text-cyan-300",        label: "Spawning" },
+  offline:      { bg: "bg-red-100 dark:bg-red-900/30",             text: "text-red-700 dark:text-red-300",          label: "Offline" },
+};
+
+/* ═══ Status dot color for avatar ring ═══ */
+const STATUS_DOT_COLOR: Record<string, string> = {
+  idle: "#9ca3af",
+  thinking: "#3b82f6",
+  tool_calling: "#f97316",
+  speaking: "#a855f7",
+  spawning: "#06b6d4",
+  offline: "#ef4444",
+};
+
 export function FloorPlan() {
   // Fetch agents from MC API so the office view works independently
   const { agents: realAgents } = useLiveData(30000);
   useRealAgentSync(realAgents);
   useAmbientSounds();
+  const { isMobile } = useResponsive();
 
   const agents = useOfficeStore((s) => s.agents);
   const links = useOfficeStore((s) => s.links);
@@ -79,6 +101,14 @@ export function FloorPlan() {
   const rainOpacity = totalCount > 0
     ? Math.min(0.6, 0.2 + (activeCount / totalCount) * 0.4)
     : 0.2;
+
+  // ── Mobile portrait view: scrollable card list ──
+  if (isMobile) {
+    const visibleAgents = agentList.filter((a) => !a.isPlaceholder);
+    return (
+      <MobileAgentList agents={visibleAgents} activeCount={activeCount} totalCount={totalCount} isDark={isDark} />
+    );
+  }
 
   return (
     <div className="relative flex h-full w-full flex-col bg-gray-100 dark:bg-black">
@@ -670,6 +700,126 @@ function CollaborationGlow({
   }
 
   return <g>{glowElements}</g>;
+}
+
+/* ═══ Mobile Agent List View ═══ */
+
+interface MobileAgentCardProps {
+  agent: {
+    id: string;
+    name: string;
+    status: string;
+    zone: string;
+    currentTool: { name: string } | null;
+    speechBubble: { text: string } | null;
+  };
+  isDark: boolean;
+}
+
+function MobileAgentCard({ agent, isDark }: MobileAgentCardProps) {
+  const badge = STATUS_BADGE[agent.status] ?? STATUS_BADGE.idle;
+  const dotColor = STATUS_DOT_COLOR[agent.status] ?? STATUS_DOT_COLOR.idle;
+  const taskText =
+    agent.currentTool
+      ? `Using ${agent.currentTool.name}`
+      : agent.speechBubble
+        ? agent.speechBubble.text.slice(0, 60) + (agent.speechBubble.text.length > 60 ? "..." : "")
+        : agent.status === "thinking"
+          ? "Thinking..."
+          : "—";
+
+  // Deterministic color from agent id
+  const hue = Array.from(agent.id).reduce((h, c) => h + c.charCodeAt(0), 0) % 360;
+  const avatarColor = `hsl(${hue}, 65%, ${isDark ? 55 : 45}%)`;
+
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3.5 dark:border-[rgba(0,255,65,0.12)] dark:bg-[rgba(0,10,0,0.6)]">
+      {/* Avatar circle */}
+      <div
+        className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+        style={{ backgroundColor: avatarColor }}
+      >
+        {agent.name.charAt(0).toUpperCase()}
+        <span
+          className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white dark:border-[#0a0a0a]"
+          style={{ backgroundColor: dotColor }}
+        />
+      </div>
+
+      {/* Info */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {agent.name}
+          </span>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.bg} ${badge.text}`}>
+            {badge.label}
+          </span>
+        </div>
+        <p className="truncate text-xs text-gray-500 dark:text-gray-400">{taskText}</p>
+        <span className="mt-0.5 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-400 dark:bg-gray-800 dark:text-gray-500">
+          {agent.zone || "corridor"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function MobileAgentList({
+  agents,
+  activeCount,
+  totalCount,
+  isDark,
+}: {
+  agents: Array<{
+    id: string;
+    name: string;
+    status: string;
+    zone: string;
+    currentTool: { name: string } | null;
+    speechBubble: { text: string } | null;
+  }>;
+  activeCount: number;
+  totalCount: number;
+  isDark: boolean;
+}) {
+  const { t } = useTranslation("office");
+
+  return (
+    <div className="flex h-full w-full flex-col bg-gray-50 dark:bg-[#0a0a0a]">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-[rgba(0,255,65,0.15)]">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-[#00ff41]">
+          {t("mobileView.title", { defaultValue: "Office" })}
+        </h2>
+        <div className="flex items-center gap-1.5">
+          <span
+            className="inline-block h-2 w-2 rounded-full bg-emerald-400"
+            style={isDark ? { boxShadow: "0 0 6px #00ff41" } : undefined}
+          />
+          <span className="font-mono text-xs text-gray-600 dark:text-[#00ff41]">
+            {activeCount}/{totalCount}
+          </span>
+          <span className="text-[10px] text-gray-400 dark:text-[#0a5d0a]">
+            {t("statusOverlay.agents", { defaultValue: "agents online" })}
+          </span>
+        </div>
+      </div>
+
+      {/* Scrollable card list */}
+      <div className="flex-1 space-y-2 overflow-y-auto p-3">
+        {agents.length === 0 ? (
+          <div className="flex h-40 items-center justify-center text-sm text-gray-400 dark:text-gray-600">
+            {t("mobileView.noAgents", { defaultValue: "No agents in office" })}
+          </div>
+        ) : (
+          agents.map((agent) => (
+            <MobileAgentCard key={agent.id} agent={agent} isDark={isDark} />
+          ))
+        )}
+      </div>
+    </div>
+  );
 }
 
 /** Main entrance door cut into the bottom outer wall of lounge zone */

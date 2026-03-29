@@ -37,7 +37,7 @@
 17. **search-everything** — IN PROGRESS: Global search across agents, crons, logs, chat history. Spotlight-style overlay.
 18. **offline-dashboard** — COMPLETED (2026-03-29 21:34 CST): Cache last-known agent/cron state in localStorage so the dashboard shows something even when tunnel is down.
 
-## WAVE 3 — LIVING OFFICE (Nathan's vision: "make it realistic")
+## WAVE 3 — LIVING OFFICE (Nathan's vision: "make it realistic") — ALL COMPLETED
 19. **idle-micro-animations** — IN PROGRESS: Agents in lounge/chill get subtle idle loops: reading (small book icon bobbing), sipping coffee (cup near face), stretching (slight scale pulse), leaning against wall (tilt). Randomized per agent based on ID hash. Pure CSS/SVG — no JS tick cost. Each agent picks 1 of 4-5 idle behaviors.
 20. **smart-zone-behavior** — COMPLETED (2026-03-29 22:01 CST): Agents doing related tasks (same cron, same build) auto-gather at the meeting table with connection lines. Agents that just finished a task walk to chill zone (coffee break). Agents with errors pace in the corridor. New agents spawn at entrance and walk to their desk. Based on real status + task metadata from the API.
 21. **time-of-day-ambiance** — COMPLETED (2026-03-29 22:45 CST): Office lighting shifts with real clock — warm golden tones 6am-9am, bright midday, amber sunset 5-7pm, dim blue-green night. Matrix rain intensity intensity scales with system load (more active agents = heavier rain). Window elements on office walls show sky gradient matching time.
@@ -45,3 +45,13 @@
 23. **ambient-office-sounds** — QUEUED: Optional (toggle in settings). Subtle keyboard clicking when agents are thinking/tool_calling. Soft chime on task completion. Muted alert tone on errors. Volume tied to activity level. Web Audio API, no external files — synthesized tones. (Implementation failed: Insufficient detail to implement directly. 2026-03-29 23:07 CST)
 24. **activity-heatmap-floor** — QUEUED: Floor tiles subtly glow warmer under busy zones. If desk zone has 5 active agents, the floor there pulses slightly. Idle zones stay cool/dim. Visual indicator of where the work is happening without reading status text.
 25. **agent-personality-poses** — QUEUED: Each agent gets a unique idle stance based on their role — CEO (Morpheus) stands tall center-office, trading agents lean forward intensely, content agents recline casually, ops agents patrol between zones. Role mapped from agent name/model metadata.
+
+## WAVE 5 — POWER USER & MOBILE POLISH
+26. **responsive-office-mobile** — QUEUED: Office SVG is landscape 1200x700 — on mobile portrait it's tiny. Add mobile-specific view: either rotate prompt, or a simplified vertical layout showing agent cards in a scrollable list with status indicators. Keep the full SVG for desktop/landscape.
+27. **dark-mode-polish** — QUEUED: Audit all pages for dark mode consistency. Matrix green theme for dark, clean white for light. Fix any contrast issues, inconsistent borders, or unreadable text in either mode.
+28. **api-error-resilience** — QUEUED: All API calls should have retry logic, timeout handling, and graceful fallback UI (skeleton loaders instead of blank screens). Currently some pages show nothing when API is slow.
+29. **keyboard-shortcuts** — QUEUED: Power user shortcuts — / for search, g+d for dashboard, g+o for office, g+a for agents, g+c for cron, Esc to close modals. Show shortcut hints in command palette.
+30. **memory-viewer-enhance** — QUEUED: The /memory page should render markdown nicely, support file browsing (tree view of memory/*.md), and show file sizes + last modified dates.
+31. **log-streaming** — QUEUED: /logs page should auto-scroll and highlight errors in red, warnings in yellow. Add log level filter buttons (ERROR/WARN/INFO). Tail mode that auto-follows new entries.
+32. **cron-quick-actions** — QUEUED: On /cron page, add inline buttons: Run Now, Disable/Enable, Edit Schedule. Currently read-only — need the action endpoints wired up.
+33. **agent-task-history** — QUEUED: Show recent task history per agent — what they ran, how long it took, success/fail. Timeline view in the agent detail modal.

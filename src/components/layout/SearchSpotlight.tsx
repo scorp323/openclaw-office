@@ -288,10 +288,24 @@ export function SearchSpotlight() {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center gap-3 border-t border-gray-200 px-4 py-2 text-[10px] text-gray-400 dark:border-[rgba(0,255,65,0.1)] dark:text-[#0a5d0a]">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-gray-200 px-4 py-2 text-[10px] text-gray-400 dark:border-[rgba(0,255,65,0.1)] dark:text-[#0a5d0a]">
           <span>\u2191\u2193 navigate</span>
           <span>\u21B5 select</span>
           <span>esc close</span>
+          <span className="ml-auto hidden items-center gap-1 sm:inline-flex">
+            <kbd className="rounded border border-gray-200 px-1 py-px text-[9px] dark:border-[rgba(0,255,65,0.15)]">/</kbd>
+            search
+          </span>
+          <span className="hidden items-center gap-1 sm:inline-flex">
+            <kbd className="rounded border border-gray-200 px-1 py-px text-[9px] dark:border-[rgba(0,255,65,0.15)]">g</kbd>
+            <kbd className="rounded border border-gray-200 px-1 py-px text-[9px] dark:border-[rgba(0,255,65,0.15)]">d</kbd>
+            dashboard
+          </span>
+          <span className="hidden items-center gap-1 sm:inline-flex">
+            <kbd className="rounded border border-gray-200 px-1 py-px text-[9px] dark:border-[rgba(0,255,65,0.15)]">g</kbd>
+            <kbd className="rounded border border-gray-200 px-1 py-px text-[9px] dark:border-[rgba(0,255,65,0.15)]">o</kbd>
+            office
+          </span>
         </div>
       </div>
     </div>

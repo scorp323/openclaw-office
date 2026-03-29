@@ -504,7 +504,8 @@
       "tools": "工具",
       "skills": "技能",
       "channels": "渠道",
-      "cronJobs": "定时任务"
+      "cronJobs": "定时任务",
+      "history": "历史记录"
     },
     "overview": {
       "title": "基本信息",

@@ -1,4 +1,4 @@
-import { Brain, Search, FileText, ChevronRight, RefreshCw, Tag, X } from "lucide-react";
+import { Brain, Search, FileText, ChevronRight, RefreshCw, Tag, X, HardDrive, Calendar } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MarkdownContent } from "@/components/chat/MarkdownContent";
 
@@ -12,7 +12,26 @@ interface MemoryFile {
   name: string;
   lines: number;
   sizeBytes: number;
+  lastModified?: number;
   meta: MemoryFileMeta;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDate(ts: number | undefined): string {
+  if (!ts) return "";
+  const d = new Date(ts);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffDays === 0) return "today";
+  if (diffDays === 1) return "yesterday";
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return d.toLocaleDateString();
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -148,7 +167,7 @@ export function MemoryPage() {
         {/* File tree */}
         <div className="w-80 shrink-0 space-y-2">
           {loading && files.length === 0 ? (
-            <div className="flex items-center justify-center py-12 text-sm text-gray-400">
+            <div className="flex items-center justify-center py-12 text-sm text-gray-400 dark:text-gray-500">
               Loading...
             </div>
           ) : filtered.length === 0 ? (
@@ -194,6 +213,18 @@ export function MemoryPage() {
                           {file.meta.description}
                         </div>
                       )}
+                      <div className="mt-0.5 flex items-center gap-2 text-[9px] text-gray-400 dark:text-gray-500">
+                        <span className="flex items-center gap-0.5">
+                          <HardDrive className="h-2.5 w-2.5" />
+                          {formatBytes(file.sizeBytes)}
+                        </span>
+                        {file.lastModified && (
+                          <span className="flex items-center gap-0.5">
+                            <Calendar className="h-2.5 w-2.5" />
+                            {formatDate(file.lastModified)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {file.meta.type && (
                       <span
@@ -230,6 +261,16 @@ export function MemoryPage() {
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   {selectedFile}
                 </span>
+                {(() => {
+                  const f = files.find((file) => file.name === selectedFile);
+                  if (!f) return null;
+                  return (
+                    <span className="ml-auto flex items-center gap-3 text-[10px] text-gray-400 dark:text-gray-500">
+                      <span>{formatBytes(f.sizeBytes)}</span>
+                      {f.lastModified && <span>{new Date(f.lastModified).toLocaleString()}</span>}
+                    </span>
+                  );
+                })()}
               </div>
               <MarkdownContent content={displayContent} />
             </div>

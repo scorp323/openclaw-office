@@ -1,4 +1,4 @@
-import { Terminal, Pause, Play } from "lucide-react";
+import { Terminal, Pause, Play, ArrowDownToLine } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LogsSkeleton } from "@/components/console/shared/Skeleton";
 
@@ -9,16 +9,40 @@ interface LogEntry {
   ts: number;
 }
 
+type LogLevel = "ERROR" | "WARN" | "INFO";
+
 const SOURCE_COLORS: Record<string, string> = {
   agent: "#3b82f6",
   cron: "#f59e0b",
   system: "#00ff41",
 };
 
+const LEVEL_COLORS: Record<LogLevel, string> = {
+  ERROR: "text-red-400",
+  WARN: "text-yellow-400",
+  INFO: "text-[#00ff41]",
+};
+
+function detectLevel(text: string): LogLevel {
+  const upper = text.slice(0, 80).toUpperCase();
+  if (upper.includes("ERROR") || upper.includes("ERR ") || upper.includes("[ERROR]")) return "ERROR";
+  if (upper.includes("WARN") || upper.includes("[WARN]")) return "WARN";
+  return "INFO";
+}
+
+const LEVEL_FILTERS: Array<{ value: LogLevel | "ALL"; label: string }> = [
+  { value: "ALL", label: "All" },
+  { value: "ERROR", label: "ERROR" },
+  { value: "WARN", label: "WARN" },
+  { value: "INFO", label: "INFO" },
+];
+
 export function LogsPage() {
   const [entries, setEntries] = useState<LogEntry[] | null>(null);
   const [paused, setPaused] = useState(false);
-  const [filter, setFilter] = useState<string>("all");
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [levelFilter, setLevelFilter] = useState<LogLevel | "ALL">("ALL");
+  const [tailMode, setTailMode] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pausedRef = useRef(false);
 
@@ -44,13 +68,17 @@ export function LogsPage() {
   }, [fetchLogs]);
 
   useEffect(() => {
-    if (!paused && scrollRef.current) {
+    if (tailMode && !paused && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [entries, paused]);
+  }, [entries, paused, tailMode]);
 
   const allEntries = entries ?? [];
-  const filtered = filter === "all" ? allEntries : allEntries.filter((e) => e.source === filter);
+  const filtered = allEntries.filter((e) => {
+    if (sourceFilter !== "all" && e.source !== sourceFilter) return false;
+    if (levelFilter !== "ALL" && detectLevel(e.text) !== levelFilter) return false;
+    return true;
+  });
 
   return (
     <div className="flex h-[calc(100vh-3rem)] flex-col">
@@ -63,13 +91,14 @@ export function LogsPage() {
           </span>
         </div>
         <div className="flex items-center gap-2">
+          {/* Source filter */}
           <div className="flex items-center gap-1 rounded-lg border border-gray-200 p-0.5 dark:border-[rgba(0,255,65,0.15)]">
             {["all", "agent", "cron", "system"].map((src) => (
               <button
                 key={src}
-                onClick={() => setFilter(src)}
+                onClick={() => setSourceFilter(src)}
                 className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                  filter === src
+                  sourceFilter === src
                     ? "bg-gray-900 text-white dark:bg-[rgba(0,255,65,0.2)] dark:text-[#00ff41]"
                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-[#00ff41]"
                 }`}
@@ -78,6 +107,40 @@ export function LogsPage() {
               </button>
             ))}
           </div>
+          {/* Level filter */}
+          <div className="flex items-center gap-1 rounded-lg border border-gray-200 p-0.5 dark:border-[rgba(0,255,65,0.15)]">
+            {LEVEL_FILTERS.map((lf) => (
+              <button
+                key={lf.value}
+                onClick={() => setLevelFilter(lf.value)}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                  levelFilter === lf.value
+                    ? lf.value === "ERROR"
+                      ? "bg-red-900/60 text-red-300"
+                      : lf.value === "WARN"
+                        ? "bg-yellow-900/60 text-yellow-300"
+                        : "bg-gray-900 text-white dark:bg-[rgba(0,255,65,0.2)] dark:text-[#00ff41]"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-[#00ff41]"
+                }`}
+              >
+                {lf.label}
+              </button>
+            ))}
+          </div>
+          {/* Tail mode toggle */}
+          <button
+            onClick={() => setTailMode((t) => !t)}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+              tailMode
+                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                : "bg-gray-100 text-gray-600 dark:bg-[rgba(0,255,65,0.08)] dark:text-gray-300"
+            }`}
+            title={tailMode ? "Auto-scroll on" : "Auto-scroll off"}
+          >
+            <ArrowDownToLine className="h-3.5 w-3.5" />
+            Tail
+          </button>
+          {/* Pause/Resume */}
           <button
             onClick={() => setPaused((p) => !p)}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
@@ -109,20 +172,30 @@ export function LogsPage() {
             </div>
           </div>
         ) : (
-          filtered.map((entry, i) => (
-            <div key={`${entry.ts}-${i}`} className="flex hover:bg-[rgba(0,255,65,0.03)]">
-              <span className="mr-3 shrink-0 select-none text-gray-600 tabular-nums">
-                {new Date(entry.ts).toLocaleTimeString()}
-              </span>
-              <span
-                className="mr-3 w-14 shrink-0 text-right font-semibold uppercase"
-                style={{ color: SOURCE_COLORS[entry.source] ?? "#00ff41" }}
-              >
-                {entry.source}
-              </span>
-              <span className="min-w-0 break-all text-[#00ff41]">{entry.text}</span>
-            </div>
-          ))
+          filtered.map((entry, i) => {
+            const level = detectLevel(entry.text);
+            const levelColor = LEVEL_COLORS[level];
+            const rowBg =
+              level === "ERROR"
+                ? "bg-red-950/30 hover:bg-red-950/50"
+                : level === "WARN"
+                  ? "bg-yellow-950/20 hover:bg-yellow-950/30"
+                  : "hover:bg-[rgba(0,255,65,0.03)]";
+            return (
+              <div key={`${entry.ts}-${i}`} className={`flex ${rowBg}`}>
+                <span className="mr-3 shrink-0 select-none text-gray-600 tabular-nums">
+                  {new Date(entry.ts).toLocaleTimeString()}
+                </span>
+                <span
+                  className="mr-3 w-14 shrink-0 text-right font-semibold uppercase"
+                  style={{ color: SOURCE_COLORS[entry.source] ?? "#00ff41" }}
+                >
+                  {entry.source}
+                </span>
+                <span className={`min-w-0 break-all ${levelColor}`}>{entry.text}</span>
+              </div>
+            );
+          })
         )}
         {!paused && (
           <div className="mt-1 inline-block h-4 w-2 animate-pulse bg-[#00ff41]" />

@@ -504,7 +504,8 @@
       "tools": "Tools",
       "skills": "Skills",
       "channels": "Channels",
-      "cronJobs": "Cron Jobs"
+      "cronJobs": "Cron Jobs",
+      "history": "History"
     },
     "overview": {
       "title": "Basic Info",

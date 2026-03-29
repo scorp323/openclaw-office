@@ -1,5 +1,5 @@
-import { Bot, Clock, Cpu, Loader2, MessageSquare, RefreshCw, Send, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { AlertTriangle, Bot, Clock, Cpu, Loader2, MessageSquare, RefreshCw, Send, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiPost } from "@/lib/api-actions";
 import { toastSuccess, toastError } from "@/store/toast-store";
 import { useTranslation } from "react-i18next";
@@ -10,6 +10,7 @@ import { DeleteAgentDialog } from "@/components/console/agents/DeleteAgentDialog
 import { SvgAvatar } from "@/components/shared/SvgAvatar";
 import { AgentsSkeleton } from "@/components/console/shared/Skeleton";
 import { useAgentsStore } from "@/store/console-stores/agents-store";
+import { useApiQuery } from "@/hooks/useApiQuery";
 
 interface FleetAgent {
   id: string;
@@ -234,33 +235,24 @@ export function AgentsPage() {
   const { selectedAgentId, agents: storeAgents, fetchAgents, selectAgent } = useAgentsStore();
   const selectedAgent = storeAgents.find((a) => a.id === selectedAgentId) ?? null;
 
-  const [fleetAgents, setFleetAgents] = useState<FleetAgent[]>([]);
-  const [loading, setLoading] = useState(false);
   const [messageTarget, setMessageTarget] = useState<string | null>(null);
 
-  const fetchFleet = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/mc-api/agents");
-      if (res.ok) {
-        const data = (await res.json()) as { agents: FleetAgent[] };
-        setFleetAgents(data.agents ?? []);
-      }
-    } catch {
-      // fall back to store agents
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const transformFleet = useCallback(
+    (data: unknown) => ((data as { agents: FleetAgent[] }).agents ?? []),
+    [],
+  );
+  const { data: fleetAgents, loading, error: fleetError, retry: fetchFleet } = useApiQuery<FleetAgent[]>({
+    path: "/agents",
+    transform: transformFleet,
+  });
 
   useEffect(() => {
     fetchAgents();
-    fetchFleet();
-  }, [fetchAgents, fetchFleet]);
+  }, [fetchAgents]);
 
   // Merge store agents with fleet data for status info
-  const mergedAgents: FleetAgent[] =
-    fleetAgents.length > 0
+  const mergedAgents: FleetAgent[] = useMemo(() =>
+    fleetAgents && fleetAgents.length > 0
       ? fleetAgents
       : storeAgents.map((a) => ({
           id: a.id,
@@ -270,7 +262,9 @@ export function AgentsPage() {
           emoji: a.identity?.emoji ?? "🤖",
           zone: "",
           status: "standby" as const,
-        }));
+        })),
+    [fleetAgents, storeAgents],
+  );
 
   return (
     <div className="space-y-6">
@@ -297,6 +291,19 @@ export function AgentsPage() {
       {/* Fleet Grid */}
       {loading && mergedAgents.length === 0 ? (
         <AgentsSkeleton />
+      ) : fleetError && mergedAgents.length === 0 ? (
+        <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-900/10">
+          <AlertTriangle className="mb-3 h-10 w-10 text-red-400" />
+          <p className="text-sm font-medium text-red-700 dark:text-red-300">Failed to load agents</p>
+          <p className="mt-1 max-w-xs text-center text-xs text-red-500 dark:text-red-400">{fleetError}</p>
+          <button
+            type="button"
+            onClick={fetchFleet}
+            className="mt-4 rounded-md bg-red-600 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
       ) : mergedAgents.length === 0 ? (
         <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
           <Bot className="mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" strokeWidth={1.5} />

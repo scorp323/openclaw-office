@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export interface ShortcutEntry {
@@ -17,6 +17,11 @@ export const SHORTCUT_LIST: ShortcutEntry[] = [
   { keys: "⌘ 8", label: "Settings" },
   { keys: "⌘ 9", label: "Logs" },
   { keys: "⌘ K", label: "Search" },
+  { keys: "/", label: "Focus search" },
+  { keys: "g d", label: "Go to Dashboard" },
+  { keys: "g o", label: "Go to Office" },
+  { keys: "g a", label: "Go to Agents" },
+  { keys: "g c", label: "Go to Cron" },
   { keys: "?", label: "Keyboard shortcuts" },
   { keys: "Esc", label: "Close overlay / modal" },
 ];
@@ -33,9 +38,21 @@ const NAV_MAP: Record<string, string> = {
   "9": "/logs",
 };
 
+/** "g then X" navigation sequences */
+const G_NAV_MAP: Record<string, string> = {
+  d: "/dashboard",
+  o: "/office",
+  a: "/agents",
+  c: "/cron",
+};
+
+const G_SEQUENCE_TIMEOUT_MS = 800;
+
 export function useKeyboardShortcuts() {
   const navigate = useNavigate();
   const [helpOpen, setHelpOpen] = useState(false);
+  const gPendingRef = useRef(false);
+  const gTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const closeHelp = useCallback(() => setHelpOpen(false), []);
   const toggleHelp = useCallback(() => setHelpOpen((p) => !p), []);
@@ -51,6 +68,10 @@ export function useKeyboardShortcuts() {
 
       // Escape: close any open dialog / overlay
       if (e.key === "Escape") {
+        // Reset g-sequence
+        gPendingRef.current = false;
+        if (gTimerRef.current) { clearTimeout(gTimerRef.current); gTimerRef.current = null; }
+
         if (helpOpen) {
           setHelpOpen(false);
           e.preventDefault();
@@ -66,8 +87,45 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      // '?' to show help (only when not typing in an input)
-      if (e.key === "?" && !isInput && !e.metaKey && !e.ctrlKey) {
+      // Skip non-escape shortcuts when typing in inputs
+      if (isInput) return;
+
+      // Handle second key of "g then X" sequence
+      if (gPendingRef.current) {
+        gPendingRef.current = false;
+        if (gTimerRef.current) { clearTimeout(gTimerRef.current); gTimerRef.current = null; }
+        const route = G_NAV_MAP[e.key];
+        if (route) {
+          e.preventDefault();
+          navigate(route);
+          return;
+        }
+        // Not a valid g-sequence follow-up — fall through to normal handling
+      }
+
+      // "/" to focus search (triggers Cmd+K spotlight)
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        // Dispatch Ctrl+K to open SearchSpotlight
+        document.dispatchEvent(
+          new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }),
+        );
+        return;
+      }
+
+      // "g" to start a navigation sequence
+      if (e.key === "g" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        gPendingRef.current = true;
+        gTimerRef.current = setTimeout(() => {
+          gPendingRef.current = false;
+          gTimerRef.current = null;
+        }, G_SEQUENCE_TIMEOUT_MS);
+        return;
+      }
+
+      // '?' to show help
+      if (e.key === "?" && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         toggleHelp();
         return;
@@ -82,7 +140,10 @@ export function useKeyboardShortcuts() {
     };
 
     document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
+    return () => {
+      document.removeEventListener("keydown", handler);
+      if (gTimerRef.current) clearTimeout(gTimerRef.current);
+    };
   }, [navigate, helpOpen, toggleHelp]);
 
   return { helpOpen, closeHelp, toggleHelp };

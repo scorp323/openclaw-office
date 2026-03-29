@@ -273,7 +273,7 @@ export function ChatPage() {
               <button
                 type="button"
                 onClick={() => newSession()}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200/80 bg-white px-3 py-2 text-[13px] font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200/80 bg-white px-3 py-2 text-[13px] font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100"
               >
                 <MessageSquarePlus className="h-3.5 w-3.5" />
                 <span>{t("page.newSessionPrimary")}</span>
@@ -538,7 +538,7 @@ export function ChatPage() {
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
                           {item.label}
                         </span>
-                        <span className="text-xs text-gray-400">{item.description}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500">{item.description}</span>
                       </button>
                     ))}
                   </div>

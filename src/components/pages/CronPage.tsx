@@ -32,6 +32,7 @@ export function CronPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [runTarget, setRunTarget] = useState<string | null>(null);
+  const [disableTarget, setDisableTarget] = useState<string | null>(null);
   const [logsTarget, setLogsTarget] = useState<string | null>(null);
   const [logsData, setLogsData] = useState<Array<{ ts: number; text: string; file: string }>>([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -58,7 +59,34 @@ export function CronPage() {
   }, [fetchTasks, initEventListeners]);
 
   const handleToggle = (id: string, enabled: boolean) => {
-    updateTask(id, { enabled } as Partial<import("@/gateway/adapter-types").CronTaskInput>);
+    if (!enabled) {
+      // Disabling: show confirmation dialog
+      setDisableTarget(id);
+    } else {
+      // Enabling: do it directly with toast
+      doToggle(id, true);
+    }
+  };
+
+  const doToggle = async (id: string, enabled: boolean) => {
+    try {
+      await updateTask(id, { enabled } as Partial<import("@/gateway/adapter-types").CronTaskInput>);
+      toastSuccess(
+        enabled ? t("cron.toggle.enabled", { defaultValue: "Task Enabled" }) : t("cron.toggle.disabled", { defaultValue: "Task Disabled" }),
+        enabled
+          ? t("cron.toggle.enabledMsg", { defaultValue: "Cron task has been enabled" })
+          : t("cron.toggle.disabledMsg", { defaultValue: "Cron task has been disabled" }),
+      );
+    } catch (err) {
+      toastError(t("cron.toggle.error", { defaultValue: "Toggle Failed" }), String(err));
+    }
+  };
+
+  const handleDisableConfirm = async () => {
+    if (disableTarget) {
+      await doToggle(disableTarget, false);
+      setDisableTarget(null);
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -205,6 +233,15 @@ export function CronPage() {
         description={t("cron.run.description")}
         onConfirm={handleRunConfirm}
         onCancel={() => setRunTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={disableTarget !== null}
+        title={t("cron.disable.title", { defaultValue: "Disable Task" })}
+        description={t("cron.disable.description", { defaultValue: "Are you sure you want to disable this cron task? It will no longer run on schedule." })}
+        onConfirm={handleDisableConfirm}
+        onCancel={() => setDisableTarget(null)}
+        variant="danger"
       />
 
       {/* Logs dialog */}
