@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { CronStatsBar } from "@/components/console/cron/CronStatsBar";
 import { CronTaskCard } from "@/components/console/cron/CronTaskCard";
 import { CronTaskDialog } from "@/components/console/cron/CronTaskDialog";
+import { CronTimeline } from "@/components/console/cron/CronTimeline";
 import { ConfirmDialog } from "@/components/console/shared/ConfirmDialog";
 import { EmptyState } from "@/components/console/shared/EmptyState";
 import { ErrorState } from "@/components/console/shared/ErrorState";
@@ -100,6 +101,7 @@ export function CronPage() {
         onCreate={() => openDialog()}
       />
       <CronStatsBar tasks={tasks} />
+      <CronTimeline tasks={tasks} />
 
       {tasks.length === 0 ? (
         <EmptyState
