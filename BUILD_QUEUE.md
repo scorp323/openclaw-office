@@ -30,9 +30,9 @@
 10. **agent-detail-modal** — COMPLETED (2026-03-29 17:20 CST) — Tap an agent in the office to see a detail panel: name, role, model, current task, last active, status history. Mobile-friendly bottom sheet.
 11. **cron-timeline** — IN PROGRESS: Visual timeline on /cron showing when each cron last ran and when it runs next. Color-coded: green=ok, red=error, gray=disabled.
 12. **real-time-cost-counter** — IN PROGRESS: Live-updating cost display in the header: today's API spend, tokens used, model breakdown. Pulls from /mc-api/costs.
-13. **agent-chat-shortcut** — From the office floor plan, tap agent → "Chat" button → opens /chat pre-addressed to that agent. (ERROR: Morpheus cannot directly implement new code features for this project; requires manual coding or a dedicated coding agent.)
-14. **mobile-nav-gestures** — QUEUED (BUILD FAILED 2026-03-29 11:18 UTC: TypeScript errors in QuickActionsFab.tsx and SystemHealthBar.tsx): Swipe left/right to navigate between pages (office → dashboard → cron → chat). Feels native.
-15. **notification-bell** — QUEUED (BUILD FAILED 2026-03-29 11:37 UTC: TypeScript errors in QuickActionsFab.tsx and SystemHealthBar.tsx): Bell icon in header with badge count. Shows recent events: cron failures, agent errors, completed tasks. Replaces checking Discord.
+13. **agent-chat-shortcut** — From the office floor plan, tap agent → "Chat" button → opens /chat pre-addressed to that agent.
+14. **mobile-nav-gestures** — Swipe left/right to navigate between pages (office → dashboard → cron → chat). Feels native.
+15. **notification-bell** — Bell icon in header with badge count. Shows recent events: cron failures, agent errors, completed tasks. Replaces checking Discord.
 16. **quick-actions-fab** — Floating action button on mobile: restart all crons, check costs, trigger heartbeat, toggle work mode.
 17. **search-everything** — Global search across agents, crons, logs, chat history. Spotlight-style overlay.
 18. **offline-dashboard** — Cache last-known agent/cron state in localStorage so the dashboard shows something even when tunnel is down.
