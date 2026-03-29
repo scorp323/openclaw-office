@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useCostStore } from "@/store/console-stores/cost-store";
+import { useOfficeStore } from "@/store/office-store";
 
 const POLL_INTERVAL = 15_000;
+const WS_POLL_INTERVAL = 60_000;
 
 function useAnimatedNumber(target: number, duration = 600): number {
   const [display, setDisplay] = useState(target);
@@ -40,11 +42,14 @@ export function CostCounter() {
   const animatedCost = useAnimatedNumber(todayCostUsd);
   const animatedTokens = useAnimatedNumber(todayTokens);
 
+  const wsConnected = useOfficeStore((s) => s.connectionStatus) === "connected";
+
   useEffect(() => {
     fetchCosts();
-    const interval = setInterval(fetchCosts, POLL_INTERVAL);
+    // When WS is connected, cost ticks come via store — poll less frequently
+    const interval = setInterval(fetchCosts, wsConnected ? WS_POLL_INTERVAL : POLL_INTERVAL);
     return () => clearInterval(interval);
-  }, [fetchCosts]);
+  }, [fetchCosts, wsConnected]);
 
   if (todayCostUsd === 0 && todayTokens === 0) return null;
 

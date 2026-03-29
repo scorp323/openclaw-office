@@ -1,4 +1,8 @@
-import { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
+import { useState, useEffect, useCallback, useSyncExternalStore, useRef } from 'react';
+import { useWsLiveData, type WsLiveUpdate } from './useWsLiveData';
+
+const WS_REFRESH_DEBOUNCE_MS = 2_000;
+const FALLBACK_POLL_INTERVAL_MS = 15_000;
 
 interface CronJob {
   id: string;
@@ -76,6 +80,7 @@ interface LiveData {
   stale: boolean;
   lastRefresh: number;
   refresh: () => void;
+  wsConnected: boolean;
 }
 
 const CACHE_KEY = 'openclaw-live-data-cache';
@@ -227,11 +232,41 @@ export function useLiveData(pollIntervalMs = 30000): LiveData {
     }
   }, []);
 
-  useEffect(() => {
-    refresh();
-    const interval = setInterval(refresh, pollIntervalMs);
-    return () => clearInterval(interval);
-  }, [refresh, pollIntervalMs]);
+  // WS-driven refresh: when gateway WS pushes updates, debounce a refresh
+  const wsDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  return { crons, system, gateway, agents, history, activity, ollama, channels, memoryFiles, loading, error, stale, lastRefresh, refresh };
+  const handleWsUpdate = useCallback((_update: WsLiveUpdate) => {
+    // Debounce: batch rapid WS events into a single refresh
+    if (wsDebounceRef.current) clearTimeout(wsDebounceRef.current);
+    wsDebounceRef.current = setTimeout(() => {
+      wsDebounceRef.current = null;
+      void refresh();
+    }, WS_REFRESH_DEBOUNCE_MS);
+  }, [refresh]);
+
+  const { wsConnected } = useWsLiveData({ onUpdate: handleWsUpdate });
+
+  useEffect(() => {
+    // Always do an initial fetch
+    void refresh();
+
+    if (wsConnected) {
+      // WS connected: no periodic polling needed, WS events trigger debounced refresh.
+      // But do a slow background poll as safety net (every 60s).
+      const safetyInterval = setInterval(() => void refresh(), 60_000);
+      return () => {
+        clearInterval(safetyInterval);
+        if (wsDebounceRef.current) clearTimeout(wsDebounceRef.current);
+      };
+    }
+
+    // WS disconnected: fall back to 15s polling
+    const interval = setInterval(() => void refresh(), pollIntervalMs > 0 ? Math.min(pollIntervalMs, FALLBACK_POLL_INTERVAL_MS) : FALLBACK_POLL_INTERVAL_MS);
+    return () => {
+      clearInterval(interval);
+      if (wsDebounceRef.current) clearTimeout(wsDebounceRef.current);
+    };
+  }, [refresh, pollIntervalMs, wsConnected]);
+
+  return { crons, system, gateway, agents, history, activity, ollama, channels, memoryFiles, loading, error, stale, lastRefresh, refresh, wsConnected };
 }

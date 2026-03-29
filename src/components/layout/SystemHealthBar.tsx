@@ -1,5 +1,6 @@
-import { ChevronUp, Cpu, AlertTriangle } from "lucide-react";
+import { ChevronUp, Cpu, AlertTriangle, Wifi, WifiOff } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useWsConnectionStatus } from "@/hooks/useWsLiveData";
 
 interface HealthData {
   ramPercent: number;
@@ -25,6 +26,7 @@ function StatusDot({ up, label }: { up: boolean; label: string }) {
 export function SystemHealthBar() {
   const [health, setHealth] = useState<HealthData | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const wsStatus = useWsConnectionStatus();
 
   const fetchHealth = useCallback(async () => {
     try {
@@ -38,9 +40,12 @@ export function SystemHealthBar() {
 
   useEffect(() => {
     void fetchHealth();
-    const id = setInterval(() => void fetchHealth(), 30_000);
+    // When WS is connected, poll health less frequently (60s safety net)
+    // When disconnected, fall back to 15s polling
+    const interval = wsStatus.connected ? 60_000 : 15_000;
+    const id = setInterval(() => void fetchHealth(), interval);
     return () => clearInterval(id);
-  }, [fetchHealth]);
+  }, [fetchHealth, wsStatus.connected]);
 
   if (!health) return null;
 
@@ -85,6 +90,22 @@ export function SystemHealthBar() {
               </span>
             </div>
             <div>
+              <div className="mb-1 font-medium text-gray-500 dark:text-gray-400">WebSocket</div>
+              <div className="flex items-center gap-1.5">
+                {wsStatus.connected ? (
+                  <>
+                    <Wifi className="h-3 w-3 text-green-400" />
+                    <span className="text-green-400">Live</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff className="h-3 w-3 text-amber-400" />
+                    <span className="text-amber-400">{wsStatus.status === "reconnecting" ? "Reconnecting…" : "Polling"}</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <div>
               <div className="mb-1 font-medium text-gray-500 dark:text-gray-400">Updated</div>
               <span>{new Date(health.ts).toLocaleTimeString()}</span>
             </div>
@@ -102,6 +123,16 @@ export function SystemHealthBar() {
         </div>
         <StatusDot up={health.ollamaUp} label="Ollama" />
         <StatusDot up={health.gatewayUp} label="GW" />
+        <div className="flex items-center gap-1">
+          {wsStatus.connected ? (
+            <Wifi className="h-3 w-3 text-green-400" />
+          ) : (
+            <WifiOff className="h-3 w-3 text-amber-400" />
+          )}
+          <span className={wsStatus.connected ? "text-green-400" : "text-amber-400"}>
+            {wsStatus.connected ? "WS" : "Poll"}
+          </span>
+        </div>
         {isThrottled && (
           <div className="flex items-center gap-1 text-amber-400">
             <AlertTriangle className="h-3 w-3" />
