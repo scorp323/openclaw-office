@@ -131,6 +131,33 @@ export function calculateMeetingSeatsSvg(
  * Cluster positions for collaborating agents around a meeting table.
  * Agents on the same task sit close together.
  */
+/**
+ * Calculate positions for desk agents.
+ */
+export function calculateDeskSlots(zone: { x: number; y: number; width: number; height: number }, _occupiedCount: number, maxCount: number): Array<{ unitX: number; unitY: number }> {
+  const slots: Array<{ unitX: number; unitY: number }> = [];
+  const spacingX = 100; // Horizontal spacing between desks
+  const spacingY = 100; // Vertical spacing between desks
+  const startX = zone.x + 50; // Offset from zone edge
+  const startY = zone.y + 50; // Offset from zone edge
+
+  let currentX = startX;
+  let currentY = startY;
+
+  for (let i = 0; i < maxCount; i++) {
+    slots.push({ unitX: currentX, unitY: currentY });
+    currentX += spacingX;
+    if (currentX + 50 > zone.x + zone.width) { // Check if next desk would exceed zone width
+      currentX = startX;
+      currentY += spacingY;
+      if (currentY + 50 > zone.y + zone.height) { // Check if next row would exceed zone height
+        break; // No more space in the zone
+      }
+    }
+  }
+  return slots;
+}
+
 export function calculateMeetingClusterPositions(
   agentIds: string[],
   tableCenter: { x: number; y: number },

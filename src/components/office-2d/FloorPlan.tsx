@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { VisualAgent } from "@/gateway/types";
 import { useLiveData } from "@/hooks/useLiveData";
 import { useRealAgentSync } from "@/hooks/useRealAgentSync";
 import {
@@ -11,11 +10,10 @@ import {
   ZONE_COLORS,
   ZONE_COLORS_DARK,
 } from "@/lib/constants";
-import { calculateDeskSlots, calculateMeetingSeatsSvg } from "@/lib/position-allocator";
+import { calculateMeetingSeatsSvg } from "@/lib/position-allocator";
 import { useOfficeStore } from "@/store/office-store";
 import { AgentAvatar } from "./AgentAvatar";
 import { ConnectionLine } from "./ConnectionLine";
-import { DeskUnit } from "./DeskUnit";
 import { MeetingTable, Sofa, Plant, CoffeeCup, Chair } from "./furniture";
 import { HeatmapFloor } from "./HeatmapFloor";
 import { MatrixRain } from "./MatrixRain";
@@ -37,14 +35,6 @@ export function FloorPlan() {
   const isDark = theme === "dark";
   const colors = isDark ? ZONE_COLORS_DARK : ZONE_COLORS;
 
-  const deskAgents = useMemo(
-    () => agentList.filter((a) => a.zone === "desk" && !a.isSubAgent && !a.movement && a.confirmed),
-    [agentList],
-  );
-  const hotDeskAgents = useMemo(
-    () => agentList.filter((a) => a.zone === "hotDesk" && !a.movement),
-    [agentList],
-  );
   const loungeAgents = useMemo(
     () => agentList.filter((a) => a.zone === "lounge" && !a.movement && !a.isPlaceholder),
     [agentList],
@@ -64,23 +54,6 @@ export function FloorPlan() {
   const corridorAgents = useMemo(
     () => agentList.filter((a) => a.zone === "corridor" && !a.movement && !a.isPlaceholder),
     [agentList],
-  );
-
-  const maxSubAgents = useOfficeStore((s) => s.maxSubAgents);
-
-  const deskSlots = useMemo(
-    () => calculateDeskSlots(ZONES.desk, deskAgents.length, Math.max(deskAgents.length, 4)),
-    [deskAgents.length],
-  );
-
-  const hotDeskSlots = useMemo(
-    () =>
-      calculateDeskSlots(
-        ZONES.hotDesk,
-        hotDeskAgents.length,
-        Math.max(hotDeskAgents.length, maxSubAgents),
-      ),
-    [hotDeskAgents.length, maxSubAgents],
   );
 
   const meetingCenter = {
@@ -184,9 +157,6 @@ export function FloorPlan() {
           <ZoneLabel key={`label-${key}`} zone={zone} zoneKey={key as ZoneKey} />
         ))}
 
-        {/* ── Layer 5: Furniture – Desk zone ── */}
-        <DeskZoneFurniture deskSlots={deskSlots} deskAgents={deskAgents} />
-
         {/* ── Layer 5: Furniture – Meeting zone ── */}
         <MeetingTable
           x={meetingCenter.x}
@@ -199,9 +169,6 @@ export function FloorPlan() {
           meetingAgentCount={meetingAgents.length}
           isDark={isDark}
         />
-
-        {/* ── Layer 5: Furniture – Hot desk zone ── */}
-        <HotDeskZoneFurniture slots={hotDeskSlots} agents={hotDeskAgents} />
 
         {/* ── Layer 5: Furniture – Lounge zone (incl. reception + entrance) ── */}
         <LoungeDecor isDark={isDark} />
@@ -441,60 +408,6 @@ function DoorOpenings({ isDark }: { isDark: boolean }) {
           </g>
         );
       })}
-    </g>
-  );
-}
-
-function DeskZoneFurniture({
-  deskSlots,
-  deskAgents,
-}: {
-  deskSlots: Array<{ unitX: number; unitY: number }>;
-  deskAgents: VisualAgent[];
-}) {
-  const agentBySlot = useMemo(() => {
-    const map = new Map<number, VisualAgent>();
-    for (const agent of deskAgents) {
-      let hash = 0;
-      for (let i = 0; i < agent.id.length; i++) {
-        hash = ((hash << 5) - hash + agent.id.charCodeAt(i)) | 0;
-      }
-      const idx = Math.abs(hash) % deskSlots.length;
-      let slot = idx;
-      while (map.has(slot)) {
-        slot = (slot + 1) % deskSlots.length;
-      }
-      map.set(slot, agent);
-    }
-    return map;
-  }, [deskAgents, deskSlots.length]);
-
-  return (
-    <g>
-      {deskSlots.map((slot, i) => (
-        <DeskUnit
-          key={`desk-${i}`}
-          x={slot.unitX}
-          y={slot.unitY}
-          agent={agentBySlot.get(i) ?? null}
-        />
-      ))}
-    </g>
-  );
-}
-
-function HotDeskZoneFurniture({
-  slots,
-  agents,
-}: {
-  slots: Array<{ unitX: number; unitY: number }>;
-  agents: VisualAgent[];
-}) {
-  return (
-    <g>
-      {slots.map((slot, i) => (
-        <DeskUnit key={`hotdesk-${i}`} x={slot.unitX} y={slot.unitY} agent={agents[i] ?? null} />
-      ))}
     </g>
   );
 }

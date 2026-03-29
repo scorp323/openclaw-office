@@ -1383,13 +1383,7 @@ function cancelRetireTimer(agentId: string): void {
 
 /**
  * Central retire scheduling for sub-agents.
- * Enforces: must stay at hotDesk >= MIN_HOTDESK_STAY_MS before walking back.
- *
- * Possible states when called:
- * - Still walking TO hotDesk → will be re-invoked by tickMovement on arrival
- * - At hotDesk, arrived recently → schedule timer for remaining wait
- * - At hotDesk, stayed long enough → start walk back immediately
- * - At lounge (never made it) → remove immediately
+ * Walk to lounge then fade (removal happens on arrival).
  */
 function scheduleRetireAfterMinStay(agentId: string): void {
   cancelRetireTimer(agentId);
@@ -1397,36 +1391,15 @@ function scheduleRetireAfterMinStay(agentId: string): void {
   const agent = useOfficeStore.getState().agents.get(agentId);
   if (!agent?.isSubAgent || agent.isPlaceholder || !agent.pendingRetire) return;
 
-  // Still walking to hotDesk — tickMovement will re-invoke on arrival
-  if (agent.movement?.toZone === "hotDesk") return;
+  // Already walking to lounge — tickMovement will handle removal on arrival
+  if (agent.movement?.toZone === "lounge") return;
 
-  // Sitting at hotDesk — check minimum stay
-  if (agent.zone === "hotDesk") {
-    const arrived = agent.arrivedAtHotDeskAt ?? Date.now();
-    const elapsed = Date.now() - arrived;
-    const remaining = MIN_HOTDESK_STAY_MS - elapsed;
-
-    if (remaining > 0) {
-      const timer = setTimeout(() => {
-        subAgentRetireTimers.delete(agentId);
-        scheduleRetireAfterMinStay(agentId);
-      }, remaining);
-      subAgentRetireTimers.set(agentId, timer);
-      return;
-    }
-
-    // Min stay satisfied → walk back to lounge (removal happens on arrival)
-    useOfficeStore.getState().startMovement(agentId, "lounge");
-    return;
-  }
-
-  // Agent is in lounge (hasn't walked to hotDesk yet, or walk hasn't started).
-  // Instead of removing immediately, send it to hotDesk first so the user
-  // sees the full walk-in → stay → walk-out animation cycle.
+  // At lounge already — remove immediately
   if (agent.zone === "lounge" && !agent.movement) {
-    useOfficeStore.getState().startMovement(agentId, "hotDesk");
+    useOfficeStore.getState().removeSubAgent(agentId);
     return;
   }
 
-  // Walking to lounge already — tickMovement will handle removal on arrival
+  // At meeting or elsewhere — walk back to lounge (removal happens on arrival)
+  useOfficeStore.getState().startMovement(agentId, "lounge");
 }

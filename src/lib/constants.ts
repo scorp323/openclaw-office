@@ -15,15 +15,25 @@ export const OFFICE = {
   corridorWidth: 28,
 } as const;
 
-// 3-zone layout: meeting (full top), lounge (bottom-left 60%), chill (bottom-right 40%)
-const topH = Math.round((OFFICE.height - OFFICE.corridorWidth) * 0.5);
-const bottomH = OFFICE.height - OFFICE.corridorWidth - topH;
-const bottomY = OFFICE.y + topH + OFFICE.corridorWidth;
+// 5-zone layout: meeting (top), desk (mid-left), hotDesk (mid-right), lounge (bottom-left), chill (bottom-right)
+const meetingH = Math.round((OFFICE.height - OFFICE.corridorWidth) * 0.3); // 30% for meeting
+const deskHotdeskH = Math.round((OFFICE.height - OFFICE.corridorWidth) * 0.2); // 20% for desk/hotDesk
+const bottomH = OFFICE.height - OFFICE.corridorWidth - meetingH - deskHotdeskH; // Remaining for lounge/chill
+
+const meetingY = OFFICE.y;
+const deskHotdeskY = OFFICE.y + meetingH;
+const corridorY = OFFICE.y + meetingH + deskHotdeskH;
+const bottomY = corridorY + OFFICE.corridorWidth;
+
+const deskW = Math.round(OFFICE.width * 0.5);
+const hotDeskW = OFFICE.width - deskW;
 const loungeW = Math.round(OFFICE.width * 0.6);
 const chillW = OFFICE.width - loungeW;
 
 export const ZONES = {
-  meeting: { x: OFFICE.x, y: OFFICE.y, width: OFFICE.width, height: topH, label: "会议室" },
+  meeting: { x: OFFICE.x, y: meetingY, width: OFFICE.width, height: meetingH, label: "会议室" },
+  desk: { x: OFFICE.x, y: deskHotdeskY, width: deskW, height: deskHotdeskH, label: "工位区" },
+  hotDesk: { x: OFFICE.x + deskW, y: deskHotdeskY, width: hotDeskW, height: deskHotdeskH, label: "热区工位" },
   lounge: { x: OFFICE.x, y: bottomY, width: loungeW, height: bottomH, label: "休息区" },
   chill: { x: OFFICE.x + loungeW, y: bottomY, width: chillW, height: bottomH, label: "The Rooftop" },
 } as const;
@@ -37,7 +47,7 @@ export const CORRIDOR_ENTRANCE = {
 // Corridor center crossing point (horizontal corridor between top and bottom zones)
 export const CORRIDOR_CENTER = {
   x: OFFICE.x + OFFICE.width / 2,
-  y: OFFICE.y + topH + OFFICE.corridorWidth / 2,
+  y: OFFICE.y + meetingH + deskHotdeskH + OFFICE.corridorWidth / 2,
 } as const;
 
 export const ZONE_COLORS = {
