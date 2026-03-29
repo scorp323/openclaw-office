@@ -18,8 +18,8 @@
 8. **theme-auto-switch** — Respect prefers-color-scheme media query for auto dark/light.
 9. **command-palette** — Swipe-down or tap shortcut to run common actions (restart cron, check costs, trigger agent).
 
-## IN PROGRESS
-- [ ] **chat-mobile-polish** — Polish /chat page for mobile: input sizing, scroll behavior, send button UX.
+## COMPLETED
+- [x] **chat-mobile-polish** — Polish /chat page for mobile: input sizing, scroll behavior, send button UX. (2026-03-29 16:01 CST)
 
 ## COMPLETED
 - [x] **live-status-badges** — Show cron health/last run/error error count on dashboard cards without clicking into /cron. (COMPLETED 2026-03-29 15:46 CST)
