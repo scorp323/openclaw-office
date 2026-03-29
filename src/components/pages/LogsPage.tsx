@@ -1,5 +1,6 @@
 import { Terminal, Pause, Play, Filter } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { LogsSkeleton } from "@/components/console/shared/Skeleton";
 
 interface LogEntry {
   source: string;
@@ -15,7 +16,7 @@ const SOURCE_COLORS: Record<string, string> = {
 };
 
 export function LogsPage() {
-  const [entries, setEntries] = useState<LogEntry[]>([]);
+  const [entries, setEntries] = useState<LogEntry[] | null>(null);
   const [paused, setPaused] = useState(false);
   const [filter, setFilter] = useState<string>("all");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -48,7 +49,8 @@ export function LogsPage() {
     }
   }, [entries, paused]);
 
-  const filtered = filter === "all" ? entries : entries.filter((e) => e.source === filter);
+  const allEntries = entries ?? [];
+  const filtered = filter === "all" ? allEntries : allEntries.filter((e) => e.source === filter);
 
   return (
     <div className="flex h-[calc(100vh-3rem)] flex-col">
@@ -94,7 +96,9 @@ export function LogsPage() {
         ref={scrollRef}
         className="flex-1 overflow-auto bg-black p-4 font-mono text-xs leading-5"
       >
-        {filtered.length === 0 ? (
+        {entries === null ? (
+          <LogsSkeleton />
+        ) : filtered.length === 0 ? (
           <div className="flex h-full items-center justify-center text-gray-600">
             <div className="text-center">
               <Filter className="mx-auto mb-2 h-8 w-8 opacity-40" />

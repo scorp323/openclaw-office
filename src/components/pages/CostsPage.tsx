@@ -4,6 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend,
 } from "recharts";
+import { CostsSkeleton } from "@/components/console/shared/Skeleton";
 
 interface CostDetail {
   dailySpend: Array<{ date: string; cost: number }>;
@@ -78,6 +79,8 @@ export function CostsPage() {
           Refresh
         </button>
       </div>
+
+      {loading && !data && <CostsSkeleton />}
 
       {data && (
         <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-[rgba(0,255,65,0.15)] dark:bg-[rgba(0,10,0,0.6)]">

@@ -6,6 +6,7 @@ import { AgentDetailTabs } from "@/components/console/agents/AgentDetailTabs";
 import { CreateAgentDialog } from "@/components/console/agents/CreateAgentDialog";
 import { DeleteAgentDialog } from "@/components/console/agents/DeleteAgentDialog";
 import { SvgAvatar } from "@/components/shared/SvgAvatar";
+import { AgentsSkeleton } from "@/components/console/shared/Skeleton";
 import { useAgentsStore } from "@/store/console-stores/agents-store";
 
 interface FleetAgent {
@@ -195,14 +196,16 @@ export function AgentsPage() {
       </div>
 
       {/* Fleet Grid */}
-      {mergedAgents.length === 0 ? (
+      {loading && mergedAgents.length === 0 ? (
+        <AgentsSkeleton />
+      ) : mergedAgents.length === 0 ? (
         <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
           <Bot className="mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
             No agents found
           </p>
         </div>
-      ) : (
+      ) : mergedAgents.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {mergedAgents.map((agent) => (
             <AgentFleetCard
@@ -213,7 +216,7 @@ export function AgentsPage() {
             />
           ))}
         </div>
-      )}
+      ) : null}
 
       {/* Detail Panel (appears below when agent selected) */}
       {selectedAgent && (
