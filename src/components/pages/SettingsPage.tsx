@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { AboutSection } from "@/components/console/settings/AboutSection";
+import { QuickSettings } from "@/components/console/settings/QuickSettings";
 import { AdvancedSection } from "@/components/console/settings/AdvancedSection";
 import { AppearanceSection } from "@/components/console/settings/AppearanceSection";
 import { DeveloperSection } from "@/components/console/settings/DeveloperSection";
@@ -42,6 +43,7 @@ export function SettingsPage() {
         <LoadingState />
       ) : (
         <div className="space-y-4">
+          <QuickSettings />
           <AppearanceSection />
           <NotificationsSection />
           <SoundSection />

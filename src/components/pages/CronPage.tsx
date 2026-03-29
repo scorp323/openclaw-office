@@ -1,6 +1,7 @@
-import { RefreshCw, Plus, Clock, X, List, BarChart3 } from "lucide-react";
+import { RefreshCw, Plus, Clock, List, BarChart3 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { CronLogViewer } from "@/components/console/cron/CronLogViewer";
 import { CronStatsBar } from "@/components/console/cron/CronStatsBar";
 import { CronTaskCard } from "@/components/console/cron/CronTaskCard";
 import { CronTaskDialog } from "@/components/console/cron/CronTaskDialog";
@@ -11,7 +12,6 @@ import { ErrorState } from "@/components/console/shared/ErrorState";
 import { CronSkeleton } from "@/components/console/shared/Skeleton";
 import { useCronStore } from "@/store/console-stores/cron-store";
 import { toastSuccess, toastError } from "@/store/toast-store";
-import { useFetchWithRetry } from "@/hooks/useFetchWithRetry";
 
 export function CronPage() {
   const { t } = useTranslation("console");
@@ -36,14 +36,6 @@ export function CronPage() {
   const [disableTarget, setDisableTarget] = useState<string | null>(null);
   const [logsTarget, setLogsTarget] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "timeline">("list");
-
-  // Resilient logs fetch — 2 retries, exponential backoff, 10s timeout
-  type LogEntry = { ts: number; text: string; file: string };
-  const logsUrl = logsTarget !== null
-    ? `/mc-api/cron/${encodeURIComponent(logsTarget)}/logs`
-    : null;
-  const { data: logsRaw, isLoading: logsLoading } = useFetchWithRetry<{ logs: LogEntry[] }>(logsUrl);
-  const logsData = logsRaw?.logs ?? [];
 
   const handleViewLogs = useCallback((id: string) => {
     setLogsTarget(id);
@@ -241,46 +233,13 @@ export function CronPage() {
         variant="danger"
       />
 
-      {/* Logs dialog */}
+      {/* Logs modal */}
       {logsTarget !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 max-h-[70vh] w-full max-w-2xl overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900">
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                {t("cron.logs.title")} — {logsTarget}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setLogsTarget(null)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="max-h-[55vh] overflow-auto p-4">
-              {logsLoading ? (
-                <div className="py-8 text-center text-sm text-gray-400">Loading logs...</div>
-              ) : logsData.length === 0 ? (
-                <div className="py-8 text-center text-sm text-gray-400">
-                  {t("cron.logs.empty")}
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {logsData.map((entry, i) => (
-                    <div key={`${entry.ts}-${i}`} className="flex gap-3 rounded px-2 py-1 text-xs hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <span className="shrink-0 text-gray-400 dark:text-gray-500">
-                        {new Date(entry.ts).toLocaleTimeString()}
-                      </span>
-                      <span className="min-w-0 break-all text-gray-700 dark:text-gray-300">
-                        {entry.text}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <CronLogViewer
+          cronId={logsTarget}
+          cronName={tasks.find((t) => t.id === logsTarget)?.name}
+          onClose={() => setLogsTarget(null)}
+        />
       )}
     </div>
   );

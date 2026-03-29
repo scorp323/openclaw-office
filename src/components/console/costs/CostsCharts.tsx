@@ -4,7 +4,7 @@
  * loads when the user navigates to /costs.
  */
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend,
 } from "recharts";
 
@@ -45,7 +45,13 @@ export default function CostsCharts({ data }: CostsChartsProps) {
       <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-[rgba(0,255,65,0.15)] dark:bg-[rgba(0,10,0,0.6)]">
         <h2 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Daily Spend (Last 30 Days)</h2>
         <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={data.dailySpend}>
+          <AreaChart data={data.dailySpend}>
+            <defs>
+              <linearGradient id="costGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#00ff41" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#00ff41" stopOpacity={0} />
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,255,65,0.1)" />
             <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} stroke="#666" />
             <YAxis tick={{ fontSize: 10 }} stroke="#666" tickFormatter={(v: number) => `$${v.toFixed(2)}`} />
@@ -54,8 +60,14 @@ export default function CostsCharts({ data }: CostsChartsProps) {
               labelStyle={{ color: "#00ff41" }}
               formatter={(value: number) => [`$${value.toFixed(4)}`, "Cost"]}
             />
-            <Bar dataKey="cost" fill="#00ff41" radius={[2, 2, 0, 0]} />
-          </BarChart>
+            <Area
+              type="monotone"
+              dataKey="cost"
+              stroke="#00ff41"
+              strokeWidth={2}
+              fill="url(#costGradient)"
+            />
+          </AreaChart>
         </ResponsiveContainer>
       </div>
 

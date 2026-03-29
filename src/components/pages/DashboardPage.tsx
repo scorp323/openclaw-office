@@ -7,6 +7,7 @@ import { ChannelOverview } from "@/components/console/dashboard/ChannelOverview"
 import { QuickNavGrid } from "@/components/console/dashboard/QuickNavGrid";
 import { SkillOverview } from "@/components/console/dashboard/SkillOverview";
 import { StatCard } from "@/components/console/dashboard/StatCard";
+import { SystemHealthWidget } from "@/components/console/dashboard/SystemHealthWidget";
 import { ErrorState } from "@/components/console/shared/ErrorState";
 import { DashboardSkeleton } from "@/components/console/shared/Skeleton";
 import { useDashboardStore } from "@/store/console-stores/dashboard-store";
@@ -14,7 +15,7 @@ import { isHttpAdapter } from "@/gateway/adapter-provider";
 import { useOfficeStore } from "@/store/office-store";
 
 const CARD_ORDER_KEY = "openclaw-dashboard-card-order";
-const DEFAULT_ORDER = ["stats", "quicknav", "channels", "skills", "activity"];
+const DEFAULT_ORDER = ["systemhealth", "stats", "quicknav", "channels", "skills", "activity"];
 
 function loadCardOrder(): string[] {
   try {
@@ -164,6 +165,8 @@ export function DashboardPage() {
       )}
 
       <DraggableGrid cardIds={DEFAULT_ORDER}>
+        <SystemHealthWidget />
+
         <div>
           <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Stats</h3>
           <div className="grid grid-cols-2 gap-3">

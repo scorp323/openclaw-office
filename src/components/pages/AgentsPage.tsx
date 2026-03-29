@@ -5,6 +5,7 @@ import { toastSuccess, toastError } from "@/store/toast-store";
 import { useTranslation } from "react-i18next";
 import { AgentDetailHeader } from "@/components/console/agents/AgentDetailHeader";
 import { AgentDetailTabs } from "@/components/console/agents/AgentDetailTabs";
+import { AgentUptimeBars } from "@/components/console/agents/AgentUptimeBars";
 import { CreateAgentDialog } from "@/components/console/agents/CreateAgentDialog";
 import { DeleteAgentDialog } from "@/components/console/agents/DeleteAgentDialog";
 import { SvgAvatar } from "@/components/shared/SvgAvatar";
@@ -20,6 +21,7 @@ interface FleetAgent {
   emoji: string;
   zone: string;
   status: "active" | "standby" | "offline";
+  lastSeen?: number;
 }
 
 function relativeTime(ts: number): string {
@@ -226,6 +228,13 @@ function AgentFleetCard({
           </span>
         </div>
       </div>
+
+      {/* 24-hour uptime bars */}
+      <AgentUptimeBars
+        status={agent.status}
+        lastSeen={agent.lastSeen}
+        agentId={agent.id}
+      />
     </button>
   );
 }
