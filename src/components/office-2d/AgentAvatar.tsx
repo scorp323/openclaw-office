@@ -5,9 +5,22 @@ import { getMatrixCharacter, type MatrixCharacterStyle } from "@/lib/avatar-gene
 import { getCodename, getCharacterKey } from "@/lib/matrix-codenames";
 import { STATUS_COLORS, AVATAR } from "@/lib/constants";
 import { useOfficeStore } from "@/store/office-store";
+import "./IdleAnimations.css";
 
 const WALK_BOB_AMPLITUDE = 2;
 const WALK_BOB_FREQ = 8;
+
+const IDLE_BEHAVIORS = ["reading", "sipping", "stretching", "leaning", "typing"] as const;
+type IdleBehavior = (typeof IDLE_BEHAVIORS)[number];
+
+/** Deterministic idle behavior based on agent id hash */
+function getIdleBehavior(agentId: string): IdleBehavior {
+  let hash = 0;
+  for (let i = 0; i < agentId.length; i++) {
+    hash = ((hash << 5) - hash + agentId.charCodeAt(i)) | 0;
+  }
+  return IDLE_BEHAVIORS[Math.abs(hash) % IDLE_BEHAVIORS.length];
+}
 
 interface AgentAvatarProps {
   agent: VisualAgent;
@@ -41,6 +54,10 @@ export const AgentAvatar = memo(function AgentAvatar({ agent }: AgentAvatarProps
     codename.length > AVATAR.nameLabelMaxChars
       ? `${codename.slice(0, AVATAR.nameLabelMaxChars)}…`
       : codename;
+
+  const isIdleZone = agent.zone === "lounge" || agent.zone === "chill";
+  const showIdleAnim = isIdleZone && !isWalking && !isPlaceholder && agent.status === "idle";
+  const idleBehavior = showIdleAnim ? getIdleBehavior(agent.id) : undefined;
 
   // Walk animation loop via requestAnimationFrame
   const agentIdRef = useRef(agent.id);
@@ -103,6 +120,7 @@ export const AgentAvatar = memo(function AgentAvatar({ agent }: AgentAvatarProps
       transform={`translate(${agent.position.x}, ${agent.position.y})`}
       style={{ cursor: isPlaceholder ? "default" : "pointer" }}
       opacity={groupOpacity}
+      data-idle-behavior={idleBehavior}
       onClick={() => !isPlaceholder && selectAgent(agent.id)}
       onMouseEnter={() => !isPlaceholder && setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -222,6 +240,9 @@ export const AgentAvatar = memo(function AgentAvatar({ agent }: AgentAvatarProps
           </div>
         </foreignObject>
       )}
+
+      {/* Idle micro-animation prop icon */}
+      {idleBehavior && <IdlePropIcon behavior={idleBehavior} r={r} />}
 
       {/* Codename + real name label */}
       <foreignObject
@@ -553,6 +574,42 @@ function MatrixGlasses({
         </g>
       );
     default:
+      return null;
+  }
+}
+
+/* --- Idle prop icon for lounge/chill micro-animations --- */
+
+function IdlePropIcon({ behavior, r }: { behavior: IdleBehavior; r: number }) {
+  const x = -r * 0.75;
+  const y = r * 0.3;
+
+  switch (behavior) {
+    case "reading":
+      return (
+        <g className="idle-prop" transform={`translate(${x}, ${y})`}>
+          <rect x={-4} y={-3} width={8} height={6} rx={1} fill="#a78bfa" opacity={0.8} />
+          <line x1={-2} y1={-1} x2={2} y2={-1} stroke="#fff" strokeWidth={0.5} opacity={0.6} />
+          <line x1={-2} y1={1} x2={2} y2={1} stroke="#fff" strokeWidth={0.5} opacity={0.6} />
+        </g>
+      );
+    case "sipping":
+      return (
+        <g className="idle-prop" transform={`translate(${x}, ${y})`}>
+          <rect x={-3} y={-2} width={6} height={5} rx={1} fill="#d97706" opacity={0.8} />
+          <rect x={-2} y={-3} width={4} height={1.5} rx={0.5} fill="#fbbf24" opacity={0.5} />
+        </g>
+      );
+    case "typing":
+      return (
+        <g className="idle-prop" transform={`translate(${x}, ${y})`}>
+          {[0, 1, 2].map((i) => (
+            <rect key={i} x={-3 + i * 2.5} y={0} width={1.5} height={2} rx={0.3} fill="#6ee7b7" opacity={0.7} />
+          ))}
+        </g>
+      );
+    default:
+      // stretching and leaning use whole-group animation, no prop icon needed
       return null;
   }
 }

@@ -628,7 +628,7 @@ const server = createServer(async (req, res) => {
       const proxyRes = await new Promise((resolve, reject) => {
         const proxyReq = httpRequest(apiUrl, {
           method: req.method,
-          headers: { ...req.headers, host: "127.0.0.1:3335" },
+          headers: { ...req.headers, host: "127.0.0.1:3335", authorization: "Bearer 1337" },
         }, resolve);
         proxyReq.on("error", reject);
         req.pipe(proxyReq);

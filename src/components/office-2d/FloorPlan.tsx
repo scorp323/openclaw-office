@@ -17,7 +17,9 @@ import { AgentAvatar } from "./AgentAvatar";
 import { ConnectionLine } from "./ConnectionLine";
 import { DeskUnit } from "./DeskUnit";
 import { MeetingTable, Sofa, Plant, CoffeeCup, Chair } from "./furniture";
+import { HeatmapFloor } from "./HeatmapFloor";
 import { MatrixRain } from "./MatrixRain";
+import { TimeAmbiance } from "./TimeAmbiance";
 import { ZoneLabel } from "./ZoneLabel";
 
 type ZoneKey = keyof typeof ZONES;
@@ -98,11 +100,15 @@ export function FloorPlan() {
 
   const activeCount = agentList.filter((a) => a.status !== "idle" && a.status !== "offline" && !a.isPlaceholder).length;
   const totalCount = agentList.filter((a) => !a.isPlaceholder).length;
+  // MatrixRain density scales with active agent ratio (0.2 base → up to 0.6)
+  const rainOpacity = totalCount > 0
+    ? Math.min(0.6, 0.2 + (activeCount / totalCount) * 0.4)
+    : 0.2;
 
   return (
     <div className="relative flex h-full w-full flex-col bg-gray-100 dark:bg-black md:flex-row">
       <div className="relative min-h-0 flex-1">
-        <MatrixRain />
+        <MatrixRain opacity={rainOpacity} />
         <OfficeStatusOverlay activeCount={activeCount} totalCount={totalCount} isDark={isDark} />
         <svg
           viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
@@ -163,6 +169,9 @@ export function FloorPlan() {
             }
           />
         ))}
+
+        {/* ── Layer 2b: Activity heatmap overlay (above floor, below walls) ── */}
+        <HeatmapFloor agents={agentList} />
 
         {/* ── Layer 3: Internal partition walls ── */}
         <PartitionWalls isDark={isDark} />
@@ -246,6 +255,9 @@ export function FloorPlan() {
         {walkingAgents.map((agent) => (
           <AgentAvatar key={`walk-${agent.id}`} agent={agent} />
         ))}
+
+        {/* ── Layer 9: Time-of-day ambiance overlay ── */}
+        <TimeAmbiance />
         </svg>
       </div>
     </div>

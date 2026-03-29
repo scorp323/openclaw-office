@@ -12,7 +12,11 @@ interface Column {
   length: number;
 }
 
-export function MatrixRain() {
+interface MatrixRainProps {
+  opacity?: number;
+}
+
+export function MatrixRain({ opacity = 0.2 }: MatrixRainProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const columnsRef = useRef<Column[]>([]);
   const rafRef = useRef<number>(0);
@@ -129,7 +133,7 @@ export function MatrixRain() {
       ref={canvasRef}
       className="pointer-events-none absolute inset-0 h-full w-full"
       aria-hidden="true"
-      style={{ opacity: 0.2 }}
+      style={{ opacity, transition: "opacity 2s ease" }}
     />
   );
 }
