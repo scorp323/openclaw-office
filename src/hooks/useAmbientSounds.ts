@@ -25,11 +25,26 @@ function getVolumeScale(activeCount: number): number {
 }
 
 let audioCtx: AudioContext | null = null;
+let iosUnlocked = false;
 
 function getAudioContext(): AudioContext {
   if (!audioCtx) audioCtx = new AudioContext();
   if (audioCtx.state === "suspended") void audioCtx.resume();
   return audioCtx;
+}
+
+/** iOS/Safari requires a user gesture to unlock AudioContext.
+ *  Register a one-time tap handler that pre-creates and resumes the context. */
+function ensureIOSUnlock() {
+  if (iosUnlocked) return;
+  iosUnlocked = true;
+  const unlock = () => {
+    getAudioContext();
+    document.removeEventListener("touchstart", unlock);
+    document.removeEventListener("click", unlock);
+  };
+  document.addEventListener("touchstart", unlock, { once: true });
+  document.addEventListener("click", unlock, { once: true });
 }
 
 /** Soft click — like a mechanical key press */
@@ -96,6 +111,9 @@ export function useAmbientSounds() {
   const soundEnabled = useOfficeStore((s) => s.soundEnabled);
   const prevStatusesRef = useRef<Map<string, string>>(new Map());
   const clickTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Pre-register iOS audio unlock on first render
+  useEffect(() => { ensureIOSUnlock(); }, []);
 
   const agentList = Array.from(agents.values());
   const activeCount = agentList.filter((a) => !a.isPlaceholder && a.status !== "offline").length;

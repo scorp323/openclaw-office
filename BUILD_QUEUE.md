@@ -28,30 +28,30 @@
 
 ## WAVE 2 — QUEUED
 10. **agent-detail-modal** — COMPLETED (2026-03-29 17:20 CST) — Tap an agent in the office to see a detail panel: name, role, model, current task, last active, status history. Mobile-friendly bottom sheet.
-11. **cron-timeline** — IN PROGRESS: Visual timeline on /cron showing when each cron last ran and when it runs next. Color-coded: green=ok, red=error, gray=disabled.
-12. **real-time-cost-counter** — IN PROGRESS: Live-updating cost display in the header: today's API spend, tokens used, model breakdown. Pulls from /mc-api/costs.
+11. **cron-timeline** — COMPLETED (2026-03-30 03:30 CST): Visual timeline on /cron. Color-coded: green=ok, red=error, gray=disabled.
+12. **real-time-cost-counter** — COMPLETED (2026-03-30 03:30 CST): CostCounter component in header.
 13. **agent-chat-shortcut** — COMPLETED (2026-03-29 19:50 CST) — From the office floor plan, tap agent → "Chat" button → opens /chat pre-addressed to that agent.
 14. **mobile-nav-gestures** — COMPLETED (2026-03-29 20:03 CST)
 15. **notification-bell** — COMPLETED (2026-03-29 21:04 CST) — Bell icon in header with badge count. Shows recent events: cron failures, agent errors, completed tasks. Replaces checking Discord.
 16. **quick-actions-fab** — COMPLETED (2026-03-29 21:20 CST) — Floating action button on mobile: restart all crons, check costs, trigger heartbeat, toggle work mode.
-17. **search-everything** — IN PROGRESS: Global search across agents, crons, logs, chat history. Spotlight-style overlay.
+17. **search-everything** — COMPLETED (2026-03-30 03:30 CST): SearchSpotlight overlay.
 18. **offline-dashboard** — COMPLETED (2026-03-29 21:34 CST): Cache last-known agent/cron state in localStorage so the dashboard shows something even when tunnel is down.
 
 ## WAVE 3 — LIVING OFFICE (Nathan's vision: "make it realistic") — ALL COMPLETED
-19. **idle-micro-animations** — IN PROGRESS: Agents in lounge/chill get subtle idle loops: reading (small book icon bobbing), sipping coffee (cup near face), stretching (slight scale pulse), leaning against wall (tilt). Randomized per agent based on ID hash. Pure CSS/SVG — no JS tick cost. Each agent picks 1 of 4-5 idle behaviors.
+19. **idle-micro-animations** — COMPLETED (2026-03-30 03:30 CST): Agents in lounge/chill get subtle idle loops: reading (small book icon bobbing), sipping coffee (cup near face), stretching (slight scale pulse), leaning against wall (tilt). Randomized per agent based on ID hash. Pure CSS/SVG — no JS tick cost. Each agent picks 1 of 4-5 idle behaviors.
 20. **smart-zone-behavior** — COMPLETED (2026-03-29 22:01 CST): Agents doing related tasks (same cron, same build) auto-gather at the meeting table with connection lines. Agents that just finished a task walk to chill zone (coffee break). Agents with errors pace in the corridor. New agents spawn at entrance and walk to their desk. Based on real status + task metadata from the API.
 21. **time-of-day-ambiance** — COMPLETED (2026-03-29 22:45 CST): Office lighting shifts with real clock — warm golden tones 6am-9am, bright midday, amber sunset 5-7pm, dim blue-green night. Matrix rain intensity intensity scales with system load (more active agents = heavier rain). Window elements on office walls show sky gradient matching time.
 22. **agent-interactions** — COMPLETED (2026-03-29 22:56 CST): When two agents collaborate (connection line exists), they physically huddle closer. Task completion triggers a brief celebration animation (confetti burst or green flash). Agent spawning has a "beam in" effect. Agent going offline fades out with a "logging off" speech bubble.
-23. **ambient-office-sounds** — QUEUED: Optional (toggle in settings). Subtle keyboard clicking when agents are thinking/tool_calling. Soft chime on task completion. Muted alert tone on errors. Volume tied to activity level. Web Audio API, no external files — synthesized tones. (Implementation failed: Insufficient detail to implement directly. 2026-03-29 23:07 CST)
-24. **activity-heatmap-floor** — QUEUED: Floor tiles subtly glow warmer under busy zones. If desk zone has 5 active agents, the floor there pulses slightly. Idle zones stay cool/dim. Visual indicator of where the work is happening without reading status text.
-25. **agent-personality-poses** — QUEUED: Each agent gets a unique idle stance based on their role — CEO (Morpheus) stands tall center-office, trading agents lean forward intensely, content agents recline casually, ops agents patrol between zones. Role mapped from agent name/model metadata.
+23. **ambient-office-sounds** — COMPLETED (2026-03-30 04:10 CST): Web Audio synth — clicks, chimes, alerts. Volume scales with activity. Mute toggle in TopBar.
+24. **activity-heatmap-floor** — COMPLETED (2026-03-30 04:10 CST): SVG radial gradients, blue→orange by density, red pulse on errors.
+25. **agent-personality-poses** — COMPLETED (2026-03-30 04:10 CST): Role-based idle stances via CSS transforms.
 
 ## WAVE 5 — POWER USER & MOBILE POLISH
 26. **responsive-office-mobile** — QUEUED: Office SVG is landscape 1200x700 — on mobile portrait it's tiny. Add mobile-specific view: either rotate prompt, or a simplified vertical layout showing agent cards in a scrollable list with status indicators. Keep the full SVG for desktop/landscape.
 27. **dark-mode-polish** — QUEUED: Audit all pages for dark mode consistency. Matrix green theme for dark, clean white for light. Fix any contrast issues, inconsistent borders, or unreadable text in either mode.
-28. **api-error-resilience** — QUEUED: All API calls should have retry logic, timeout handling, and graceful fallback UI (skeleton loaders instead of blank screens). Currently some pages show nothing when API is slow.
-29. **keyboard-shortcuts** — QUEUED: Power user shortcuts — / for search, g+d for dashboard, g+o for office, g+a for agents, g+c for cron, Esc to close modals. Show shortcut hints in command palette.
-30. **memory-viewer-enhance** — QUEUED: The /memory page should render markdown nicely, support file browsing (tree view of memory/*.md), and show file sizes + last modified dates.
-31. **log-streaming** — QUEUED: /logs page should auto-scroll and highlight errors in red, warnings in yellow. Add log level filter buttons (ERROR/WARN/INFO). Tail mode that auto-follows new entries.
-32. **cron-quick-actions** — QUEUED: On /cron page, add inline buttons: Run Now, Disable/Enable, Edit Schedule. Currently read-only — need the action endpoints wired up.
+28. **api-error-resilience** — COMPLETED (2026-03-30 04:10 CST): useFetchWithRetry hook — 2 retries, backoff, 10s timeout.
+29. **keyboard-shortcuts** — COMPLETED (2026-03-30 04:10 CST): Vim-style g+key nav, / search, Esc close, ? help.
+30. **memory-viewer-enhance** — COMPLETED (2026-03-30 03:40 CST): File tree + markdown renderer + sizes.
+31. **log-streaming** — COMPLETED (2026-03-30 03:40 CST): Level filters, auto-scroll, color-coded.
+32. **cron-quick-actions** — COMPLETED (2026-03-30 03:40 CST): Inline Run/Toggle with toasts.
 33. **agent-task-history** — QUEUED: Show recent task history per agent — what they ran, how long it took, success/fail. Timeline view in the agent detail modal.
