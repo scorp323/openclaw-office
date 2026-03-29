@@ -59,12 +59,6 @@ export function QuickActionsFab() {
       icon: "\u263E",
       label: "Toggle Theme",
       onClick: () => {
-        const { theme, setTheme } = (
-          window as unknown as Record<string, unknown>
-        ).__officeStoreApi as { theme: string; setTheme: (t: string) => void } | undefined ?? {
-          theme: "dark",
-          setTheme: () => {},
-        };
         // Use store directly
         const storeModule = document.querySelector("[data-theme]");
         if (storeModule) {

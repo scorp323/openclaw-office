@@ -1,4 +1,4 @@
-import { ChevronUp, Cpu, Server, Wifi, AlertTriangle } from "lucide-react";
+import { ChevronUp, Cpu, AlertTriangle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 interface HealthData {
