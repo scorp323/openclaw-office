@@ -7,6 +7,7 @@ import { RestartBanner } from "@/components/shared/RestartBanner";
 import { ToastContainer } from "@/components/shared/ToastContainer";
 import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
 import { useOfficeStore } from "@/store/office-store";
+import { QuickActionsFab } from "./QuickActionsFab";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 
@@ -81,6 +82,7 @@ export function AppShell({ children, isMobile = false }: AppShellProps) {
         ))}
       </div>
       {isMobile && <MobileBottomNav />}
+      <QuickActionsFab />
     </div>
   );
 }
