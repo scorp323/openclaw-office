@@ -8,7 +8,6 @@ import { QuickNavGrid } from "@/components/console/dashboard/QuickNavGrid";
 import { SkillOverview } from "@/components/console/dashboard/SkillOverview";
 import { StatCard } from "@/components/console/dashboard/StatCard";
 import { ErrorState } from "@/components/console/shared/ErrorState";
-import { LoadingState } from "@/components/console/shared/LoadingState";
 import { DashboardSkeleton } from "@/components/console/shared/Skeleton";
 import { useDashboardStore } from "@/store/console-stores/dashboard-store";
 import { useOfficeStore } from "@/store/office-store";

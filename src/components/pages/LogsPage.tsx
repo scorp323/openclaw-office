@@ -1,4 +1,4 @@
-import { Terminal, Pause, Play, Filter } from "lucide-react";
+import { Terminal, Pause, Play } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LogsSkeleton } from "@/components/console/shared/Skeleton";
 

@@ -8,7 +8,6 @@ import { CronTimeline } from "@/components/console/cron/CronTimeline";
 import { ConfirmDialog } from "@/components/console/shared/ConfirmDialog";
 import { EmptyState } from "@/components/console/shared/EmptyState";
 import { ErrorState } from "@/components/console/shared/ErrorState";
-import { LoadingState } from "@/components/console/shared/LoadingState";
 import { CronSkeleton } from "@/components/console/shared/Skeleton";
 import { useCronStore } from "@/store/console-stores/cron-store";
 import { toastSuccess, toastError } from "@/store/toast-store";

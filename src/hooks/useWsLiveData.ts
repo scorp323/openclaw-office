@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { useOfficeStore } from "@/store/office-store";
 
 /**
@@ -100,6 +100,6 @@ export function useWsConnectionStatus(): {
   return {
     connected: connectionStatus === "connected",
     status: connectionStatus,
-    error: connectionError,
+    error: connectionError ?? undefined,
   };
 }

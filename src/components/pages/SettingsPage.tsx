@@ -20,7 +20,6 @@ export function SettingsPage() {
   const devMode = useConsoleSettingsStore((s) => s.devModeUnlocked);
 
   const loadFromServer = useConsoleSettingsStore((s) => s.loadFromServer);
-  const settingsLoaded = useConsoleSettingsStore((s) => s.settingsLoaded);
 
   useEffect(() => {
     void fetchConfig();
