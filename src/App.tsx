@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
 import { ConsoleLayout } from "@/components/layout/ConsoleLayout";
+import { KeyboardShortcutsModal } from "@/components/layout/KeyboardShortcutsModal";
 import { SearchSpotlight } from "@/components/layout/SearchSpotlight";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { CommandCenter } from "@/components/pages/CommandCenter";
@@ -16,10 +17,13 @@ const DashboardPage = lazy(() => import("@/components/pages/DashboardPage").then
 const ChatPage = lazy(() => import("@/components/pages/ChatPage").then(m => ({ default: m.ChatPage })));
 const SettingsPage = lazy(() => import("@/components/pages/SettingsPage").then(m => ({ default: m.SettingsPage })));
 const SkillsPage = lazy(() => import("@/components/pages/SkillsPage").then(m => ({ default: m.SkillsPage })));
+const LogsPage = lazy(() => import("@/components/pages/LogsPage").then(m => ({ default: m.LogsPage })));
+const CostsPage = lazy(() => import("@/components/pages/CostsPage").then(m => ({ default: m.CostsPage })));
 import type { PageId } from "@/gateway/types";
 import { useGatewayConnection } from "@/hooks/useGatewayConnection";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useResponsive } from "@/hooks/useResponsive";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useOfficeStore } from "@/store/office-store";
 
 function LoadingScreen() {
@@ -62,6 +66,8 @@ const PAGE_MAP: Record<string, PageId> = {
   "/skills": "skills",
   "/cron": "cron",
   "/settings": "settings",
+  "/logs": "logs",
+  "/costs": "costs",
 };
 
 function resolveGatewayWsUrl(pathOrUrl: string, fallbackUrl: string): string {
@@ -106,6 +112,7 @@ export function App() {
   const { isMobile } = useResponsive();
   const { wsClient } = useGatewayConnection({ url: gatewayUrl, token: gatewayToken });
   useNotifications();
+  const { helpOpen, closeHelp } = useKeyboardShortcuts();
 
   return (
     <>
@@ -113,6 +120,7 @@ export function App() {
       <PageTracker />
       <ChatWorkspaceBootstrap wsClient={wsClient} />
       <SearchSpotlight />
+      <KeyboardShortcutsModal open={helpOpen} onClose={closeHelp} />
       <ErrorBoundary>
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
@@ -126,6 +134,8 @@ export function App() {
               <Route path="/skills" element={<SkillsPage />} />
               <Route path="/cron" element={<CronPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/logs" element={<LogsPage />} />
+              <Route path="/costs" element={<CostsPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

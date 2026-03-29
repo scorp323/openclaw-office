@@ -53,6 +53,8 @@
     "channels": "渠道",
     "skills": "技能",
     "cron": "定时任务",
-    "settings": "设置"
+    "settings": "设置",
+    "logs": "日志",
+    "costs": "成本"
   }
 }

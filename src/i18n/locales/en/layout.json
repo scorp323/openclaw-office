@@ -53,6 +53,8 @@
     "channels": "Channels",
     "skills": "Skills",
     "cron": "Cron Tasks",
-    "settings": "Settings"
+    "settings": "Settings",
+    "logs": "Logs",
+    "costs": "Costs"
   }
 }

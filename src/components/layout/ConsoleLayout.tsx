@@ -1,4 +1,4 @@
-import { Home, Bot, Radio, Puzzle, Clock, Settings, WifiOff } from "lucide-react";
+import { Home, Bot, Radio, Puzzle, Clock, Settings, WifiOff, Terminal, DollarSign } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { RestartBanner } from "@/components/shared/RestartBanner";
@@ -19,6 +19,8 @@ export function ConsoleLayout() {
     { path: "/skills", labelKey: "consoleNav.skills", icon: Puzzle },
     { path: "/cron", labelKey: "consoleNav.cron", icon: Clock },
     { path: "/settings", labelKey: "consoleNav.settings", icon: Settings },
+    { path: "/logs", labelKey: "consoleNav.logs", icon: Terminal },
+    { path: "/costs", labelKey: "consoleNav.costs", icon: DollarSign },
   ] as const;
 
   return (
