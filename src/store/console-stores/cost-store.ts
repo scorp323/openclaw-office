@@ -1,8 +1,19 @@
 import { create } from "zustand";
 
 interface CostState {
+  // Legacy compat
   todayCostUsd: number;
   todayTokens: number;
+  // New fields
+  weeklyPct: number;
+  sessionPct: number;
+  dailyBudgetPct: number;
+  throttleState: string;
+  maxAgents: number;
+  estimatedWeeklyCostUsd: number;
+  estimatedDailyCostUsd: number;
+  extraCostUsd: number;
+  weeklyBudgetUsd: number;
   updatedAt: number;
   fetchCosts: () => Promise<void>;
 }
@@ -12,6 +23,15 @@ const API_BASE = "/mc-api";
 export const useCostStore = create<CostState>((set) => ({
   todayCostUsd: 0,
   todayTokens: 0,
+  weeklyPct: 0,
+  sessionPct: 0,
+  dailyBudgetPct: 0,
+  throttleState: "unknown",
+  maxAgents: 0,
+  estimatedWeeklyCostUsd: 0,
+  estimatedDailyCostUsd: 0,
+  extraCostUsd: 0,
+  weeklyBudgetUsd: 0,
   updatedAt: 0,
 
   fetchCosts: async () => {
@@ -23,8 +43,17 @@ export const useCostStore = create<CostState>((set) => ({
       if (!res.ok) return;
       const data = await res.json();
       set({
-        todayCostUsd: data.todayCostUsd ?? 0,
+        todayCostUsd: data.estimatedDailyCostUsd ?? data.todayCostUsd ?? 0,
         todayTokens: data.todayTokens ?? 0,
+        weeklyPct: data.weeklyPct ?? 0,
+        sessionPct: data.sessionPct ?? 0,
+        dailyBudgetPct: data.dailyBudgetPct ?? 0,
+        throttleState: data.throttleState ?? "unknown",
+        maxAgents: data.maxAgents ?? 0,
+        estimatedWeeklyCostUsd: data.estimatedWeeklyCostUsd ?? 0,
+        estimatedDailyCostUsd: data.estimatedDailyCostUsd ?? 0,
+        extraCostUsd: data.extraCostUsd ?? 0,
+        weeklyBudgetUsd: data.weeklyBudgetUsd ?? 0,
         updatedAt: data.updatedAt ?? Date.now(),
       });
     } catch {

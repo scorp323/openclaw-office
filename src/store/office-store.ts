@@ -255,6 +255,7 @@ export const useOfficeStore = create<OfficeStore>()(
     agentCosts: {} as Record<string, number>,
     currentPage: "office" as PageId,
     chatDockHeight: getInitialChatDockHeight(),
+    soundEnabled: (() => { try { return localStorage.getItem("openclaw-sound") !== "false"; } catch { return false; } })() as boolean,
     maxSubAgents: 8,
     agentToAgentConfig: { enabled: false, allow: [] } as AgentToAgentConfig,
     runIdMap: new Map(),

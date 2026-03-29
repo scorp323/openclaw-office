@@ -270,29 +270,59 @@ const routes = {
   }),
 
   "/api/costs": () => cached("costs", 10_000, () => {
-    let todayCost = 0;
-    let todayTokens = 0;
+    let weeklyPct = 0;
+    let sessionPct = 0;
+    let dailyBudgetPct = 0;
+    let throttleState = "unknown";
+    let maxAgents = 0;
+    let extraCost = 0;
+    let extraBudget = 0;
+
+    // Parse pipe-delimited throttle state: STATE|MAX_AGENTS|DAILY_BUDGET|WEEKLY_PCT|SESSION_PCT
     try {
       const throttlePath = "/tmp/morpheus-throttle-state";
       if (existsSync(throttlePath)) {
-        const raw = readFileSync(throttlePath, "utf8");
-        const data = JSON.parse(raw);
-        todayCost = data.todayCostUsd ?? data.costUsd ?? 0;
-        todayTokens = data.todayTokens ?? data.totalTokens ?? 0;
+        const raw = readFileSync(throttlePath, "utf8").trim();
+        const parts = raw.split("|");
+        if (parts.length >= 5) {
+          throttleState = parts[0] || "unknown";
+          maxAgents = parseInt(parts[1]) || 0;
+          dailyBudgetPct = parseFloat(parts[2]) || 0;
+          weeklyPct = parseFloat(parts[3]) || 0;
+          sessionPct = parseFloat(parts[4]) || 0;
+        }
       }
     } catch {}
-    // Fallback: try codexbar cost data
-    if (todayCost === 0) {
-      try {
-        const out = textExec("openclaw usage status --json 2>/dev/null", 5000);
-        if (!out.startsWith("ERROR")) {
-          const usage = JSON.parse(out);
-          todayCost = usage.todayCostUsd ?? 0;
-          todayTokens = usage.todayTokens ?? 0;
-        }
-      } catch {}
-    }
-    return { todayCostUsd: todayCost, todayTokens, updatedAt: Date.now() };
+
+    // Parse quota-monitor output for extra cost data
+    try {
+      const quotaLog = "/tmp/morpheus-quota-latest.json";
+      if (existsSync(quotaLog)) {
+        const data = JSON.parse(readFileSync(quotaLog, "utf8"));
+        extraCost = data.extraCostUsd ?? 0;
+        extraBudget = data.extraBudgetUsd ?? 0;
+      }
+    } catch {}
+
+    // Try to get Anthropic subscription cost estimate from weekly %
+    // MAX subscription is $200/month ≈ $46.15/week
+    const weeklyBudgetUsd = 46.15;
+    const estimatedWeeklyCost = +(weeklyBudgetUsd * weeklyPct / 100).toFixed(2);
+    const estimatedDailyCost = +(estimatedWeeklyCost / 7).toFixed(2);
+
+    return {
+      weeklyPct,
+      sessionPct,
+      dailyBudgetPct,
+      throttleState,
+      maxAgents,
+      estimatedWeeklyCostUsd: estimatedWeeklyCost,
+      estimatedDailyCostUsd: estimatedDailyCost,
+      extraCostUsd: extraCost,
+      extraBudgetUsd: extraBudget,
+      weeklyBudgetUsd,
+      updatedAt: Date.now(),
+    };
   }),
 
   "/api/memory": () => cached("memory", 10_000, () => {
@@ -425,25 +455,20 @@ const routes = {
         }
       } catch {}
     }
-    // Fallback: generate synthetic data from throttle state + history
+    // Fallback: generate data from throttle state
     if (dailySpend.length === 0) {
       try {
         const throttlePath = "/tmp/morpheus-throttle-state";
-        let todayCost = 0;
+        let weeklyPct = 0;
         if (existsSync(throttlePath)) {
-          const data = JSON.parse(readFileSync(throttlePath, "utf8"));
-          todayCost = data.todayCostUsd ?? data.costUsd ?? 0;
+          const raw = readFileSync(throttlePath, "utf8").trim();
+          const parts = raw.split("|");
+          if (parts.length >= 4) weeklyPct = parseFloat(parts[3]) || 0;
         }
-        if (todayCost === 0) {
-          try {
-            const out = textExec("openclaw usage status --json 2>/dev/null", 5000);
-            if (!out.startsWith("ERROR")) {
-              const usage = JSON.parse(out);
-              todayCost = usage.todayCostUsd ?? 0;
-            }
-          } catch {}
-        }
-        totalCost = todayCost;
+        // MAX subscription = $200/month ≈ $46.15/week
+        const weeklyBudgetUsd = 46.15;
+        const todayCost = +((weeklyBudgetUsd * weeklyPct / 100) / 7).toFixed(2);
+        totalCost = +(weeklyBudgetUsd * weeklyPct / 100).toFixed(2);
         // Generate last 30 days with decay
         const now = Date.now();
         for (let i = 29; i >= 0; i--) {
@@ -506,8 +531,12 @@ const routes = {
     try {
       const throttlePath = "/tmp/morpheus-throttle-state";
       if (existsSync(throttlePath)) {
-        const data = JSON.parse(readFileSync(throttlePath, "utf8"));
-        throttleState = data.state || data.throttleState || "normal";
+        const raw = readFileSync(throttlePath, "utf8").trim();
+        // Format: STATE|MAX_AGENTS|DAILY_BUDGET|WEEKLY_PCT|SESSION_PCT
+        const parts = raw.split("|");
+        if (parts.length >= 1) {
+          throttleState = parts[0].replace(/_AWAKE_HALF|_SLEEP_BOOST/g, "") || "normal";
+        }
       }
     } catch {}
 

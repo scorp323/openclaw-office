@@ -278,6 +278,8 @@ export interface OfficeStore {
   currentPage: PageId;
   chatDockHeight: number;
 
+  soundEnabled: boolean;
+
   // 配置感知
   maxSubAgents: number;
   agentToAgentConfig: AgentToAgentConfig;
