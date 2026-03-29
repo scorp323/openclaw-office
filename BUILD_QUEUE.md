@@ -15,7 +15,7 @@
 ## QUEUED (in priority order)
 6. **push-notifications** — IN PROGRESS (2026-03-29 16:21 CST)
 7. **pwa-manifest** — COMPLETED (2026-03-29 16:47 CST)
-8. **theme-auto-switch** — Respect prefers-color-scheme media query for auto dark/light.
+8. **theme-auto-switch** — COMPLETED (2026-03-29 16:50 CST)
 9. **command-palette** — Swipe-down or tap shortcut to run common actions (restart cron, check costs, trigger agent).
 
 ## COMPLETED
