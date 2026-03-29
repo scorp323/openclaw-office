@@ -1,22 +1,39 @@
-import { useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
 import { ConsoleLayout } from "@/components/layout/ConsoleLayout";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
-import { FloorPlan } from "@/components/office-2d/FloorPlan";
 import { CommandCenter } from "@/components/pages/CommandCenter";
-import { AgentsPage } from "@/components/pages/AgentsPage";
-import { ChannelsPage } from "@/components/pages/ChannelsPage";
-import { CronPage } from "@/components/pages/CronPage";
-import { DashboardPage } from "@/components/pages/DashboardPage";
-import { ChatPage } from "@/components/pages/ChatPage";
-import { SettingsPage } from "@/components/pages/SettingsPage";
-import { SkillsPage } from "@/components/pages/SkillsPage";
 import { ChatWorkspaceBootstrap } from "@/components/chat/ChatWorkspaceBootstrap";
+
+// Lazy-load heavy pages — keeps initial bundle small
+const FloorPlan = lazy(() => import("@/components/office-2d/FloorPlan").then(m => ({ default: m.FloorPlan })));
+const AgentsPage = lazy(() => import("@/components/pages/AgentsPage").then(m => ({ default: m.AgentsPage })));
+const ChannelsPage = lazy(() => import("@/components/pages/ChannelsPage").then(m => ({ default: m.ChannelsPage })));
+const CronPage = lazy(() => import("@/components/pages/CronPage").then(m => ({ default: m.CronPage })));
+const DashboardPage = lazy(() => import("@/components/pages/DashboardPage").then(m => ({ default: m.DashboardPage })));
+const ChatPage = lazy(() => import("@/components/pages/ChatPage").then(m => ({ default: m.ChatPage })));
+const SettingsPage = lazy(() => import("@/components/pages/SettingsPage").then(m => ({ default: m.SettingsPage })));
+const SkillsPage = lazy(() => import("@/components/pages/SkillsPage").then(m => ({ default: m.SkillsPage })));
 import type { PageId } from "@/gateway/types";
 import { useGatewayConnection } from "@/hooks/useGatewayConnection";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useOfficeStore } from "@/store/office-store";
+
+function LoadingScreen() {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "center",
+      height: "100vh", width: "100vw",
+      background: "#000", color: "#00ff41",
+      fontFamily: "'JetBrains Mono', monospace",
+      flexDirection: "column", gap: 12,
+    }}>
+      <div style={{ fontSize: 40, animation: "pulse 1.5s ease-in-out infinite" }}>🌀</div>
+      <div style={{ fontSize: 14, opacity: 0.7 }}>Loading Morpheus...</div>
+    </div>
+  );
+}
 
 function ThemeSync() {
   const theme = useOfficeStore((s) => s.theme);
@@ -93,20 +110,22 @@ export function App() {
       <PageTracker />
       <ChatWorkspaceBootstrap wsClient={wsClient} />
       <ErrorBoundary>
-        <Routes>
-          <Route path="/" element={<ErrorBoundary><CommandCenter /></ErrorBoundary>} />
-          <Route path="/office" element={<ErrorBoundary><AppShell isMobile={isMobile}><FloorPlan /></AppShell></ErrorBoundary>} />
-          <Route element={<ConsoleLayout />}>
-            <Route path="/chat" element={<ChatPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/agents" element={<AgentsPage />} />
-            <Route path="/channels" element={<ChannelsPage />} />
-            <Route path="/skills" element={<SkillsPage />} />
-            <Route path="/cron" element={<CronPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <Suspense fallback={<LoadingScreen />}>
+          <Routes>
+            <Route path="/" element={<ErrorBoundary><CommandCenter /></ErrorBoundary>} />
+            <Route path="/office" element={<ErrorBoundary><AppShell isMobile={isMobile}><FloorPlan /></AppShell></ErrorBoundary>} />
+            <Route element={<ConsoleLayout />}>
+              <Route path="/chat" element={<ChatPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/agents" element={<AgentsPage />} />
+              <Route path="/channels" element={<ChannelsPage />} />
+              <Route path="/skills" element={<SkillsPage />} />
+              <Route path="/cron" element={<CronPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </ErrorBoundary>
     </>
   );
