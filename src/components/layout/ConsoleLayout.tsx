@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { RestartBanner } from "@/components/shared/RestartBanner";
 import { useIsStale } from "@/hooks/useLiveData";
+import { useResponsive } from "@/hooks/useResponsive";
+import { MobileBottomNav } from "./MobileBottomNav";
 import { TopBar } from "./TopBar";
 
 function PageTransition({ locationKey }: { locationKey: string }) {
@@ -40,6 +42,7 @@ export function ConsoleLayout() {
   const navigate = useNavigate();
   const isChatRoute = location.pathname === "/chat";
   const isStale = useIsStale();
+  const { isMobile } = useResponsive();
 
   const sidebarNavItems = [
     { path: "/dashboard", labelKey: "consoleNav.dashboard", icon: Home },
@@ -64,7 +67,7 @@ export function ConsoleLayout() {
       )}
       <TopBar />
       <div className="flex flex-1 overflow-hidden">
-        {!isChatRoute && (
+        {!isChatRoute && !isMobile && (
           <nav className="flex w-52 shrink-0 flex-col border-r border-gray-200 bg-white py-3 dark:border-gray-700 dark:bg-gray-900">
             {sidebarNavItems.map((item) => {
               const isActive = location.pathname === item.path;
@@ -73,6 +76,21 @@ export function ConsoleLayout() {
                 <button
                   key={item.path}
                   onClick={() => navigate(item.path)}
+                  onMouseEnter={() => {
+                    // Prefetch page on hover
+                    const pageMap: Record<string, () => Promise<unknown>> = {
+                      "/dashboard": () => import("@/components/pages/DashboardPage"),
+                      "/agents": () => import("@/components/pages/AgentsPage"),
+                      "/channels": () => import("@/components/pages/ChannelsPage"),
+                      "/skills": () => import("@/components/pages/SkillsPage"),
+                      "/cron": () => import("@/components/pages/CronPage"),
+                      "/settings": () => import("@/components/pages/SettingsPage"),
+                      "/logs": () => import("@/components/pages/LogsPage"),
+                      "/costs": () => import("@/components/pages/CostsPage"),
+                      "/memory": () => import("@/components/pages/MemoryPage"),
+                    };
+                    pageMap[item.path]?.();
+                  }}
                   className={`mx-2 flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors ${
                     isActive
                       ? "bg-blue-50 font-medium text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
@@ -87,11 +105,12 @@ export function ConsoleLayout() {
           </nav>
         )}
         <main className="flex-1 overflow-auto">
-          <div className={isChatRoute ? "h-full p-6" : "mx-auto max-w-6xl p-6"}>
+          <div className={`${isChatRoute ? "h-full p-6" : "mx-auto max-w-6xl p-6"} ${isMobile ? "pb-20" : ""}`}>
             <PageTransition locationKey={location.key} />
           </div>
         </main>
       </div>
+      {isMobile && <MobileBottomNav />}
     </div>
   );
 }
