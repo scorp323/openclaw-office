@@ -12,14 +12,27 @@
 ## COMPLETED
 - [x] **agent-pulse-animation** — Breathing glow on active agents, dim on standby. CSS keyframes, no JS overhead. (2026-03-29 15:33 CST)
 
+## COMPLETED
+- [x] **command-palette** — Swipe-down or tap shortcut to run common actions (restart cron, check costs, trigger agent). (2026-03-29 16:57 CST)
+
 ## QUEUED (in priority order)
-6. **push-notifications** — IN PROGRESS (2026-03-29 16:21 CST)
-7. **pwa-manifest** — COMPLETED (2026-03-29 16:47 CST)
-8. **theme-auto-switch** — COMPLETED (2026-03-29 16:50 CST)
-9. **command-palette** — Swipe-down or tap shortcut to run common actions (restart cron, check costs, trigger agent).
+- [x] **push-notifications** — Partial (service worker + manifest done, subscription logic skipped — needs VAPID keys). (2026-03-29 16:21 CST)
+- [x] **pwa-manifest** — COMPLETED (2026-03-29 16:47 CST)
+- [x] **theme-auto-switch** — COMPLETED (2026-03-29 16:50 CST)
 
 ## COMPLETED
 - [x] **chat-mobile-polish** — Polish /chat page for mobile: input sizing, scroll behavior, send button UX. (2026-03-29 16:01 CST)
 
 ## COMPLETED
 - [x] **live-status-badges** — Show cron health/last run/error error count on dashboard cards without clicking into /cron. (COMPLETED 2026-03-29 15:46 CST)
+
+## WAVE 2 — QUEUED
+10. **agent-detail-modal** — Tap an agent in the office to see a detail panel: name, role, model, current task, last active, status history. Mobile-friendly bottom sheet.
+11. **cron-timeline** — Visual timeline on /cron showing when each cron last ran and when it runs next. Color-coded: green=ok, red=error, gray=disabled.
+12. **real-time-cost-counter** — Live-updating cost display in the header: today's API spend, tokens used, model breakdown. Pulls from /mc-api/costs.
+13. **agent-chat-shortcut** — From the office floor plan, tap agent → "Chat" button → opens /chat pre-addressed to that agent.
+14. **mobile-nav-gestures** — Swipe left/right to navigate between pages (office → dashboard → cron → chat). Feels native.
+15. **notification-bell** — Bell icon in header with badge count. Shows recent events: cron failures, agent errors, completed tasks. Replaces checking Discord.
+16. **quick-actions-fab** — Floating action button on mobile: restart all crons, check costs, trigger heartbeat, toggle work mode.
+17. **search-everything** — Global search across agents, crons, logs, chat history. Spotlight-style overlay.
+18. **offline-dashboard** — Cache last-known agent/cron state in localStorage so the dashboard shows something even when tunnel is down.
