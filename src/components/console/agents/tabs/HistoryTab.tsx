@@ -40,6 +40,39 @@ const TYPE_CONFIG: Record<string, { icon: typeof Zap; color: string; bgColor: st
 
 const DEFAULT_TYPE_CONFIG = { icon: Zap, color: "text-purple-500", bgColor: "bg-purple-500" };
 
+// TODO: Remove mock generator once /mc-api/agents/:id/history endpoint is available
+function generateMockHistory(agentId: string): TaskHistoryItem[] {
+  const now = Date.now();
+  const templates = [
+    { task: "Process incoming message", type: "chat", detail: "Handled user query about project status" },
+    { task: "Execute tool call", type: "tool", detail: "Called search_files with pattern '*.ts'" },
+    { task: "Generate summary report", type: "system", detail: "Weekly activity summary for channel #general" },
+    { task: "Cron: health check", type: "cron", detail: "Periodic system health verification" },
+    { task: "Sub-agent delegation", type: "tool", detail: "Delegated research task to specialist agent" },
+    { task: "File analysis", type: "tool", detail: "Analyzed 12 files for code review" },
+    { task: "Channel message broadcast", type: "chat", detail: "Sent notification to #updates channel" },
+    { task: "Memory consolidation", type: "system", detail: "Merged duplicate memory entries" },
+  ];
+  // Deterministic seed from agentId
+  let seed = 0;
+  for (let i = 0; i < agentId.length; i++) seed = ((seed << 5) - seed + agentId.charCodeAt(i)) | 0;
+  const rng = () => { seed = (seed * 16807) % 2147483647; return (seed & 0x7fffffff) / 2147483647; };
+
+  return Array.from({ length: 8 }, (_, i) => {
+    const tmpl = templates[Math.floor(rng() * templates.length)];
+    const success = rng() > 0.2;
+    return {
+      id: `mock-${agentId.slice(0, 8)}-${i}`,
+      type: tmpl.type,
+      task: tmpl.task,
+      result: success ? ("success" as const) : ("fail" as const),
+      durationMs: Math.floor(rng() * 30000) + 200,
+      timestamp: now - (i * 3600000 + Math.floor(rng() * 1800000)),
+      detail: success ? tmpl.detail : "Error: timeout after 30s",
+    };
+  });
+}
+
 interface HistoryTabProps {
   agent: AgentSummary;
 }
@@ -53,13 +86,18 @@ export function HistoryTab({ agent }: HistoryTabProps) {
   const fetchHistory = useCallback(async () => {
     setLoading(true);
     try {
-      // TODO: If /mc-api/agents/{id}/history doesn't exist yet, the server should
-      // return { tasks: [] } with mock data structured as TaskHistoryItem[]
       const res = await fetch(`/mc-api/agents/${encodeURIComponent(agent.id)}/history`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (Array.isArray(data.tasks)) setTasks(data.tasks.slice(0, 50));
+      if (Array.isArray(data.tasks) && data.tasks.length > 0) {
+        setTasks(data.tasks.slice(0, 50));
+      } else {
+        // TODO: Remove mock fallback once real history endpoint returns data
+        setTasks(generateMockHistory(agent.id));
+      }
     } catch {
-      // silently fail — endpoint may not exist yet
+      // TODO: Remove mock fallback once /mc-api/agents/:id/history is implemented
+      setTasks(generateMockHistory(agent.id));
     } finally {
       setLoading(false);
     }

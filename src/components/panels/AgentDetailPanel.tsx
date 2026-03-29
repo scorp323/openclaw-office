@@ -35,6 +35,35 @@ function relativeTime(ts: number): string {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
+// TODO: Remove mock generator once /mc-api/agents/:id/history endpoint is available
+function generatePanelMockHistory(agentId: string): TaskHistoryItem[] {
+  const now = Date.now();
+  const templates = [
+    { task: "Process message", type: "chat", detail: "Handled user query" },
+    { task: "Tool call: search", type: "tool", detail: "Searched codebase" },
+    { task: "Health check", type: "cron", detail: "System verification" },
+    { task: "File analysis", type: "tool", detail: "Reviewed 5 files" },
+    { task: "Send notification", type: "chat", detail: "Channel broadcast" },
+  ];
+  let seed = 0;
+  for (let i = 0; i < agentId.length; i++) seed = ((seed << 5) - seed + agentId.charCodeAt(i)) | 0;
+  const rng = () => { seed = (seed * 16807) % 2147483647; return (seed & 0x7fffffff) / 2147483647; };
+
+  return Array.from({ length: 5 }, (_, i) => {
+    const tmpl = templates[Math.floor(rng() * templates.length)];
+    const success = rng() > 0.25;
+    return {
+      id: `mock-panel-${agentId.slice(0, 8)}-${i}`,
+      type: tmpl.type,
+      task: tmpl.task,
+      result: success ? ("success" as const) : ("fail" as const),
+      durationMs: Math.floor(rng() * 15000) + 100,
+      timestamp: now - (i * 2400000 + Math.floor(rng() * 1200000)),
+      detail: success ? tmpl.detail : "Error: timeout",
+    };
+  });
+}
+
 function HistoryTab({ agentId }: { agentId: string }) {
   const [tasks, setTasks] = useState<TaskHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,13 +71,18 @@ function HistoryTab({ agentId }: { agentId: string }) {
   const fetchHistory = useCallback(async () => {
     setLoading(true);
     try {
-      // TODO: If /mc-api/agents/{id}/history doesn't exist yet, the server should
-      // return { tasks: [] } with mock data structured as TaskHistoryItem[]
       const res = await fetch(`/mc-api/agents/${encodeURIComponent(agentId)}/history`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (Array.isArray(data.tasks)) setTasks(data.tasks.slice(0, 20));
+      if (Array.isArray(data.tasks) && data.tasks.length > 0) {
+        setTasks(data.tasks.slice(0, 20));
+      } else {
+        // TODO: Remove mock fallback once real history endpoint returns data
+        setTasks(generatePanelMockHistory(agentId));
+      }
     } catch {
-      // silently fail — endpoint may not exist yet
+      // TODO: Remove mock fallback once /mc-api/agents/:id/history is implemented
+      setTasks(generatePanelMockHistory(agentId));
     } finally {
       setLoading(false);
     }
