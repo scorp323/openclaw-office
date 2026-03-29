@@ -101,9 +101,11 @@ export function LogsPage() {
         ) : filtered.length === 0 ? (
           <div className="flex h-full items-center justify-center text-gray-600">
             <div className="text-center">
-              <Filter className="mx-auto mb-2 h-8 w-8 opacity-40" />
-              <p>No log entries found</p>
-              <p className="mt-1 text-gray-700">Waiting for logs from ~/Library/Logs/morpheus-*.log</p>
+              <Terminal className="mx-auto mb-3 h-12 w-12 opacity-30" strokeWidth={1.5} />
+              <p className="text-sm font-medium text-gray-400">No log entries yet</p>
+              <p className="mt-1 max-w-xs text-xs text-gray-600">
+                Logs will appear here from agent activity, cron jobs, and system events
+              </p>
             </div>
           </div>
         ) : (

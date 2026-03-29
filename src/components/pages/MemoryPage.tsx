@@ -153,9 +153,12 @@ export function MemoryPage() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12 text-center">
-              <Brain className="h-8 w-8 text-gray-300 dark:text-gray-600" />
-              <p className="text-sm text-gray-400 dark:text-gray-500">
-                {search ? "No matching memory files" : "No memory files found"}
+              <Brain className="h-10 w-10 text-gray-300 dark:text-gray-600" strokeWidth={1.5} />
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                {search ? "No matching memory files" : "No memory files yet"}
+              </p>
+              <p className="max-w-[200px] text-xs text-gray-400 dark:text-gray-500">
+                {search ? "Try a different search term" : "Memory files will appear here as agents store information"}
               </p>
             </div>
           ) : (

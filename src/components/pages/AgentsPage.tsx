@@ -200,9 +200,12 @@ export function AgentsPage() {
         <AgentsSkeleton />
       ) : mergedAgents.length === 0 ? (
         <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-          <Bot className="mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+          <Bot className="mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" strokeWidth={1.5} />
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
             No agents found
+          </p>
+          <p className="mt-1 max-w-xs text-center text-xs text-gray-400 dark:text-gray-500">
+            Connect to Gateway or create a new agent to get started
           </p>
         </div>
       ) : mergedAgents.length > 0 ? (
