@@ -250,7 +250,9 @@ export type PageId =
   | "channels"
   | "skills"
   | "cron"
-  | "settings";
+  | "settings"
+  | "logs"
+  | "costs";
 
 export interface TokenSnapshot {
   timestamp: number;

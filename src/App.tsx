@@ -5,6 +5,7 @@ import { ConsoleLayout } from "@/components/layout/ConsoleLayout";
 import { KeyboardShortcutsModal } from "@/components/layout/KeyboardShortcutsModal";
 import { SearchSpotlight } from "@/components/layout/SearchSpotlight";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+import { SystemHealthBar } from "@/components/layout/SystemHealthBar";
 import { CommandCenter } from "@/components/pages/CommandCenter";
 import { ChatWorkspaceBootstrap } from "@/components/chat/ChatWorkspaceBootstrap";
 
@@ -120,6 +121,7 @@ export function App() {
       <PageTracker />
       <ChatWorkspaceBootstrap wsClient={wsClient} />
       <SearchSpotlight />
+      <SystemHealthBar />
       <KeyboardShortcutsModal open={helpOpen} onClose={closeHelp} />
       <ErrorBoundary>
         <Suspense fallback={<LoadingScreen />}>
