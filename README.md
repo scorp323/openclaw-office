@@ -174,6 +174,7 @@ pnpm dev
 | `VITE_GATEWAY_WS_PATH`  | 否                        | `/gateway-ws`          | 浏览器侧反向代理 WS 路径        |
 | `VITE_GATEWAY_TOKEN`    | 是（连接真实 Gateway 时） | —                      | Gateway 认证 token               |
 | `VITE_MOCK`             | 否                        | `false`                | 启用 Mock 模式（不需要 Gateway） |
+| `MC_AUTH_PIN`           | 否                        | `1337`                 | API 服务器认证 PIN               |
 
 ### Mock 模式（无需 Gateway）
 
@@ -222,6 +223,36 @@ Gateway 广播实时事件（`agent`、`presence`、`health`、`heartbeat`）并
 **微信养虾技术交流群**：欢迎扫码加群，与大家一起交流养虾实践、技术心得与实际真实的业务应用等。
 
 <img src="./assets/weixin.png" alt="微信养虾技术交流群二维码" width="300" />
+
+---
+
+## 部署
+
+### 生产构建
+
+```bash
+pnpm build        # 输出到 dist/
+```
+
+使用任意静态文件服务器提供 `dist/` 目录。内置的 `openclaw-office` CLI 包含 API 服务器并提供前端服务：
+
+```bash
+npx @ww-ai-lab/openclaw-office --port 5180
+```
+
+### Cloudflare Tunnel
+
+通过 Cloudflare Tunnel 安全地将本地实例暴露到互联网（例如移动端测试或远程访问）：
+
+```bash
+# 安装 cloudflared
+brew install cloudflared
+
+# 创建快速隧道（无需 Cloudflare 账号）
+cloudflared tunnel --url http://localhost:5180
+```
+
+这会提供一个公共的 `https://*.trycloudflare.com` URL，代理到本地 Mission Control。如需持久隧道，请通过 `cloudflared tunnel create` 配置命名隧道。
 
 ---
 

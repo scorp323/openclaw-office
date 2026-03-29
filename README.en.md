@@ -174,6 +174,7 @@ Open `http://localhost:5180` in your browser.
 | `VITE_GATEWAY_WS_PATH`  | No                                    | `/gateway-ws`          | Browser-side reverse proxy WS path   |
 | `VITE_GATEWAY_TOKEN`    | Yes (when connecting to real Gateway) | —                      | Gateway auth token                   |
 | `VITE_MOCK`             | No                                    | `false`                | Enable mock mode (no Gateway needed) |
+| `MC_AUTH_PIN`           | No                                    | `1337`                 | Auth PIN for the API server          |
 
 ### Mock Mode (No Gateway)
 
@@ -214,6 +215,36 @@ OpenClaw Gateway  ──WebSocket──>  ws-client.ts  ──>  event-parser.ts
 ```
 
 The Gateway broadcasts real-time events (`agent`, `presence`, `health`, `heartbeat`) and responds to RPC requests. The frontend maps Agent lifecycle events to visual states (idle, working, speaking, tool_calling, error) and renders them in the office scene.
+
+---
+
+## Deployment
+
+### Production Build
+
+```bash
+pnpm build        # outputs to dist/
+```
+
+Serve `dist/` with any static file server. The built-in `openclaw-office` CLI includes an API server and serves the frontend:
+
+```bash
+npx @ww-ai-lab/openclaw-office --port 5180
+```
+
+### Cloudflare Tunnel
+
+To expose your local instance securely over the internet (e.g., for mobile testing or remote access):
+
+```bash
+# Install cloudflared
+brew install cloudflared
+
+# Create a quick tunnel (no Cloudflare account required)
+cloudflared tunnel --url http://localhost:5180
+```
+
+This gives you a public `https://*.trycloudflare.com` URL that proxies to your local Mission Control. For persistent tunnels, configure a named tunnel via `cloudflared tunnel create`.
 
 ---
 
