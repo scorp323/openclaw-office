@@ -23,12 +23,12 @@ describe("useToastStore", () => {
     expect(useToastStore.getState().toasts).toHaveLength(0);
   });
 
-  it("limits to 5 toasts max", () => {
+  it("limits to 3 toasts max", () => {
     for (let i = 0; i < 7; i++) {
       useToastStore.getState().addToast({ type: "info", title: `Toast ${i}` });
     }
-    expect(useToastStore.getState().toasts).toHaveLength(5);
-    expect(useToastStore.getState().toasts[0].title).toBe("Toast 2");
+    expect(useToastStore.getState().toasts).toHaveLength(3);
+    expect(useToastStore.getState().toasts[0].title).toBe("Toast 4");
   });
 
   it("clears all toasts", () => {
