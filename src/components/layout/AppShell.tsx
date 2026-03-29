@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { ChatDialog } from "@/components/chat/ChatDialog";
 import { ChatDockBar } from "@/components/chat/ChatDockBar";
 import { RestartBanner } from "@/components/shared/RestartBanner";
@@ -77,6 +77,46 @@ export function AppShell({ children, isMobile = false }: AppShellProps) {
           <Sidebar />
         ))}
       </div>
+      {isMobile && <MobileBottomNav />}
     </div>
+  );
+}
+
+function MobileBottomNav() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const items = [
+    { path: "/", icon: "🏠", label: "Home" },
+    { path: "/office", icon: "🏢", label: "Office" },
+    { path: "/agents", icon: "🤖", label: "Agents" },
+    { path: "/chat", icon: "💬", label: "Chat" },
+    { path: "/dashboard", icon: "📊", label: "Stats" },
+  ];
+
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-50 flex border-t border-gray-200 bg-white dark:border-[rgba(0,255,65,0.2)] dark:bg-[rgba(0,0,0,0.95)] md:hidden">
+      {items.map((item) => {
+        const isActive =
+          item.path === "/dashboard"
+            ? !["/office", "/chat"].includes(location.pathname)
+            : location.pathname === item.path;
+        return (
+          <button
+            key={item.path}
+            onClick={() => navigate(item.path)}
+            className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 ${
+              isActive
+                ? "text-gray-900 dark:text-[#00ff41]"
+                : "text-gray-400 dark:text-[#0a5d0a]"
+            }`}
+            style={{ minHeight: 48 }}
+          >
+            <span className="text-xl">{item.icon}</span>
+            <span className="text-[10px] font-medium">{item.label}</span>
+          </button>
+        );
+      })}
+    </nav>
   );
 }

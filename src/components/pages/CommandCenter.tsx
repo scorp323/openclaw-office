@@ -627,8 +627,8 @@ export function CommandCenter() {
 
   return (
     <div style={{ position: "relative", minHeight: "100vh", background: "#000", overflow: "hidden" }}>
-      {/* Brain rain background — fed by real activity */}
-      <BrainRain liveThoughts={liveThoughts} />
+      {/* Brain rain background — fed by real activity (hidden on mobile for perf) */}
+      {typeof window !== "undefined" && window.innerWidth > 768 && <BrainRain liveThoughts={liveThoughts} />}
 
       {/* Subtle grid overlay */}
       <div style={{
@@ -922,6 +922,9 @@ export function CommandCenter() {
         </>
       )}
 
+      {/* Mobile Bottom Nav — visible only on small screens where sidebar is hidden */}
+      <MobileNav activeView={activeView} onNavigate={setActiveView} />
+
       {/* Animations */}
       <style>{`
         @keyframes pulse {
@@ -933,8 +936,60 @@ export function CommandCenter() {
         }
         @media (max-width: 768px) {
           aside { display: none !important; }
+          main { padding-bottom: 60px !important; }
         }
       `}</style>
     </div>
+  );
+}
+
+/* ── Mobile Bottom Navigation ──────────────────────── */
+function MobileNav({ activeView, onNavigate }: { activeView: string; onNavigate: (view: string) => void }) {
+  const items = [
+    { view: "dashboard", icon: "🏠", label: "Home" },
+    { view: "office", icon: "🏢", label: "Office" },
+    { view: "agents", icon: "🤖", label: "Agents" },
+    { view: "crons", icon: "⏰", label: "Crons" },
+    { view: "system", icon: "📊", label: "System" },
+  ];
+
+  return (
+    <nav style={{
+      position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200,
+      display: "none", /* shown via media query below */
+      borderTop: "1px solid rgba(0, 255, 65, 0.15)",
+      background: "rgba(0, 5, 0, 0.95)",
+      backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+      fontFamily: "'JetBrains Mono', monospace",
+    }} className="mc-mobile-nav">
+      {items.map(item => (
+        <button
+          key={item.view}
+          onClick={() => {
+            if (item.view === "office") {
+              window.location.href = "/office";
+            } else {
+              onNavigate(item.view);
+            }
+          }}
+          style={{
+            flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
+            justifyContent: "center", gap: 2, padding: "8px 0", minHeight: 52,
+            border: "none", cursor: "pointer",
+            background: "transparent",
+            color: activeView === item.view ? "#00ff41" : "rgba(255,255,255,0.35)",
+            transition: "color 0.15s",
+          }}
+        >
+          <span style={{ fontSize: 20 }}>{item.icon}</span>
+          <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.05em" }}>{item.label}</span>
+        </button>
+      ))}
+      <style>{`
+        @media (max-width: 768px) {
+          .mc-mobile-nav { display: flex !important; }
+        }
+      `}</style>
+    </nav>
   );
 }

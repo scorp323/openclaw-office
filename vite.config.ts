@@ -225,6 +225,18 @@ export default defineConfig({
       "@": resolve(rootDir, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "react-dom": ["react-dom", "react-dom/client"],
+          recharts: ["recharts"],
+          i18next: ["i18next", "react-i18next"],
+          zustand: ["zustand"],
+        },
+      },
+    },
+  },
   server: {
     port: 5180,
     proxy: {

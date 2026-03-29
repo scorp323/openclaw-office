@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
 import { ConsoleLayout } from "@/components/layout/ConsoleLayout";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { FloorPlan } from "@/components/office-2d/FloorPlan";
 import { CommandCenter } from "@/components/pages/CommandCenter";
 import { AgentsPage } from "@/components/pages/AgentsPage";
@@ -91,20 +92,22 @@ export function App() {
       <ThemeSync />
       <PageTracker />
       <ChatWorkspaceBootstrap wsClient={wsClient} />
-      <Routes>
-        <Route path="/" element={<CommandCenter />} />
-        <Route path="/office" element={<AppShell isMobile={isMobile}><FloorPlan /></AppShell>} />
-        <Route element={<ConsoleLayout />}>
-          <Route path="/chat" element={<ChatPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/agents" element={<AgentsPage />} />
-          <Route path="/channels" element={<ChannelsPage />} />
-          <Route path="/skills" element={<SkillsPage />} />
-          <Route path="/cron" element={<CronPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/" element={<ErrorBoundary><CommandCenter /></ErrorBoundary>} />
+          <Route path="/office" element={<ErrorBoundary><AppShell isMobile={isMobile}><FloorPlan /></AppShell></ErrorBoundary>} />
+          <Route element={<ConsoleLayout />}>
+            <Route path="/chat" element={<ChatPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/agents" element={<AgentsPage />} />
+            <Route path="/channels" element={<ChannelsPage />} />
+            <Route path="/skills" element={<SkillsPage />} />
+            <Route path="/cron" element={<CronPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </ErrorBoundary>
     </>
   );
 }

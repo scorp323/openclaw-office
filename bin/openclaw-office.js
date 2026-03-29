@@ -2,11 +2,41 @@
 
 import { createServer, request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
+import { createGzip } from "node:zlib";
 import { readFileSync, existsSync, mkdirSync } from "node:fs";
 import { readFile, writeFile, access, readdir, unlink, mkdir } from "node:fs/promises";
 import { resolve, join, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { networkInterfaces, homedir } from "node:os";
+
+// Gzip-compressible MIME types
+const GZIP_TYPES = new Set([
+  "text/html", "text/css", "application/javascript", "application/json",
+  "image/svg+xml", "text/plain",
+]);
+
+function shouldGzip(mime, acceptEncoding) {
+  if (!acceptEncoding || !acceptEncoding.includes("gzip")) return false;
+  const base = mime.split(";")[0].trim();
+  return GZIP_TYPES.has(base);
+}
+
+function sendWithGzip(res, statusCode, headers, body, acceptEncoding) {
+  const mime = headers["Content-Type"] || "";
+  if (shouldGzip(mime, acceptEncoding) && body.length > 1024) {
+    headers["Content-Encoding"] = "gzip";
+    headers["Vary"] = "Accept-Encoding";
+    delete headers["Content-Length"];
+    res.writeHead(statusCode, headers);
+    const gz = createGzip();
+    gz.pipe(res);
+    gz.end(body);
+  } else {
+    headers["Content-Length"] = Buffer.byteLength(body);
+    res.writeHead(statusCode, headers);
+    res.end(body);
+  }
+}
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const distDir = resolve(__dirname, "..", "dist");
@@ -568,11 +598,36 @@ const server = createServer(async (req, res) => {
     }
   }
 
+  // Proxy /mc-api/* to the MC API server on port 3335
+  if (pathname.startsWith("/mc-api/")) {
+    const apiPath = "/api" + pathname.slice("/mc-api".length);
+    const apiUrl = `http://127.0.0.1:3335${apiPath}${url.search}`;
+    try {
+      const proxyRes = await new Promise((resolve, reject) => {
+        const proxyReq = httpRequest(apiUrl, {
+          method: req.method,
+          headers: { ...req.headers, host: "127.0.0.1:3335" },
+        }, resolve);
+        proxyReq.on("error", reject);
+        req.pipe(proxyReq);
+      });
+      res.writeHead(proxyRes.statusCode, {
+        ...proxyRes.headers,
+        "access-control-allow-origin": "*",
+      });
+      proxyRes.pipe(res);
+    } catch (err) {
+      sendJson(res, 502, { error: "API server unavailable", detail: String(err) });
+    }
+    return;
+  }
+
+  const acceptEncoding = req.headers["accept-encoding"] || "";
+
   // Serve injected index.html for root and SPA routes
   if (pathname === "/" || pathname === "/index.html") {
     const html = await getIndexHtml();
-    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(html);
+    sendWithGzip(res, 200, { "Content-Type": "text/html; charset=utf-8" }, html, acceptEncoding);
     return;
   }
 
@@ -583,15 +638,18 @@ const server = createServer(async (req, res) => {
   if (content) {
     const ext = extname(filePath).toLowerCase();
     const mime = MIME_TYPES[ext] || "application/octet-stream";
-    res.writeHead(200, { "Content-Type": mime });
-    res.end(content);
+    const headers = { "Content-Type": mime };
+    // Immutable caching for hashed assets (e.g. /assets/index-CDGSTlew.js)
+    if (pathname.startsWith("/assets/")) {
+      headers["Cache-Control"] = "public, max-age=31536000, immutable";
+    }
+    sendWithGzip(res, 200, headers, content, acceptEncoding);
     return;
   }
 
   // SPA fallback for client-side routes
   const html = await getIndexHtml();
-  res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-  res.end(html);
+  sendWithGzip(res, 200, { "Content-Type": "text/html; charset=utf-8" }, html, acceptEncoding);
 });
 
 server.on("upgrade", (req, socket, head) => {

@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { VisualAgent } from "@/gateway/types";
+import { useLiveData } from "@/hooks/useLiveData";
+import { useRealAgentSync } from "@/hooks/useRealAgentSync";
 import {
   SVG_WIDTH,
   SVG_HEIGHT,
@@ -21,6 +23,10 @@ import { ZoneLabel } from "./ZoneLabel";
 type ZoneKey = keyof typeof ZONES;
 
 export function FloorPlan() {
+  // Fetch agents from MC API so the office view works independently
+  const { agents: realAgents } = useLiveData(30000);
+  useRealAgentSync(realAgents);
+
   const agents = useOfficeStore((s) => s.agents);
   const links = useOfficeStore((s) => s.links);
   const theme = useOfficeStore((s) => s.theme);
